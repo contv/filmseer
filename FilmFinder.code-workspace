@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"name": "FilmFinder Root",
+			"path": "."
+		},
+		{
+			"name": "Server App (FastAPI)",
+			"path": "./backends/serverapp-fastapi"
+		},
+		{
+			"name": "Web App (React)",
+			"path": "./frontends/webapp-react"
+		}
+	],
+	"settings": {}
+}
