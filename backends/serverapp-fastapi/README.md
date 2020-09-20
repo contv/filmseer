@@ -6,9 +6,11 @@ This is a server app for COMP9900 FilmFinder Project.
 
 1. `poetry install`
 
-2. `poetry shell`
+2. Create a `.env` from `.env.template`
 
-3. `uvicorn app.main:app --reload`
+3. `poetry shell`
+
+4. `uvicorn app.main:app --reload`
 
 The `poetry run start` is buggy now and will be fixed soon.
 
