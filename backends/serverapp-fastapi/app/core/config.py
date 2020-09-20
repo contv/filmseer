@@ -20,8 +20,12 @@ class Settings(BaseSettings):
     GZIP_ENABLED: bool = True
     GZIP_MIN_SIZE: int = 500
     FORCE_HTTPS: bool = False
-    STATIC_FILE_ROOT: str = str((Path(__file__).resolve().parents[4] / 'public').resolve())
-    ERROR_PAGES_ROOT: str = str((Path(__file__).resolve().parents[4] / 'error-pages').resolve())
+    STATIC_FILE_ROOT: str = str(
+        (Path(__file__).resolve().parents[4] / "public").resolve()
+    )
+    ERROR_PAGES_ROOT: str = str(
+        (Path(__file__).resolve().parents[4] / "error-pages").resolve()
+    )
 
     # CORS Settings
     CORS_ORIGINS: List[Union[AnyHttpUrl, constr(regex=r"^\*$")]] = []  # noqa: F722
