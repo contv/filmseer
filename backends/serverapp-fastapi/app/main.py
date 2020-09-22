@@ -29,16 +29,16 @@ if settings.FORCE_HTTPS:
     )
     logger.info("HTTPSRedirectMiddleware loaded")
 
-if settings.SERVER_HOSTS:
-    if settings.SERVER_HOSTS == ["*"]:
-        logger.warn('It is unsafe to set SERVER_HOSTS to "*"')
+if settings.ALLOWED_HOSTS:
+    if settings.ALLOWED_HOSTS == ["*"]:
+        logger.warn('It is unsafe to set ALLOWED_HOSTS to "*"')
     app.add_middleware(
         TrustedHostMiddleware,
-        allowed_hosts=settings.SERVER_HOSTS,
+        allowed_hosts=settings.ALLOWED_HOSTS,
     )
     logger.info("TrustedHostMiddleware loaded")
 else:
-    logger.warn("No SERVER_HOSTS configuration has been found")
+    logger.warn("No ALLOWED_HOSTS configuration has been found")
 
 if settings.CORS_ORIGINS:
     app.add_middleware(

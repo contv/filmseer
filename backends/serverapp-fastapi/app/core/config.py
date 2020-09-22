@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     API_URL_PATH: str = "/api/v1"
     # Base URL should not be configured here,
     # it should be generated using the Request body.
-    SERVER_HOSTS: List[str] = ["*"]
+    ALLOWED_HOSTS: List[str] = ["*"]
     GZIP_ENABLED: bool = True
     GZIP_MIN_SIZE: int = 500
     FORCE_HTTPS: bool = False
