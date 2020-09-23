@@ -20,7 +20,10 @@ logging.config.fileConfig(
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title=settings.PROJECT_NAME, openapi_url=settings.API_URL_PATH + "openapi.json"
+    title=settings.PROJECT_NAME,
+    openapi_url=settings.API_URL_PATH + "openapi.json",
+    docs_url="/docs" if settings.DEV_MODE else None,
+    redoc_url="/redoc" if settings.DEV_MODE else None,
 )
 
 if settings.FORCE_HTTPS:
