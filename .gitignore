@@ -258,3 +258,10 @@ $RECYCLE.BIN/
 !FilmFinder.code-workspace
 .vscode/settings.json
 **/.vscode/settings.json
+!README.md
+public/**/*
+!public/favicon.ico
+storages/cache/**/*
+storages/contents/**/*
+storages/database/postgres/**/*
+storages/sessions/**/*

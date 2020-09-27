@@ -8,8 +8,9 @@ from fastapi import APIRouter
 __all__ = ["router"]
 
 
-def import_submodules(package: str, recursive: bool = True):
-    """Import all submodules of a module, recursively, including subpackages
+def import_subroutes(package: str, recursive: bool = True):
+    """
+    Import all subroutes(submodules), recursively.
 
     :param package: package (name or actual module)
     :type package: str | module
@@ -44,11 +45,11 @@ def import_submodules(package: str, recursive: bool = True):
             results[url_path] = submodule
 
         if recursive and is_pkg:
-            results.update(import_submodules(full_name))
+            results.update(import_subroutes(full_name))
     return results
 
 
-routes = import_submodules(__name__)
+routes = import_subroutes(__name__)
 print(list(routes.keys()))
 
 router = APIRouter()

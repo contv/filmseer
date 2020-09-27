@@ -32,12 +32,17 @@ def start():
     server_ports = []
     # Multiple ports
     try:
-        server_ports = [
-            int(x)
-            for x in list(json.loads(env_dict.get("SERVER_PORTS") or "8000"))
-            if str(x).isdigit() and (0 < int(x) < 65535)
-        ]
-        print(server_ports)
+        server_ports = (
+            [
+                int(x)
+                for x in list(json.loads(env_dict.get("SERVER_PORTS") or "8000"))
+                if str(x).isdigit() and (0 < int(x) < 65535)
+            ]
+            if not isinstance(
+                json.loads(env_dict.get("SERVER_PORTS") or "8000"), (int, float)
+            )
+            else [int(json.loads(env_dict.get("SERVER_PORTS") or "8000"))]
+        )
     except json.decoder.JSONDecodeError:
         print(
             "ERROR: SERVER_PORTS can only be either an int (0 - 65535) or a json array of ints.",

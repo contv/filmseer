@@ -8,7 +8,7 @@ from app.core.config import settings
 
 def handle_error_pages(app: FastAPI) -> FastAPI:
     @app.middleware("http")
-    async def custom_http_errors(request: Request, call_next):
+    async def http_error_pages_middleware(request: Request, call_next):
         response: Response = await call_next(request)
         if 400 <= response.status_code < 600:
             error_page = (

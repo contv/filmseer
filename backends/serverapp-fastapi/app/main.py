@@ -9,7 +9,9 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 from app.api.v1.routers import router as api_router
 from app.core.config import settings
+from app.core.database import handle_database
 from app.core.error_pages import handle_error_pages
+from app.core.session import handle_session
 from app.core.static_router import handle_static_routes
 
 logging.config.fileConfig(
@@ -64,5 +66,7 @@ if settings.GZIP_ENABLED:
 
 app = handle_error_pages(app)
 app = handle_static_routes(app)
+app = handle_session(app)
+app = handle_database(app)
 
 app.include_router(api_router, prefix=settings.API_URL_PATH)

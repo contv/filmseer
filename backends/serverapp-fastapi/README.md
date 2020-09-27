@@ -18,7 +18,7 @@ The `poetry run start` currently does not support gunicorn.
 
 * The `/` should now be pointed to `~/public/index.html`.
 
-* `/api/v1/` and `/api/v1/hello/world` works, these are two examples of routing.
+* `/api/v1/` and `/api/v1/hello/world` should work: these are two examples of routing.
 
 ## Development
 
