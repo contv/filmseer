@@ -1,8 +1,12 @@
 import importlib
 import pkgutil
+from types import ModuleType
+from typing import Dict
+
+from tortoise.models import Model
 
 
-def import_submodules(package, recursive=True):
+def _import_submodules(package: str, recursive: bool = True) -> Dict[str, ModuleType]:
     """
     Import all submodules of a module, recursively, including subpackages
 
@@ -17,19 +21,23 @@ def import_submodules(package, recursive=True):
         full_name = package.__name__ + "." + name
         results[full_name] = importlib.import_module(full_name)
         if recursive and is_pkg:
-            results.update(import_submodules(full_name))
+            results.update(_import_submodules(full_name))
     return results
 
 
-_submodules = import_submodules(__name__)
+def _get_models(submodules: Dict[str, ModuleType]) -> Dict[str, Model]:
+    models = {}
+    for module in submodules.values():
+        model_names = dir(module)
+        for model_name in model_names:
+            model = getattr(module, model_name)
+            if isinstance(model, Model):
+                models[model_name] = getattr(module, model_name)
+    return models
 
-_models = {}
-for module in _submodules.values():
-    model_names = dir(module)
-    for model_name in model_names:
-        _models[model_name] = getattr(module, model_name)
+
+_models = _get_models(_import_submodules(__name__))
 
 globals().update(_models)
 
 __all__ = list(_models.keys())
-print("DB", __all__)

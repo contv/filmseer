@@ -50,11 +50,12 @@ def import_subroutes(package: str, recursive: bool = True):
 
 
 routes = import_subroutes(__name__)
-print(list(routes.keys()))
 
 router = APIRouter()
 
 for url_path, submodule in routes.items():
     router.include_router(
-        submodule.router, prefix=url_path.rstrip("/"), tags=url_path.strip("/").split("/")
+        submodule.router,
+        prefix=url_path.rstrip("/"),
+        tags=url_path.strip("/").split("/"),
     )
