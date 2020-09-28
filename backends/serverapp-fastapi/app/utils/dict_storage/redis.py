@@ -25,7 +25,7 @@ class RedisDictStorageDriver(DictStorageDriverBase):
     def __init__(
         self,
         key_prefix: str = "",
-        key_filter: Optional[Union[str, Callable[[str], str]]] = r"[^a-zA-Z0-9-_]+",
+        key_filter: Optional[Union[str, Callable[[str], str]]] = r"[^a-zA-Z0-9_-]+",
         ttl: int = 0,
         renew_on_ttl: int = 0,
         redis_uri: str = "",
@@ -40,7 +40,7 @@ class RedisDictStorageDriver(DictStorageDriverBase):
         self.redis_pool_max = redis_pool_max
         if isinstance(key_filter, str):
             self.key_filter_regex = re.compile(key_filter)
-            self.key_filter = lambda x: self.key_filter_regex.sub(x, "")
+            self.key_filter = lambda x: self.key_filter_regex.sub("", x)
         elif callable(key_filter):
             self.key_filter = key_filter
         elif key_filter is None:
