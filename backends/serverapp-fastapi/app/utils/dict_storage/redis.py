@@ -1,7 +1,7 @@
 import json
 import re
 from asyncio import TimeoutError as AioTimeoutError
-from typing import Any, Dict, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 import aioredis
 
@@ -12,10 +12,11 @@ from ..dict_storage import DictStorageDriverBase
 
 class RedisDictStorageDriver(DictStorageDriverBase):
     key_prefix: str
+    key_filter: Callable[[str], str]
+    key_filter_regex: str = ""
     ttl: int
     renew_on_ttl: int
     redis_uri: str
-    key_filter: re.Pattern
     redis: aioredis.Redis
     redis_pool_min: int
     redis_pool_max: int
@@ -23,6 +24,7 @@ class RedisDictStorageDriver(DictStorageDriverBase):
     def __init__(
         self,
         key_prefix: str = "",
+        key_filter: Optional[Union[str, Callable[[str], str]]] = r"[^a-zA-Z0-9-_]+",
         ttl: int = 0,
         renew_on_ttl: int = 0,
         redis_uri: str = "",
@@ -35,7 +37,13 @@ class RedisDictStorageDriver(DictStorageDriverBase):
         self.redis_uri = redis_uri
         self.redis_pool_min = redis_pool_min
         self.redis_pool_max = redis_pool_max
-        self.key_filter = re.compile(r"[^a-zA-Z0-9]+")
+        if isinstance(key_filter, str):
+            self.key_filter_regex = re.compile(key_filter)
+            self.key_filter = lambda x: self.key_filter_regex.sub(x, "")
+        elif callable(key_filter):
+            self.key_filter = key_filter
+        elif key_filter is None:
+            self.key_filter = lambda x: x
 
     async def set_key_prefix(self, new_key_prefix: str = "") -> None:
         self.key_prefix = new_key_prefix
@@ -52,7 +60,7 @@ class RedisDictStorageDriver(DictStorageDriverBase):
 
     async def get(self, key: str) -> Tuple[Dict[str, Any], int]:
         # [Note]: This action is not atomic, consider replacing with eval(Lua script).
-        full_key = self.key_prefix + self.key_filter.sub("", key.strip().upper())
+        full_key = self.key_prefix + self.key_filter(key.strip().upper())
         ttl = 0
         try:
             result_s = await self.redis.get(full_key, encoding="utf-8")
@@ -63,10 +71,13 @@ class RedisDictStorageDriver(DictStorageDriverBase):
                 raise TypeError
             if not result:
                 raise ValueError
-            ttl = await self.redis.ttl(full_key)
-            if -1 <= ttl <= self.renew_on_ttl:
-                await self.redis.expire(full_key, self.renew_on_ttl)
-            ttl = max(0, ttl)
+            if self.ttl:
+                ttl = await self.redis.ttl(full_key)
+                if -1 <= ttl <= self.renew_on_ttl:
+                    await self.redis.expire(full_key, self.renew_on_ttl)
+                ttl = max(0, ttl)
+            else:
+                ttl = 0
         except (
             LookupError,
             UnicodeError,
@@ -81,7 +92,7 @@ class RedisDictStorageDriver(DictStorageDriverBase):
         return result, ttl
 
     async def update(self, key: str, value: Dict[str, Any]) -> None:
-        full_key = self.key_prefix + self.key_filter.sub("", key.strip().upper())
+        full_key = self.key_prefix + self.key_filter(key.strip().upper())
         await self.redis.set(
             full_key,
             json.dumps(value),
@@ -89,7 +100,7 @@ class RedisDictStorageDriver(DictStorageDriverBase):
         )
 
     async def destroy(self, key: str) -> None:
-        full_key = self.key_prefix + self.key_filter.sub("", key.strip().upper())
+        full_key = self.key_prefix + self.key_filter(key.strip().upper())
         await self.redis.unlink(full_key)
 
     async def terminate_driver(self) -> None:

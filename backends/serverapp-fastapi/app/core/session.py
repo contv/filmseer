@@ -134,11 +134,9 @@ class AdvancedSessionMiddleware:
             session_id = None
         if not self.initalized:
             await self.driver.initialize_driver()
+        if self.separate_https:
+            await self.driver.set_key_prefix(self.key_prefix + scope["scheme"] + "-")
         if session_id:
-            if self.separate_https:
-                await self.driver.set_key_prefix(
-                    self.key_prefix + scope["scheme"] + "-"
-                )
             session, ttl = await self.driver.get(session_id)
             if not session:
                 session_id = None

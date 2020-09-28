@@ -1,17 +1,30 @@
-from typing import Any, Dict, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 
 class DictStorageDriverBase:
     key_prefix: str
+    key_filter: Callable[[str], str]
+    key_filter_regex: str = ""
     ttl: int
     renew_on_ttl: int
 
     def __init__(
-        self, key_prefix: str = "", ttl: int = 0, renew_on_ttl: int = 0
+        self,
+        key_prefix: str = "",
+        key_filter: Optional[Union[str, Callable[[str], str]]] = r"[^a-zA-Z0-9-_]+",
+        ttl: int = 0,
+        renew_on_ttl: int = 0,
     ) -> None:
         self.key_prefix = key_prefix
         self.ttl = ttl
         self.renew_on_ttl = renew_on_ttl
+        if isinstance(key_filter, str):
+            self.key_filter_regex = re.compile(key_filter)
+            self.key_filter = lambda x: self.key_filter_regex.sub(x, "")
+        elif callable(key_filter):
+            self.key_filter = key_filter
+        elif key_filter is None:
+            self.key_filter = lambda x: x
 
     async def set_key_prefix(self, new_key_prefix: str = "") -> None:
         self.key_prefix = new_key_prefix
