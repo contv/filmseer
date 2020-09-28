@@ -14,6 +14,7 @@ class RedisDictStorageDriver(DictStorageDriverBase):
     key_prefix: str
     key_filter: Callable[[str], str]
     key_filter_regex: str = ""
+    initialized: bool = False
     ttl: int
     renew_on_ttl: int
     redis_uri: str
@@ -49,9 +50,11 @@ class RedisDictStorageDriver(DictStorageDriverBase):
         self.key_prefix = new_key_prefix
 
     async def initialize_driver(self) -> None:
+        # The driver must be initialized first.
         self.redis = await aioredis.create_redis_pool(
             self.redis_uri, minsize=self.redis_pool_min, maxsize=self.redis_pool_max
         )
+        self.initialized = True
 
     async def create(self) -> str:
         new_id = to_base32(id())
@@ -104,5 +107,7 @@ class RedisDictStorageDriver(DictStorageDriverBase):
         await self.redis.unlink(full_key)
 
     async def terminate_driver(self) -> None:
+        # The driver must be terminated correctly in the end.
         self.redis.close()
         await self.redis.wait_closed()
+        self.initialized = False

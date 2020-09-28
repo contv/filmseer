@@ -4,7 +4,7 @@ import hashlib
 import os
 import random
 from types import SimpleNamespace
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type, Union
 
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from fastapi import FastAPI, Response
@@ -52,7 +52,9 @@ class AdvancedSessionMiddleware:
     def __init__(
         self,
         app: ASGIApp,
-        driver: Type[DictStorageDriverBase] = DictStorageDriverBase,
+        driver: Union[
+            Type[DictStorageDriverBase], DictStorageDriverBase
+        ] = DictStorageDriverBase,
         driver_args: Optional[List[Any]] = None,
         driver_kwargs: Optional[Dict[str, Any]] = None,
         separate_https: bool = settings.SESSION_SEPARATE_HTTPS,
@@ -80,18 +82,26 @@ class AdvancedSessionMiddleware:
         self.cookie_path = cookie_path
         self.cookie_same_site = cookie_same_site
         self.cookie_max_age = ttl
-        self.driver = driver(
-            *(driver_args or []),
-            **{
+        if issubclass(driver, DictStorageDriverBase):
+            self.driver = driver(
+                *(driver_args or []),
                 **{
-                    "key_prefix": self.key_prefix,
-                    "ttl": self.server_ttl,
-                    "renew_on_ttl": self.renew_on_ttl,
+                    **{
+                        "key_prefix": self.key_prefix,
+                        "ttl": self.server_ttl,
+                        "renew_on_ttl": self.renew_on_ttl,
+                    },
+                    **(driver_kwargs or {}),
                 },
-                **(driver_kwargs or {}),
-            },
-        )
-        self.initalized = False
+            )
+        elif isinstance(driver, DictStorageDriverBase):
+            self.driver = driver
+        else:
+            raise TypeError(
+                "The session driver should be a class"
+                " or a object of DictStorageDriverBase."
+            )
+        self.initalized = self.driver.initialized
 
         async def terminate_driver():
             await self.driver.terminate_driver()

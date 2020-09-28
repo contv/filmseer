@@ -5,6 +5,7 @@ class DictStorageDriverBase:
     key_prefix: str
     key_filter: Callable[[str], str]
     key_filter_regex: str = ""
+    initialized: bool = False
     ttl: int
     renew_on_ttl: int
 
@@ -30,7 +31,8 @@ class DictStorageDriverBase:
         self.key_prefix = new_key_prefix
 
     async def initialize_driver(self) -> None:
-        pass
+        # The driver must be initialized first.
+        self.initialized = True
 
     async def create(self) -> str:
         return ""
@@ -45,4 +47,5 @@ class DictStorageDriverBase:
         pass
 
     async def terminate_driver(self) -> None:
-        pass
+        # The driver must be terminated correctly in the end.
+        self.initialized = False
