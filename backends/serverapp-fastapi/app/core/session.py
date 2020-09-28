@@ -190,7 +190,9 @@ class AdvancedSessionMiddleware:
                             and scope["scheme"] in ("https", "wss"),
                         )
                         del session_id_new
-                        headers.append("Set-Cookie", dummy.raw_headers[0][1].decode("utf-8"))
+                        headers.append(
+                            "Set-Cookie", dummy.raw_headers[0][1].decode("utf-8")
+                        )
                         del dummy
                     else:
                         # Store the current session
@@ -212,7 +214,9 @@ class AdvancedSessionMiddleware:
                                 secure=self.separate_https
                                 and scope["scheme"] in ("https", "wss"),
                             )
-                            headers.append("Set-Cookie", dummy.raw_headers[0][1].decode("utf-8"))
+                            headers.append(
+                                "Set-Cookie", dummy.raw_headers[0][1].decode("utf-8")
+                            )
                             del dummy
                 else:
                     if session_id is None:
@@ -233,7 +237,9 @@ class AdvancedSessionMiddleware:
                                 secure=self.separate_https
                                 and scope["scheme"] in ("https", "wss"),
                             )
-                            headers.append("Set-Cookie", dummy.raw_headers[0][1].decode("utf-8"))
+                            headers.append(
+                                "Set-Cookie", dummy.raw_headers[0][1].decode("utf-8")
+                            )
                             del dummy
                         else:
                             # No session cookie, and the session is empty: do nothing
@@ -257,7 +263,9 @@ class AdvancedSessionMiddleware:
                             secure=self.separate_https
                             and scope["scheme"] in ("https", "wss"),
                         )
-                        headers.append("Set-Cookie", dummy.raw_headers[0][1].decode("utf-8"))
+                        headers.append(
+                            "Set-Cookie", dummy.raw_headers[0][1].decode("utf-8")
+                        )
                         del dummy
             await send(message)
 
