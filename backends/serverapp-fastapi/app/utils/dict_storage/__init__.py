@@ -13,7 +13,7 @@ class DictStorageDriverBase:
         self.ttl = ttl
         self.renew_on_ttl = renew_on_ttl
 
-    def set_key_prefix(self, new_key_prefix: str = "") -> None:
+    async def set_key_prefix(self, new_key_prefix: str = "") -> None:
         self.key_prefix = new_key_prefix
 
     async def initialize_driver(self) -> None:

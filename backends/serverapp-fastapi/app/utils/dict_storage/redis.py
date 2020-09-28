@@ -37,7 +37,7 @@ class RedisDictStorageDriver(DictStorageDriverBase):
         self.redis_pool_max = redis_pool_max
         self.key_filter = re.compile(r"[^a-zA-Z0-9]+")
 
-    def set_key_prefix(self, new_key_prefix: str = "") -> None:
+    async def set_key_prefix(self, new_key_prefix: str = "") -> None:
         self.key_prefix = new_key_prefix
 
     async def initialize_driver(self) -> None:
@@ -46,7 +46,7 @@ class RedisDictStorageDriver(DictStorageDriverBase):
         )
 
     async def create(self) -> str:
-        new_id = to_base32(id)
+        new_id = to_base32(id())
         # Lazy approach: we don't create it here but in update
         return new_id.upper()
 
@@ -64,8 +64,8 @@ class RedisDictStorageDriver(DictStorageDriverBase):
             if not result:
                 raise ValueError
             ttl = await self.redis.ttl(full_key)
-            if -1 <= ttl <= self.renew_time:
-                await self.redis.expire(full_key, self.renew_time)
+            if -1 <= ttl <= self.renew_on_ttl:
+                await self.redis.expire(full_key, self.renew_on_ttl)
             ttl = max(0, ttl)
         except (
             LookupError,

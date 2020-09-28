@@ -132,11 +132,13 @@ class AdvancedSessionMiddleware:
                 session_id = None
         elif session_id and len(session_id) != 26:
             session_id = None
+        if not self.initalized:
+            await self.driver.initialize_driver()
         if session_id:
-            if not self.initalized:
-                self.driver.initialize_driver()
             if self.separate_https:
-                self.driver.set_key_prefix(self.key_prefix + scope["scheme"] + "-")
+                await self.driver.set_key_prefix(
+                    self.key_prefix + scope["scheme"] + "-"
+                )
             session, ttl = await self.driver.get(session_id)
             if not session:
                 session_id = None
@@ -157,7 +159,7 @@ class AdvancedSessionMiddleware:
                 if scope["session"]:
                     if session_id is None:
                         # Initialize a new session cookie
-                        session_id_new = self.driver.create()
+                        session_id_new = await self.driver.create()
                         # Store the current session
                         await self.driver.update(session_id_new, scope["session"])
                         if self.cookie_secret is not None:
@@ -188,13 +190,13 @@ class AdvancedSessionMiddleware:
                             and scope["scheme"] in ("https", "wss"),
                         )
                         del session_id_new
-                        headers.append(*dummy.raw_headers[0])
+                        headers.append("Set-Cookie", dummy.raw_headers[0][1].decode("utf-8"))
                         del dummy
                     else:
                         # Store the current session
                         await self.driver.update(session_id, scope["session"])
                         # Handle renew
-                        if ttl <= self.renew_time:
+                        if ttl <= self.renew_on_ttl:
                             dummy = SimpleNamespace()
                             dummy.raw_headers = []
                             Response.set_cookie(
@@ -210,7 +212,7 @@ class AdvancedSessionMiddleware:
                                 secure=self.separate_https
                                 and scope["scheme"] in ("https", "wss"),
                             )
-                            headers.append(*dummy.raw_headers[0])
+                            headers.append("Set-Cookie", dummy.raw_headers[0][1].decode("utf-8"))
                             del dummy
                 else:
                     if session_id is None:
@@ -231,14 +233,14 @@ class AdvancedSessionMiddleware:
                                 secure=self.separate_https
                                 and scope["scheme"] in ("https", "wss"),
                             )
-                            headers.append(*dummy.raw_headers[0])
+                            headers.append("Set-Cookie", dummy.raw_headers[0][1].decode("utf-8"))
                             del dummy
                         else:
                             # No session cookie, and the session is empty: do nothing
                             pass
                     else:
                         # Delete the current session
-                        self.driver.destroy(session_id)
+                        await self.driver.destroy(session_id)
                         # Revoke this invalid session cookie
                         dummy = SimpleNamespace()
                         dummy.raw_headers = []
@@ -255,10 +257,10 @@ class AdvancedSessionMiddleware:
                             secure=self.separate_https
                             and scope["scheme"] in ("https", "wss"),
                         )
-                        headers.append(*dummy.raw_headers[0])
+                        headers.append("Set-Cookie", dummy.raw_headers[0][1].decode("utf-8"))
                         del dummy
             await send(message)
-        
+
         await self.app(scope, receive, send_wrapper)
 
 
