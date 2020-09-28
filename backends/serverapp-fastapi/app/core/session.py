@@ -6,10 +6,11 @@ import random
 from types import SimpleNamespace
 from typing import Any, Dict, List, Optional, Type, Union
 
+import tldextract
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from fastapi import FastAPI, Response
 from starlette.applications import Starlette
-from starlette.datastructures import MutableHeaders
+from starlette.datastructures import Headers, MutableHeaders
 from starlette.requests import HTTPConnection
 from starlette.routing import Router
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
@@ -122,6 +123,19 @@ class AdvancedSessionMiddleware:
         )
         session: _UncopyableDict[str, Any] = {}
         ttl: int = 0
+        cookie_domain = (
+            self.cookie_domain
+            if self.cookie_domain != "auto"
+            else ".".join(
+                [
+                    x
+                    for x in tldextract.extract(
+                        Headers(scope=scope).get("host", "").split(":")[0]
+                    )[1:]
+                    if x
+                ]
+            ).lower()
+        )
         if session_id and self.cookie_secret is not None:
             # Decrypt session_id
             try:
@@ -191,7 +205,7 @@ class AdvancedSessionMiddleware:
                             max_age=self.cookie_max_age,
                             expires=self.cookie_max_age,
                             path=self.cookie_path,
-                            domain=self.cookie_domain,
+                            domain=cookie_domain,
                             httponly=True,
                             samesite=self.cookie_same_site,
                             secure=self.separate_https
@@ -216,7 +230,7 @@ class AdvancedSessionMiddleware:
                                 max_age=self.cookie_max_age,
                                 expires=self.cookie_max_age,
                                 path=self.cookie_path,
-                                domain=self.cookie_domain,
+                                domain=cookie_domain,
                                 httponly=True,
                                 samesite=self.cookie_same_site,
                                 secure=self.separate_https
@@ -239,7 +253,7 @@ class AdvancedSessionMiddleware:
                                 max_age=0,
                                 expires=0,
                                 path=self.cookie_path,
-                                domain=self.cookie_domain,
+                                domain=cookie_domain,
                                 httponly=True,
                                 samesite=self.cookie_same_site,
                                 secure=self.separate_https
@@ -265,7 +279,7 @@ class AdvancedSessionMiddleware:
                             max_age=0,
                             expires=0,
                             path=self.cookie_path,
-                            domain=self.cookie_domain,
+                            domain=cookie_domain,
                             httponly=True,
                             samesite=self.cookie_same_site,
                             secure=self.separate_https

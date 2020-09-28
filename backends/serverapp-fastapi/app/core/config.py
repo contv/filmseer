@@ -62,6 +62,7 @@ class Settings(BaseSettings):
     SESSION_COOKIE_SAME_SITE: str = ("strict", "lax", "none")[1]
 
     # Cookie Default Settings
+    COOKIE_DEFAULT_SEPARATE_HTTPS: bool = True
     COOKIE_DEFAULT_PREFIX: str = ""
     COOKIE_DEFAULT_DOMAIN: str = ""
     COOKIE_DEFAULT_PATH: str = "/"
