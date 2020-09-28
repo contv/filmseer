@@ -23,6 +23,13 @@ def import_submodules(package, recursive=True):
 
 _submodules = import_submodules(__name__)
 
-globals().update(_submodules)
+_models = {}
+for module in _submodules.values():
+    model_names = dir(module)
+    for model_name in model_names:
+        _models[model_name] = getattr(module, model_name)
 
-__all__ = list(_submodules.keys())
+globals().update(_models)
+
+__all__ = list(_models.keys())
+print("DB", __all__)
