@@ -3,10 +3,11 @@ import json
 import os
 import platform
 import sys
-from multiprocessing import Process, cpu_count
 from pathlib import Path
 
 from dotenv import dotenv_values, find_dotenv
+
+_mp = importlib.import_module("multiprocessing")
 
 
 def start():
@@ -45,7 +46,8 @@ def start():
         )
     except json.decoder.JSONDecodeError:
         print(
-            "ERROR: SERVER_PORTS can only be either an int (0 - 65535) or a json array of ints.",
+            "ERROR: SERVER_PORTS can only be either an int (0 - 65535) or "
+            "a json array of ints.",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -59,7 +61,7 @@ def start():
                 .isdigit()
                 else "1"
             )
-            * cpu_count(),
+            * _mp.cpu_count(),
             int(
                 env_dict.get("SERVER_MAX_WORKERS", "0")
                 if env_dict.get("SERVER_MAX_WORKERS", "0").isdigit()
@@ -128,7 +130,8 @@ def start():
                     spec = importlib.util.spec_from_file_location(module_name, filename)
                 else:
                     print(
-                        "WARNING: Configuration file should have a valid Python extension."
+                        "WARNING: Configuration file should "
+                        "have a valid Python extension."
                     )
                     loader_ = importlib.machinery.SourceFileLoader(
                         module_name, filename
@@ -224,12 +227,25 @@ def start():
             )
 
         uvicorn_config.update(server_conf_options)
-        print("here", dev_mode, server_ports)
+        if platform.system() == "Darwin":
+            # Fix OSError: [Errno 9] Bad file descriptor
+            _mp.set_start_method("fork")
+            # Fix unstable os.fork() on macOS Mojave
+            if os.getenv("OBJC_DISABLE_INITIALIZE_FORK_SAFETY") is None:
+                print()
+                print("------------------------------------------------------------")
+                print(
+                    "NOTE: if your Python crashed for some uncertain reasons, "
+                    "try this workaround before starting Python: "
+                )
+                print("      `export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES`")
+                print("------------------------------------------------------------")
+                print()
 
         for server_port in server_ports:
             if dev_mode:
                 print(
-                    "DEBUG: Starting Param:",
+                    "DEBUG: Starting Parameters:",
                     {
                         **uvicorn_config,
                         **{
@@ -237,7 +253,7 @@ def start():
                         },
                     },
                 )
-            uvicorn_instances[server_port] = Process(
+            uvicorn_instances[server_port] = _mp.Process(
                 target=uvicorn.run,
                 kwargs={
                     **uvicorn_config,
