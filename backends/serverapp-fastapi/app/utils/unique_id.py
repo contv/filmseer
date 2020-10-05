@@ -163,7 +163,7 @@ DECODING = array.array(
 
 def to_uuid(
     from_value: Union[int, str, uuid.UUID, bytes, bytearray, memoryview]
-) -> str:
+) -> uuid.UUID:
     """
     Convert an ID to an UUID hyphen separated lower case string.
     """
@@ -173,7 +173,7 @@ def to_uuid(
         return str(uuid.UUID(from_value))
     if isinstance(from_value, uuid.UUID):
         return str(from_value)
-    return str(uuid.UUID(bytes=bytes(from_value)))
+    return uuid.UUID(bytes=bytes(from_value))
 
 
 def to_bytes(
