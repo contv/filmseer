@@ -13,7 +13,16 @@ async def init_database():
     await tortoise.Tortoise.init(
         db_url=settings.DATABASE_URI, modules={"models": ["app.models.db"]}
     )
+    conn = tortoise.Tortoise.get_connection("default")
+    command_items = await conn.execute_query_dict(
+        "SELECT 'DROP TABLE IF EXISTS "
+        "\"' || tablename || '\""
+        " CASCADE;' AS cmd FROM pg_tables WHERE schemaname = current_schema();"
+    )
+    for command_item in command_items:
+        await conn.execute_query(command_item["cmd"])
     await tortoise.Tortoise.generate_schemas()
+    await tortoise.Tortoise.close_connections()
 
 
 def interactive():
