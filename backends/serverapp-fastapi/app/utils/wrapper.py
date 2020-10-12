@@ -123,4 +123,4 @@ def wrap(
     )
 
 
-__all__ = ["Wrapper", "ExceptionModel", "wrap"]
+__all__ = ["Wrapper", "ExceptionModel", "wrap", "ApiException"]
