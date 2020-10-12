@@ -1,0 +1,24 @@
+.UserMenu {
+  display: grid;
+  grid-gap: 22px;
+  grid-auto-flow: column;
+  margin-left: -5px;
+  margin-right: 30px;
+
+  &__button {
+    min-width: 100px;
+    font-size: 16px;
+  }
+
+  &__icon {
+    background: transparent;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+  }
+
+  &__profile-icon {
+    width: 32px;
+    height: 32px;
+  }
+}

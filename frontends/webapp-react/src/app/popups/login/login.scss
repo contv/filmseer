@@ -1,0 +1,6 @@
+@import "./../popup-form.scss";
+
+.Login {
+  margin-bottom: 6px;
+  @include popup-form;
+}

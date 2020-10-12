@@ -1,0 +1,109 @@
+@mixin popup-form {
+  &__form {
+    display: grid;
+    grid-auto-rows: 1fr;
+    grid-auto-flow: row;
+    grid-gap: 10px;
+  }
+
+  &__form-field {
+    grid-row: auto / span 2;
+    display: grid;
+
+    &--checkbox {
+      grid-row: auto / span 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: -4px 0;
+      place-self: center start;
+    }
+  }
+
+  &__form-label {
+    font-size: 16px;
+    display: block;
+    padding-left: 5px;
+
+    &--checkbox {
+      place-self: center stretch;
+    }
+  }
+
+  &__form-input {
+    appearance: none;
+    box-sizing: border-box;
+    border: 1px solid var(--gray-5);
+    font-size: 18px;
+    height: 34px;
+    padding: 0 10px;
+    background-color: var(--gray-5);
+    place-self: stretch;
+
+    &--checkbox {
+      width: 24px;
+      height: 24px;
+
+      &:checked {
+        padding: 2px;
+        border: 4px solid var(--gray-4);
+        background-clip: content-box;
+        background-color: var(--green-2);
+      }
+
+      &:hover {
+        filter: brightness(1.05);
+        box-shadow: none;
+      }
+    
+      &:focus {
+        outline: none;
+        box-shadow: 0 0 5px -1px var(--blue-1);
+      }
+
+      &:active {
+        filter: brightness(0.87);
+        box-shadow: none;
+      }
+    }
+    
+    &:focus {
+      outline: none;
+      border: 1px solid var(--gray-1);
+    }
+  }
+
+  &__form-messages {
+    list-style: none;
+    place-self: center;
+    font-size: 12px;
+    margin: 0;
+    padding: 0;
+  }
+
+  &__form-message {
+    &--error {
+      color: var(--red);
+      filter: brightness(0.9);
+    }
+    &--success {
+      color: var(--green-2);
+      filter: brightness(0.9);
+    }
+  }
+
+  &__form-actions {
+    grid-row: auto / span 2;
+    place-self: center;
+    display: grid;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
+    grid-gap: 20px;
+  }
+
+  &__form-button {
+    width: 130px;
+    height: 36px;
+    font-size: 16px;
+  }
+}

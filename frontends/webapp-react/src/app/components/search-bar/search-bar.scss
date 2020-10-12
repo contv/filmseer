@@ -1,0 +1,29 @@
+.SearchBar {
+  display: grid;
+  grid-template-areas: "input button";
+
+  &__input {
+    grid-area: input;
+    appearance: none;
+    background-color: var(--gray-5);
+    border: 1px solid var(--gray-5);
+    padding: 0.5ex 0.5em;
+    box-sizing: border-box;
+    width: 100%;
+
+    &:focus {
+      outline: none;
+      border: 1px solid var(--gray-4);
+      background-color: var(--gray-6);
+    }
+  }
+
+  &__button {
+    grid-area: button;
+    font-size: 1em;
+    padding: 0;
+    > * {
+      vertical-align: middle;
+    }
+  }
+}

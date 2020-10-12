@@ -1,0 +1,93 @@
+:root {
+  --gray-1: #333;
+  --gray-2: #4f4f4f;
+  --gray-3: #828282;
+  --gray-4: #c4c4c4;
+  --gray-5: #e0e0e0;
+  --gray-6: #f2f2f2;
+  --red: #eb5757;
+  --orange: #f2994a;
+  --yellow: #f2c94c;
+  --green-1: #219653;
+  --green-2: #27ae60;
+  --green-3: #6fcf97;
+  --blue-1: #2f80ed;
+  --blue-2: #2d9cdb;
+  --blue-3: #56ccf2;
+  --purple-1: #9b51e0;
+  --purple-2: #bb6bd9;
+  --red-dim: #d9a2a2;
+  --blue-dim: #90b6e3;
+}
+
+[style*="--aspect-ratio:"]::before {
+  content: "";
+  display: inline-block;
+  width: 1px;
+  height: 0;
+  line-height: 0;
+  vertical-align: middle;
+  padding-bottom: calc(100% / (var(--aspect-ratio)));
+}
+
+button,
+input[type="button"] {
+  appearance: none;
+  background-color: var(--gray-4);
+  border: none;
+  border-radius: 0;
+  padding: 1ex 1em;
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 5px -1px var(--blue-1);
+  }
+
+  &:hover {
+    filter: brightness(1.12);
+    box-shadow: none;
+  }
+
+  &:active {
+    filter: brightness(0.87);
+    box-shadow: none;
+  }
+}
+
+.App {
+  display: grid;
+  grid-template-columns: auto;
+  grid-template-rows: 120px 1fr;
+  grid-template-areas: "header" "main";
+
+  &__header {
+    grid-area: header;
+    display: grid;
+    grid-template-columns: 250px 2fr 1fr;
+    grid-template-rows: auto;
+    grid-template-areas: "logo search menu";
+    column-gap: 3.5%;
+    place-self: stretch;
+  }
+
+  &__main {
+    grid-area: main;
+  }
+}
+
+.Header {
+  &__logo {
+    grid-area: logo;
+    place-self: stretch;
+  }
+
+  &__search-bar {
+    grid-area: search;
+    place-self: center stretch;
+  }
+
+  &__user-menu {
+    grid-area: menu;
+    place-self: center;
+  }
+}

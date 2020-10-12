@@ -1,0 +1,6 @@
+@import "./../popup-form.scss";
+
+.Register {
+  margin-bottom: 6px;
+  @include popup-form;
+}

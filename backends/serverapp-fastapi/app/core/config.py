@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     ERROR_PAGES_ROOT: str = str(
         (Path(__file__).resolve().parents[4] / "error-pages").resolve()
     )
+    SPA_ENTRY_FILE: str = str(
+        (Path(__file__).resolve().parents[4] / "public" / "index.html").resolve()
+    )
 
     # CORS Settings
     CORS_ORIGINS: List[Union[AnyHttpUrl, constr(regex=r"^\*$")]] = []  # noqa: F722
