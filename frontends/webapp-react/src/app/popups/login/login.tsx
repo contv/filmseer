@@ -97,7 +97,7 @@ const Login = (props: LoginProps & { className?: string }) => {
               }`}
               key="message"
             >
-              {message.message} ({message.code})
+              {message.message} {message.code > 0 ? `(${message.code})` : ""}
             </li>
             {exceptions.map((value, index) => (
               <li

@@ -23,7 +23,8 @@ async def status_code_handler(
     ):
         await FileResponse(
             Path(settings.ERROR_PAGES_ROOT) / str(response.status_code) / "index.html"
-        )
+        )(scope, receive, send)
+        return
     await response(scope, receive, send)
 
 

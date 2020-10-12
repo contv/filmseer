@@ -57,6 +57,7 @@ class ApiError extends Error {
 const api = (
   { path, method, params, body }: ApiParamType = { path: "/", method: "GET" }
 ) => {
+  console.log("before", body);
   if (params instanceof URLSearchParams) {
     params = Object.fromEntries(params);
   } else {
@@ -69,8 +70,8 @@ const api = (
   if (
     !body ||
     (typeof body === "object" &&
-      Object.keys(params).length === 0 &&
-      params.constructor === Object)
+      Object.keys(body).length === 0 &&
+      body.constructor === Object)
   ) {
     body = undefined;
   }
@@ -98,7 +99,7 @@ const api = (
   }
 
   return fetch(
-    (((process || {}).env || {}).REACT_APP_API_BASEURL || "") +
+    (((process || {}).env || {}).REACT_APP_API_BASEURL || "/api/v1") +
       path +
       (!params
         ? ""
@@ -121,7 +122,7 @@ const api = (
       keepalive: true,
       referrerPolicy: "no-referrer-when-downgrade",
       body:
-        !body || (Object.keys(body).length === 0 && body.constructor === Object)
+        (!body || (Object.keys(body).length === 0 && body.constructor === Object))
           ? undefined
           : JSON.stringify(body),
     }

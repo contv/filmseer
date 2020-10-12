@@ -1,7 +1,7 @@
 import { view } from "@risingstack/react-easy-state";
 import React from "react";
 import state from "src/app/states";
-import { api, ApiError } from "src/utils";
+import { api,ApiError } from "src/utils";
 import "./register.scss";
 
 type RegisterProps = {
@@ -93,7 +93,7 @@ const Register = (props: RegisterProps & { className?: string }) => {
       ) {
         throw new ApiError({ message: "Passwords don't match", code: 1121 });
       }
-      if ((acceptEula.current || { checked: false }).checked) {
+      if (!(acceptEula.current || { checked: false }).checked) {
         throw new ApiError({ message: "You must accept our EULA", code: 1131 });
       }
       await api({
@@ -104,7 +104,7 @@ const Register = (props: RegisterProps & { className?: string }) => {
           password: (password.current || { value: "" }).value,
         },
       });
-      props.onClose();
+      setMessage({ code: 0, message: "Congratulations! You may Sign In now." });
     } catch (error) {
       if (!(error instanceof ApiError)) {
         throw error;
@@ -179,7 +179,7 @@ const Register = (props: RegisterProps & { className?: string }) => {
               }`}
               key="message"
             >
-              {message.message} ({message.code})
+              {message.message} {message.code > 0 ? `(${message.code})` : ""}
             </li>
             {exceptions.map((value) => (
               <li className="Register__form-message Register__form-message--error">
