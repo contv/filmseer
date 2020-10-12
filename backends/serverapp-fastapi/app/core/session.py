@@ -306,3 +306,6 @@ def handle_session(app: FastAPI) -> FastAPI:
     )
 
     return app
+
+
+__all__ = ["handle_session"]

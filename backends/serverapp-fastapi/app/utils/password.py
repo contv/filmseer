@@ -62,3 +62,6 @@ def is_hash_deprecated(hash: str) -> bool:
         )
     except argon2.exceptions.InvalidHash:
         return False
+
+
+__all__ = ["hash", "verify", "is_hash_deprecated"]

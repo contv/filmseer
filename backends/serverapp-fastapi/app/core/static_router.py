@@ -8,6 +8,23 @@ from starlette.routing import Match, Route
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.core.config import settings
+from app.core.errors import status_code_handler
+
+
+class ModifiedStaticFiles(StaticFiles):
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """
+        The ASGI entry point.
+        """
+        assert scope["type"] == "http"
+
+        if not self.config_checked:
+            await self.check_config()
+            self.config_checked = True
+
+        path = self.get_path(scope)
+        response = await self.get_response(path, scope)
+        await status_code_handler(response, scope, receive, send)
 
 
 class AdvancedStaticFilesMiddleware:
@@ -47,7 +64,7 @@ class AdvancedStaticFilesMiddleware:
         else:
             self.spa_app = None
 
-        self.static_app = StaticFiles(
+        self.static_app = ModifiedStaticFiles(
             directory=directory,
             packages=packages,
             html=html,
@@ -94,3 +111,6 @@ def handle_static_routes(app: FastAPI) -> FastAPI:
     )
 
     return app
+
+
+__all__ = ["handle_static_routes"]

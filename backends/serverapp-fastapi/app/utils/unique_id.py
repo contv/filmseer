@@ -253,23 +253,35 @@ def from_str(id_value: str) -> int:
     else:
         id_b = id_s.upper().encode("ascii")
     lut = DECODING
-    return int.from_bytes(bytes(
-        (
-            ((lut[id_b[0]] << 5) | lut[id_b[1]]) & 0xFF,
-            ((lut[id_b[2]] << 3) | (lut[id_b[3]] >> 2)) & 0xFF,
-            ((lut[id_b[3]] << 6) | (lut[id_b[4]] << 1) | (lut[id_b[5]] >> 4)) & 0xFF,
-            ((lut[id_b[5]] << 4) | (lut[id_b[6]] >> 1)) & 0xFF,
-            ((lut[id_b[6]] << 7) | (lut[id_b[7]] << 2) | (lut[id_b[8]] >> 3)) & 0xFF,
-            ((lut[id_b[8]] << 5) | (lut[id_b[9]])) & 0xFF,
-            ((lut[id_b[10]] << 3) | (lut[id_b[11]] >> 2)) & 0xFF,
-            ((lut[id_b[11]] << 6) | (lut[id_b[12]] << 1) | (lut[id_b[13]] >> 4)) & 0xFF,
-            ((lut[id_b[13]] << 4) | (lut[id_b[14]] >> 1)) & 0xFF,
-            ((lut[id_b[14]] << 7) | (lut[id_b[15]] << 2) | (lut[id_b[16]] >> 3)) & 0xFF,
-            ((lut[id_b[16]] << 5) | (lut[id_b[17]])) & 0xFF,
-            ((lut[id_b[18]] << 3) | (lut[id_b[19]] >> 2)) & 0xFF,
-            ((lut[id_b[19]] << 6) | (lut[id_b[20]] << 1) | (lut[id_b[21]] >> 4)) & 0xFF,
-            ((lut[id_b[21]] << 4) | (lut[id_b[22]] >> 1)) & 0xFF,
-            ((lut[id_b[22]] << 7) | (lut[id_b[23]] << 2) | (lut[id_b[24]] >> 3)) & 0xFF,
-            ((lut[id_b[24]] << 5) | (lut[id_b[25]])) & 0xFF,
-        )
-    ), byteorder="big")
+    return int.from_bytes(
+        bytes(
+            (
+                ((lut[id_b[0]] << 5) | lut[id_b[1]]) & 0xFF,
+                ((lut[id_b[2]] << 3) | (lut[id_b[3]] >> 2)) & 0xFF,
+                ((lut[id_b[3]] << 6) | (lut[id_b[4]] << 1) | (lut[id_b[5]] >> 4))
+                & 0xFF,
+                ((lut[id_b[5]] << 4) | (lut[id_b[6]] >> 1)) & 0xFF,
+                ((lut[id_b[6]] << 7) | (lut[id_b[7]] << 2) | (lut[id_b[8]] >> 3))
+                & 0xFF,
+                ((lut[id_b[8]] << 5) | (lut[id_b[9]])) & 0xFF,
+                ((lut[id_b[10]] << 3) | (lut[id_b[11]] >> 2)) & 0xFF,
+                ((lut[id_b[11]] << 6) | (lut[id_b[12]] << 1) | (lut[id_b[13]] >> 4))
+                & 0xFF,
+                ((lut[id_b[13]] << 4) | (lut[id_b[14]] >> 1)) & 0xFF,
+                ((lut[id_b[14]] << 7) | (lut[id_b[15]] << 2) | (lut[id_b[16]] >> 3))
+                & 0xFF,
+                ((lut[id_b[16]] << 5) | (lut[id_b[17]])) & 0xFF,
+                ((lut[id_b[18]] << 3) | (lut[id_b[19]] >> 2)) & 0xFF,
+                ((lut[id_b[19]] << 6) | (lut[id_b[20]] << 1) | (lut[id_b[21]] >> 4))
+                & 0xFF,
+                ((lut[id_b[21]] << 4) | (lut[id_b[22]] >> 1)) & 0xFF,
+                ((lut[id_b[22]] << 7) | (lut[id_b[23]] << 2) | (lut[id_b[24]] >> 3))
+                & 0xFF,
+                ((lut[id_b[24]] << 5) | (lut[id_b[25]])) & 0xFF,
+            )
+        ),
+        byteorder="big",
+    )
+
+
+__all__ = ["id", "to_uuid", "to_bytes", "to_base32", "from_str"]
