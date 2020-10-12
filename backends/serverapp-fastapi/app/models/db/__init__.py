@@ -29,9 +29,11 @@ def _get_models(submodules: Dict[str, ModuleType]) -> Dict[str, Model]:
     models = {}
     for module in submodules.values():
         model_names = dir(module)
+        if "__all__" in model_names:
+            model_names = getattr(module, "__all__")
         for model_name in model_names:
             model = getattr(module, model_name)
-            if isinstance(model, Model):
+            if issubclass(model, Model):
                 models[model_name] = getattr(module, model_name)
     return models
 

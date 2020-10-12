@@ -12,3 +12,6 @@ class User(Model):
     id = fields.UUIDField(pk=True, default=_new_uuid)
     username = fields.CharField(max_length=32)
     password = fields.CharField(max_length=255)
+
+
+__all__ = ["User"]  # This is optional

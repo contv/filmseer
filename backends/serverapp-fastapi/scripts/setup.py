@@ -2,7 +2,6 @@
 # This is a set up script that is used to test connection and libraries,
 # create database tables and so on.
 # It should provide an interactive way, and a silent way.
-import asyncio
 import sys
 
 import tortoise
@@ -11,7 +10,10 @@ from app.core.config import settings
 
 
 async def init_database():
-    pass
+    await tortoise.Tortoise.init(
+        db_url=settings.DATABASE_URI, modules={"models": ["app.models.db"]}
+    )
+    await tortoise.Tortoise.generate_schemas()
 
 
 def interactive():
@@ -20,4 +22,4 @@ def interactive():
 
 
 def silent():
-    pass
+    tortoise.run_async(init_database())
