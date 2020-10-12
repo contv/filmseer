@@ -43,7 +43,7 @@ const TabPopup = (props: TabPopupProps & { className?: string }) => {
             className="Popup__close-button"
             onClick={() => setVisible(false)}
           >
-            <X size={34} />
+            <X size={24} />
           </button>
           <ul className="Popup__tabs">
             {Object.keys(props.tabs).map((key) => (
