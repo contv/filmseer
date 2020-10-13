@@ -18,6 +18,6 @@ class Users(Model):
     last_login_date = fields.DatetimeField(auto_now_add=True)
     last_login_ip = fields.CharField(max_length=32, null=True)
     create_date = fields.DatetimeField(auto_now_add=True)
-    delete_date = fields.DatetimeField()
+    delete_date = fields.DatetimeField(null=True)
 
 __all__ = ["Users"]
