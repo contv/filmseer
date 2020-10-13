@@ -49,6 +49,7 @@ if settings.CORS_ORIGINS:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[str(origin) for origin in settings.CORS_ORIGINS],
+        allow_origin_regex=settings.CORS_ORIGIN_REGEX or None,
         allow_credentials=settings.CORS_CREDENTIALS
         if settings.CORS_ORIGINS != ["*"]
         else False,

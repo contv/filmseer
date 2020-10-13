@@ -39,6 +39,7 @@ class Settings(BaseSettings):
 
     # CORS Settings
     CORS_ORIGINS: List[Union[AnyHttpUrl, constr(regex=r"^\*$")]] = []  # noqa: F722
+    CORS_ORIGIN_REGEX: str = ""
     CORS_CREDENTIALS: bool = True
     CORS_METHODS: List[str] = ["*"]
     CORS_HEADERS: List[str] = ["*"]
