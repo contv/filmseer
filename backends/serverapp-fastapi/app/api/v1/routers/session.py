@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
-from app.models.db.users import User
+from app.models.db.users import Users
 from app.utils.password import hash, is_hash_deprecated, verify
 from app.utils.wrapper import ApiException, Wrapper, wrap
 
@@ -20,7 +20,7 @@ async def check_session(request: Request) -> Wrapper[dict]:
     username = request.session.get("username")
     userid = request.session.get("userid")
     if username:
-        if await User.filter(username=username, userid=userid).exists():
+        if await Users.filter(username=username, userid=userid).exists():
             return wrap({})
         else:
             del request.session["username"]
@@ -35,7 +35,7 @@ async def create_session(login: Login, request: Request) -> Wrapper[dict]:
         del request.session["username"]
     if "userid" in request.session:
         del request.session["userid"]
-    user = await User.filter(username=login.username).first()
+    user = await Users.filter(username=login.username).first()
     if not user:
         raise ApiException(500, 2010, "Incorrect username or password")
     if verify(user.password_hash, login.password):
