@@ -1,8 +1,6 @@
 # setup.py
 # This is a set up script that is used to test connection and libraries,
 # create database tables and so on.
-import sys
-
 import tortoise
 
 from app.core.config import settings
