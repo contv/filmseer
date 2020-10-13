@@ -18,13 +18,13 @@ class Login(BaseModel):
 @router.get("/", tags=["session"])
 async def check_session(request: Request) -> Wrapper[dict]:
     username = request.session.get("username")
-    userid = request.session.get("userid")
+    user_id = request.session.get("user_id")
     if username:
-        if await Users.filter(username=username, userid=userid).exists():
+        if await Users.filter(username=username, user_id=user_id).exists():
             return wrap({})
         else:
             del request.session["username"]
-            del request.session["userid"]
+            del request.session["user_id"]
             raise ApiException(500, 2002, "This user no longer exist!")
     raise ApiException(500, 2001, "You are not logged in!")
 
@@ -33,8 +33,8 @@ async def check_session(request: Request) -> Wrapper[dict]:
 async def create_session(login: Login, request: Request) -> Wrapper[dict]:
     if "username" in request.session:
         del request.session["username"]
-    if "userid" in request.session:
-        del request.session["userid"]
+    if "user_id" in request.session:
+        del request.session["user_id"]
     user = await Users.filter(username=login.username).first()
     if not user:
         raise ApiException(500, 2010, "Incorrect username or password")
@@ -43,7 +43,7 @@ async def create_session(login: Login, request: Request) -> Wrapper[dict]:
             user.password_hash = hash(login.password)
             await user.save()
         request.session["username"] = str(user.username)
-        request.session["userid"] = str(user.userid)
+        request.session["user_id"] = str(user.user_id)
         return wrap({})
     raise ApiException(500, 2010, "Incorrect username or password")
 
@@ -52,6 +52,6 @@ async def create_session(login: Login, request: Request) -> Wrapper[dict]:
 async def delete_session(request: Request) -> Wrapper[dict]:
     if "username" in request.session:
         del request.session["username"]
-    if "userid" in request.session:
-        del request.session["userid"]
+    if "user_id" in request.session:
+        del request.session["user_id"]
     return wrap({})
