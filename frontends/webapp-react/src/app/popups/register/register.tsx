@@ -169,7 +169,7 @@ const Register = (props: RegisterProps & { className?: string }) => {
           </label>
         </div>
 
-        {hasError ? (
+        {(hasError || message.message) ? (
           <ul className="Register__form-messages">
             <li
               className={`Register__form-message ${

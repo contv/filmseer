@@ -87,7 +87,7 @@ const Login = (props: LoginProps & { className?: string }) => {
             placeholder="Your password"
           />
         </div>
-        {hasError ? (
+        {(hasError || message.message) ? (
           <ul className="Login__form-messages">
             <li
               className={`Login__form-message ${
