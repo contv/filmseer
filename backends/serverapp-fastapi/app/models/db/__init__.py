@@ -1,5 +1,6 @@
 import importlib
 import pkgutil
+from inspect import isclass
 from types import ModuleType
 from typing import Dict
 
@@ -33,7 +34,7 @@ def _get_models(submodules: Dict[str, ModuleType]) -> Dict[str, Model]:
             model_names = getattr(module, "__all__")
         for model_name in model_names:
             model = getattr(module, model_name)
-            if issubclass(model, Model):
+            if isclass(model) and issubclass(model, Model) and model is not Model:
                 models[model_name] = getattr(module, model_name)
     return models
 
