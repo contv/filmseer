@@ -35,9 +35,10 @@ flake8 = "^3.8.3"
 pytest-cov = "^2.10.1"
 
 [tool.poetry.scripts]
-vscode_setup = "scripts.vscode:setup"
+vscode-setup = "scripts.vscode:setup"
 start = "scripts.start:start"
-setup = "scripts.setup:silent"
+setup = "scripts.setup:setup_clean"
+setup-noclean = "scripts.setup:setup_noclean"
 
 [tool.isort]
 multi_line_output = 3
