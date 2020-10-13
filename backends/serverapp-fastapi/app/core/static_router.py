@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from fastapi import FastAPI
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.routing import Match, Route
@@ -64,12 +65,23 @@ class AdvancedStaticFilesMiddleware:
         else:
             self.spa_app = None
 
-        self.static_app = ModifiedStaticFiles(
-            directory=directory,
-            packages=packages,
-            html=html,
-            check_dir=check_dir,
-        )
+        if settings.GZIP_ENABLED:
+            self.static_app = GZipMiddleware(
+                app=ModifiedStaticFiles(
+                    directory=directory,
+                    packages=packages,
+                    html=html,
+                    check_dir=check_dir,
+                ),
+                minimum_size=settings.GZIP_MIN_SIZE,
+            )
+        else:
+            self.static_app = ModifiedStaticFiles(
+                directory=directory,
+                packages=packages,
+                html=html,
+                check_dir=check_dir,
+            )
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
