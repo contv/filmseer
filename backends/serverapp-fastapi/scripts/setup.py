@@ -24,7 +24,7 @@ async def init_database(drop_all: bool = False, if_not_exists: bool = True):
 
 
 def setup_clean():
-    tortoise.run_async(init_database(drop_all=True, if_not_exists=False))
+    tortoise.run_async(init_database(drop_all=True, if_not_exists=True))
 
 
 def setup_noclean():
