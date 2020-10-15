@@ -26,11 +26,11 @@ const App = () => {
         </header>
         <article className="App__main Main">
           <Switch>
-            <Route path="/">
-              <HomePage className="Main__home" />
-            </Route>
             <Route path="/user/:username?">
               <UserPage className="Main__user" />
+            </Route>
+            <Route path="/">
+              <HomePage className="Main__home" />
             </Route>
           </Switch>
         </article>
