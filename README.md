@@ -62,3 +62,43 @@ The main database should be stored here. Please remember to keep the permission 
 #### `~/storages/sessions`
 
 This can be either a file based session storage, or a persistent storage of Redis if we use Redis.
+
+
+
+
+## Style & Naming Conventions
+
+
+1. **Python**
+
+For python we should use official python conventions, e.g.:
+
+* lowercase snake case for regular variables
+* uppercase snake case for constants
+* Pascal case for classes
+
+For more details of the official style guide:  https://www.python.org/dev/peps/pep-0008/#naming-conventions
+
+
+2. **PostgreSQL**
+
+For Postgres we should be doing the following
+
+* Plural for table names: e.g. `people`, `movies`, etc.
+* Snake case for schemas, tables and fields `movie_genres`, `imdb_data.principals`, `users.password_hash`,
+* Lower case for in-line queries: `select * from users limit 5;`
+
+
+3. **JavaScript**
+
+* Pascal case for Classes
+* Camel case for variables, functions, modules
+* Upper snake case for constants
+
+For more details of the style guide we should be following: https://google.github.io/styleguide/jsguide.html#naming
+
+
+4. **Other** 
+
+   t.b.d
+
