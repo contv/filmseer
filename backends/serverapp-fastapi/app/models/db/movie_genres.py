@@ -3,9 +3,6 @@ from tortoise.models import Model
 
 from app.utils.unique_id import id, to_uuid
 
-from .genres import Genres
-from .movies import Movies
-
 
 def _new_uuid():
     return to_uuid(id())
