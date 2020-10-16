@@ -6,6 +6,7 @@
  * Then, in the outer element that should place your <List>:
  * <List />
  * <Pagination
+ *   className="TheParent__the-content-name-pagination" // Any className you preferred
  *   displayType="numbered"
  *   dataType="callback"
  *   dataCallback={(page) => {
