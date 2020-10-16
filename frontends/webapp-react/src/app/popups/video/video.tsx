@@ -6,13 +6,17 @@ type VideoProps = {
   videoId: string;
   site: "YouTube" | "Vimeo";
   frameBorder?: number;
+  autoPlay?: number;
   onClose: () => void;
 };
 
 const Video = (props: VideoProps & { className?: string }) => {
   if (props.site === "YouTube") {
     var youtubeLink =
-      "https://www.youtube.com/embed/" + props.videoId + "?autoplay=1";
+      "https://www.youtube.com/embed/" +
+      props.videoId +
+      "?autoplay=" +
+      (props.autoPlay || 1);
     return (
       <div className={`Video ${(props.className || "").trim()}`}>
         <iframe
@@ -24,10 +28,23 @@ const Video = (props: VideoProps & { className?: string }) => {
         ></iframe>
       </div>
     );
-  }
-  //TO DO: VIMEO
-  else {
-    return <div></div>;
+  } else {
+    var vimeoLink =
+      "https://player.vimeo.com/video/" +
+      props.videoId +
+      "?autoplay=" +
+      (props.autoPlay || 1);
+    return (
+      <div className={`Video ${(props.className || "").trim()}`}>
+        <iframe
+          className="Video__iframe"
+          title="Vimeo Trailer"
+          allowFullScreen
+          frameBorder={props.frameBorder || 0}
+          src={vimeoLink}
+        ></iframe>
+      </div>
+    );
   }
 };
 

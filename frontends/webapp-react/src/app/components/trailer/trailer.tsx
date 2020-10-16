@@ -18,15 +18,15 @@ const Trailer = (props: TrailerProps & { className?: string }) => {
   var videoThumb;
   if (props.site === "YouTube") {
     videoThumb = "https://img.youtube.com/vi/" + props.videoId + "/0.jpg";
-  }
-  //TO DO: VIMEO
-  else {
+  } else {
+    videoThumb = "https://vumbnail.com/" + props.videoId + ".jpg";
   }
   return (
     <div className={`Trailer ${(props.className || "").trim()} Trailer__outer`}>
       <img
         src={videoThumb}
         alt={videoThumb}
+        className="Trailer__thumbnail"
         onClick={() => {
           state.videoPopupTab = "trailer";
           setPopupVisible(true);
