@@ -6,7 +6,7 @@ type VideoProps = {
   videoId: string;
   site: "YouTube" | "Vimeo";
   frameBorder?: number;
-  autoPlay?: number;
+  autoPlay?: "0" | "1";
   onClose: () => void;
 };
 

@@ -11,6 +11,7 @@ type TrailerProps = {
   width?: number;
   site: "YouTube" | "Vimeo";
   videoId: string;
+  autoPlay?: "0" | "1";
 };
 
 const Trailer = (props: TrailerProps & { className?: string }) => {
@@ -49,6 +50,7 @@ const Trailer = (props: TrailerProps & { className?: string }) => {
               <Video
                 videoId={props.videoId}
                 site={props.site}
+                autoPlay={props.autoPlay}
                 onClose={() => {
                   setPopupVisible(false);
                 }}
