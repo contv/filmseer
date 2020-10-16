@@ -1,0 +1,11 @@
+@import "./../popup-form.scss";
+
+.Video {
+  margin-bottom: 6px;
+  @include popup-form;
+
+  &__iframe {
+    width: 640px;
+    height: 360px;
+  }
+}
