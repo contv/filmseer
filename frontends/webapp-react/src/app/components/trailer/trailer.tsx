@@ -21,7 +21,6 @@ const Trailer = (props: TrailerProps & { className?: string }) => {
   }
   //TO DO: VIMEO
   else {
-
   }
   return (
     <div className={`Trailer ${(props.className || "").trim()} Trailer__outer`}>
