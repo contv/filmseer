@@ -23,14 +23,14 @@ class Movies(Model):
     delete_date = fields.DatetimeField(null=True)
 
     # Relational fields
-    genre: fields.ManyToManyRelation["Genres"] = fields.ManyToManyField(
+    genre: fields.ManyToManyRelation["Genres"] = fields.ManyToManyField(  # noqa: F821
         "models.Genres",
         related_name="movies",
         through="movie_genres",
         backward_key="movie_id",
         forward_key="genre_id",
     )
-    people: fields.ManyToManyRelation["People"] = fields.ManyToManyField(
+    people: fields.ManyToManyRelation["People"] = fields.ManyToManyField(  # noqa: F821
         "models.People",
         related_name="movies",
         through="positions",
