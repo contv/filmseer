@@ -100,7 +100,12 @@ For Postgres we should be doing the following
 For more details of the style guide we should be following: https://google.github.io/styleguide/jsguide.html#naming
 
 
-4. **Other** 
+4. **CSS and ClassName** 
 
-   t.b.d
+* ClassNames follow a varient of BEM: `ComponentName__inner-content-name--one-state` (e.g. `Register__form-message--error`).
+* As BEM classes are a bit incompatible with CSS modules, we don't use CSS modules in our project.
+
+For more details: http://getbem.com/naming/ 
+
+(The only difference is that our "block" name is the same as the component name, and is in CamelCase)
 
