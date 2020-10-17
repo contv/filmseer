@@ -7,7 +7,7 @@ type MovieItemProps = {
   title: string;
   year: number;
   genres?: string[];
-  image?: string;
+  imageUrl?: string;
   avgRating: number;
   numReviews: number;
 };
