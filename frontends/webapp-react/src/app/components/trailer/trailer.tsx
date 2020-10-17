@@ -23,7 +23,13 @@ const Trailer = (props: TrailerProps & { className?: string }) => {
     videoThumb = "https://vumbnail.com/" + props.videoId + ".jpg";
   }
   return (
-    <div className={`Trailer ${(props.className || "").trim()} Trailer__outer`}>
+    <div
+      className={`Trailer ${(props.className || "").trim()} Trailer__outer`}
+      style={{
+        width: props.width || 360,
+        height: props.height || Math.round(((props.width || 360) / 16) * 9),
+      }}
+    >
       <img
         src={videoThumb}
         alt={videoThumb}
