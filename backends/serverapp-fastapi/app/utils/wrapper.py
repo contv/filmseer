@@ -118,7 +118,7 @@ def wrap(
                         }
                     )
                 )
-    return Wrapper[DataT](
+    return Wrapper[type(data)](
         code=code, message=message, exceptions=parsed_exceptions, data=data
     )
 
