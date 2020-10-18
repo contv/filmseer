@@ -47,7 +47,8 @@ const Trailer = (props: TrailerProps & { className?: string }) => {
         />
       </div>
       {popupVisible ? (
-        <Popup noPadding={true}
+        <Popup
+          noPadding={true}
           onClose={() => {
             setPopupVisible(false);
           }}
