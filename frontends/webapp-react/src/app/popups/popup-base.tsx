@@ -33,7 +33,7 @@ const Popup: React.FC<PopupProps & { className?: string }> = (props) => {
           <button
             className={
               "Popup__close-button" +
-              (props.title ? "" : "Popup__close-button--no-title")
+              (props.title ? "" : " Popup__close-button--no-title")
             }
             onClick={() => setVisible(false)}
           >
@@ -45,8 +45,8 @@ const Popup: React.FC<PopupProps & { className?: string }> = (props) => {
           <div
             className={
               "Popup__content" +
-              (props.title ? "" : "Popup__content--no-title") +
-              (props.noPadding ? "Popup__content--no-padding" : "")
+              (props.title ? "" : " Popup__content--no-title") +
+              (props.noPadding ? " Popup__content--no-padding" : "")
             }
           >
             {React.Children.map(props.children, (child) => {
