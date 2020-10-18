@@ -103,5 +103,9 @@
       grid-row: header / span 2;
       grid-column: header / span 2;
     }
+
+    &--no-padding {
+      padding: 0;
+    }
   }
 }
