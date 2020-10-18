@@ -3,8 +3,8 @@ import React from "react";
 import "./movie-section.scss";
 
 const MovieSection = (props: { children: React.ReactNode;  heading?: String}) => 
-    <div className="Section">
-      {props.heading && <h2 className="Heading">{props.heading}</h2>}
+    <div className="MovieSection">
+      {props.heading && <h2 className="MovieSection__Heading">{props.heading}</h2>}
       {props.children}
     </div>
 
