@@ -12,7 +12,7 @@ type PopupProps = {
 };
 
 const Popup: React.FC<PopupProps & { className?: string }> = (props) => {
-  const [visible, setVisible] = React.useState(false);
+  const [visible, setVisible] = React.useState(true);
   const nodeRef = React.useRef(null);
   return (
     <CSSTransition
@@ -31,7 +31,7 @@ const Popup: React.FC<PopupProps & { className?: string }> = (props) => {
         <div className="Popup">
           <button
             className={"Popup__close-button" + props.title ? "" : "Popup__close-button--no-title"}
-            onClick={() => setVisible(false)}
+            onClick={() => {setVisible(false); console.log(visible)}}
           >
             <X size={34} />
           </button>

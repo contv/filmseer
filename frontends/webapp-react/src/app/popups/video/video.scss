@@ -1,8 +1,7 @@
-@import "./../popup-form.scss";
+@import "./../popup.scss";
 
 .Video {
-  margin-bottom: 6px;
-  @include popup-form;
+  margin-bottom: -6px;
 
   &__iframe {
     width: 640px;

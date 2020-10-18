@@ -1,8 +1,7 @@
 import { view } from "@risingstack/react-easy-state";
 import React from "react";
-import TabPopup from "src/app/popups/popup-tabs";
+import Popup from "src/app/popups/popup-base";
 import Video from "src/app/popups/video";
-import state from "src/app/states";
 import playbutton from "./playbutton.png";
 import "./trailer.scss";
 
@@ -11,7 +10,7 @@ type TrailerProps = {
   width?: number;
   site: "YouTube" | "Vimeo";
   videoId: string;
-  autoPlay?: "0" | "1";
+  autoPlay?: boolean;
 };
 
 const Trailer = (props: TrailerProps & { className?: string }) => {
@@ -35,7 +34,6 @@ const Trailer = (props: TrailerProps & { className?: string }) => {
         alt={videoThumb}
         className="Trailer__thumbnail"
         onClick={() => {
-          state.videoPopupTab = "trailer";
           setPopupVisible(true);
         }}
       ></img>
@@ -44,33 +42,25 @@ const Trailer = (props: TrailerProps & { className?: string }) => {
           src={playbutton}
           alt="Play button"
           onClick={() => {
-            state.videoPopupTab = "trailer";
             setPopupVisible(true);
           }}
         />
       </div>
       {popupVisible ? (
-        <TabPopup
-          tabs={{
-            trailer: (
-              <Video
-                videoId={props.videoId}
-                site={props.site}
-                autoPlay={props.autoPlay}
-                onClose={() => {
-                  setPopupVisible(false);
-                }}
-              />
-            ),
-          }}
+        <Popup
           onClose={() => {
             setPopupVisible(false);
           }}
-          tabNames={{
-            trailer: <span>Trailer</span>,
-          }}
-          currentTabStateName="videoPopupTab"
-        />
+        >
+          <Video
+            videoId={props.videoId}
+            site={props.site}
+            autoPlay={props.autoPlay}
+            onClose={() => {
+              setPopupVisible(false);
+            }}
+          />
+        </Popup>
       ) : null}
     </div>
   );

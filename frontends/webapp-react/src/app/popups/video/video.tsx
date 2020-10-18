@@ -6,7 +6,7 @@ type VideoProps = {
   videoId: string;
   site: "YouTube" | "Vimeo";
   frameBorder?: number;
-  autoPlay?: "0" | "1";
+  autoPlay?: boolean;
   onClose: () => void;
 };
 
@@ -15,8 +15,8 @@ const Video = (props: VideoProps & { className?: string }) => {
     var youtubeLink =
       "https://www.youtube.com/embed/" +
       props.videoId +
-      "?autoplay=" +
-      (props.autoPlay || 1);
+      "?autoplay="
+      + ((String(props.autoPlay) === "false")? "0" : "1");
     return (
       <div className={`Video ${(props.className || "").trim()}`}>
         <iframe
@@ -32,8 +32,8 @@ const Video = (props: VideoProps & { className?: string }) => {
     var vimeoLink =
       "https://player.vimeo.com/video/" +
       props.videoId +
-      "?autoplay=" +
-      (props.autoPlay || 1);
+      "?autoplay=" + 
+      + ((String(props.autoPlay) === "false")? "0" : "1");
     return (
       <div className={`Video ${(props.className || "").trim()}`}>
         <iframe
