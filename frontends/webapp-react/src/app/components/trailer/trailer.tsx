@@ -15,7 +15,7 @@ type TrailerProps = {
 
 const Trailer = (props: TrailerProps & { className?: string }) => {
   const [popupVisible, setPopupVisible] = React.useState(false);
-  var videoThumb;
+  let videoThumb;
   if (props.site === "YouTube") {
     videoThumb = "https://img.youtube.com/vi/" + props.videoId + "/0.jpg";
   } else {

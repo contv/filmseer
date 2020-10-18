@@ -12,11 +12,11 @@ type VideoProps = {
 
 const Video = (props: VideoProps & { className?: string }) => {
   if (props.site === "YouTube") {
-    var youtubeLink =
+    let youtubeLink =
       "https://www.youtube.com/embed/" +
       props.videoId +
       "?autoplay=" +
-      (String(props.autoPlay) === "false" ? "0" : "1");
+      (props.autoPlay === undefined || props.autoPlay ? "1" : "0"); // if autoPlay is undefined, change it to true because trailer should play automatically
     return (
       <div className={`Video ${(props.className || "").trim()}`}>
         <iframe
@@ -29,11 +29,11 @@ const Video = (props: VideoProps & { className?: string }) => {
       </div>
     );
   } else {
-    var vimeoLink =
+    let vimeoLink =
       "https://player.vimeo.com/video/" +
       props.videoId +
       "?autoplay=" +
-      (String(props.autoPlay) === "false" ? "0" : "1");
+      (props.autoPlay === undefined || props.autoPlay ? "1" : "0"); // if autoPlay is undefined, change it to true because trailer should play automatically
     return (
       <div className={`Video ${(props.className || "").trim()}`}>
         <iframe
