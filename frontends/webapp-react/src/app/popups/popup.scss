@@ -42,7 +42,7 @@
     border: 1px solid #000;
     box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.3);
     padding: 0;
-    
+
     &--no-title {
       grid-column: header / span 2;
     }
@@ -99,7 +99,7 @@
     align-items: center;
     padding: 24px;
 
-    &--no-title {      
+    &--no-title {
       grid-row: header / span 2;
       grid-column: header / span 1;
     }
