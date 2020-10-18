@@ -12,7 +12,7 @@ type PopupProps = {
 };
 
 const Popup: React.FC<PopupProps & { className?: string }> = (props) => {
-  const [visible, setVisible] = React.useState(false);
+  const [visible, setVisible] = React.useState(true);
   const nodeRef = React.useRef(null);
   return (
     <CSSTransition
