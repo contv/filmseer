@@ -30,7 +30,7 @@ const Popup: React.FC<PopupProps & { className?: string }> = (props) => {
         ></div>
         <div className="Popup">
           <button
-            className={"Popup__close-button" + props.title ? "" : "Popup__close-button--no-title"}
+            className="Popup__close-button"
             onClick={() => setVisible(false)}
           >
             <X size={34} />
@@ -38,7 +38,7 @@ const Popup: React.FC<PopupProps & { className?: string }> = (props) => {
           {props.title ? (
             <div className="Popup__title">{props.title}</div>
           ) : null}
-          <div className={"Popup__content" + props.title ? "" : "Popup__content--no-title"}>
+          <div className={"Popup__content" + (props.title ? "" : "--no-title")}>
             {React.Children.map(props.children, (child) => {
               if (React.isValidElement(child)) {
                 return React.cloneElement(child, { onClose: props.onClose });
