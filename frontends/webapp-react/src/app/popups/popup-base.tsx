@@ -31,7 +31,7 @@ const Popup: React.FC<PopupProps & { className?: string }> = (props) => {
         <div className="Popup">
           <button
             className={"Popup__close-button" + props.title ? "" : "Popup__close-button--no-title"}
-            onClick={() => {setVisible(false); console.log(visible)}}
+            onClick={() => {setVisible(false)}}
           >
             <X size={34} />
           </button>
