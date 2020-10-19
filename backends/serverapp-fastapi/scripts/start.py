@@ -285,7 +285,7 @@ def start():
                     try:
                         bastion_parsed = urlparse(bastion_url)
                     except ValueError as e:
-                        print("Bastion value " + bastion_url + " is not a valid value. Valid value is ssh://user(:password)@host:port")
+                        print("ERROR: Bastion value " + bastion_url + " is not a valid value. Valid value is ssh://user(:password)@host:port")
                         sys.exit(1)
                     
                     bastion_user = bastion_parsed.username
@@ -295,7 +295,7 @@ def start():
                     try:
                         remote_regex = re.search(r"(.*):(.*)", remote_bind)
                     except ValueError as e:
-                        print("Remote value " + remote_bind + " is not a valid value. Valid value is host:port")
+                        print("ERROR: Remote value " + remote_bind + " is not a valid value. Valid value is host:port")
                         sys.exit(1)
                     
                     remote_host = remote_regex.group(1)
@@ -304,7 +304,7 @@ def start():
                     try:
                         local_regex = re.search(r"(.*):(.*)", local_bind)
                     except ValueError as e:
-                        print("Local value " + local_bind + " is not a valid value. Valid value is host:port")
+                        print("ERROR: Local value " + local_bind + " is not a valid value. Valid value is host:port")
                         sys.exit(1)
                     
                     local_host = local_regex.group(1)
