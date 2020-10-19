@@ -26,11 +26,11 @@ class MovieResponse(BaseModel):
 
 
 def calc_average_rating(cumulative_rating, num_votes):
-    return round(cumulative_rating/num_votes if num_votes > 0 else None, 1)
+    return round(cumulative_rating/num_votes if num_votes > 0 else 0, 1)
 
 
 @router.get("/{movie_id}/ratings")
-async def get_movie_rating(movie_id: str):
+async def get_average_rating(movie_id: str) -> float:
     movie = await Movies.filter(movie_id=movie_id).first()
 
     if movie is None:
