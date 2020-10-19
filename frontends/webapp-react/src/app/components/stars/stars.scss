@@ -1,0 +1,38 @@
+.Stars {
+  display: inline;
+  unicode-bidi: bidi-override;
+  direction: rtl;
+  text-align: left;
+
+  &__star {
+    display: inline-block;
+    position: relative;
+    text-decoration: none;
+    width: 1.1em;
+    color: rgba(230, 229, 231, 0.932);
+
+    &:hover {
+      color: transparent;
+    }
+
+    &:hover:before {
+      content: "\2605";
+      position: absolute;
+      left: 0;
+      color: gold;
+    }
+
+    &:hover ~ :before {
+      content: "\2605";
+      position: absolute;
+      left: 0;
+      color: gold;
+    }
+  }
+}
+
+.Rating {
+  display: inline;
+  unicode-bidi: isolate;
+  direction: ltr;
+}

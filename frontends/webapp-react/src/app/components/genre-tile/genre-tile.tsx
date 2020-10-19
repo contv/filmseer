@@ -3,12 +3,17 @@ import React from "react";
 import "./genre-tile.scss";
 
 type GenreTileProps = {
+  id: string;
   text: string;
   onClick?: () => void;
 };
 
 const GenreTile = (props: GenreTileProps & { className?: string }) => {
-  return <div className={`GenreTile ${(props.className || "").trim()}`}></div>;
+  return (
+    <li className={`GenreTile ${(props.className || "").trim()}`}>
+      {props.text}
+    </li>
+  );
 };
 
 export default view(GenreTile);
