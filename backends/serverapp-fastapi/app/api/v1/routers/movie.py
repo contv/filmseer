@@ -35,7 +35,7 @@ async def get_movie_rating(movie_id: str):
 
     if movie is None:
         return ApiException(404, 2100, "That movie doesn't exist")
-        
+
     # TODO remove ratings from blocked users
     return wrap(calc_average_rating(movie.cumulative_rating, movie.num_votes))
 
