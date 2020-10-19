@@ -21,8 +21,21 @@ class MovieResponse(BaseModel):
     trailers: List[dict]
     num_reviews: int
     num_votes: int
-    cumulative_rating: int
+    average_rating: float
     crew: List[dict]
+
+
+def calc_average_rating(cumulative_rating, num_votes):
+    return round(cumulative_rating/num_votes if num_votes > 0 else None, 1)
+
+
+@router.get("/{movie_id}/ratings")
+async def get_movie_rating(movie_id: str):
+    movie = await Movies.filter(movie_id=movie_id).first()
+
+    if movie is None:
+        return ApiException(404, 2100, "That movie doesn't exist")
+    return wrap(calc_average_rating(movie.cumulative_rating, movie.num_votes))
 
 
 @router.get(
@@ -42,6 +55,11 @@ async def get_movie(movie_id: str):
             } for p in await Positions.filter(
         movie_id=movie_id).prefetch_related("person")]
 
+    # TODO remove ratings from blocked users
+    average_rating = calc_average_rating(
+        movie.cumulative_rating, movie.num_votes
+    )
+
     movie_detail = {
         "id": str(movie.movie_id),
         "title": movie.title,
@@ -52,7 +70,7 @@ async def get_movie(movie_id: str):
         "trailers": movie.trailer,
         "num_reviews": movie.num_reviews,
         "num_votes": movie.num_votes,
-        "cumulative_rating": movie.cumulative_rating,
+        "average_rating": average_rating,
         "crew": crew,
     }
 
