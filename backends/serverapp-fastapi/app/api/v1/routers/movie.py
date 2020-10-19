@@ -12,6 +12,18 @@ override_prefix = None
 override_prefix_all = None
 
 
+class Trailer(BaseModel):
+    key: str
+    site: str
+
+
+class CrewMember(BaseModel):
+    id: str
+    name: str
+    position: str
+    image: Optional[str]
+
+
 class MovieResponse(BaseModel):
     id: str
     title: str
@@ -19,14 +31,15 @@ class MovieResponse(BaseModel):
     release_year: str
     image_url: Optional[str]
     description: Optional[str]
-    trailers: List[dict]
+    trailers: List[Trailer]
     num_reviews: int
     num_votes: int
     average_rating: float
-    crew: List[dict]
+    crew: List[CrewMember]
 
     class Config:
         alias_generator = camelize
+        allow_population_by_field_name = True
 
 
 def calc_average_rating(cumulative_rating, num_votes):
@@ -54,12 +67,12 @@ async def get_movie(movie_id: str):
         return ApiException(404, 2100, "That movie doesn't exist")
 
     crew = [
-        {
-            "id": p.person_id,
-            "name": p.person.name,
-            "position": p.position,
-            "image": p.person.image,
-        }
+        CrewMember(
+            id=str(p.person_id),
+            name=p.person.name,
+            position=p.position,
+            image=p.person.image,
+        )
         for p in await Positions.filter(
             movie_id=movie_id
         ).prefetch_related("person")
