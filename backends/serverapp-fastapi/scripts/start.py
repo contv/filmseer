@@ -274,7 +274,7 @@ def start():
                 try:
                     json_object = json.loads(env_dict.get("SSH_TUNNEL_LIST_JSON",""))
                 except ValueError as e:
-                    print("SSH_TUNNEL_LIST_JSON value is not a valid JSON")
+                    print("ERROR: SSH_TUNNEL_LIST_JSON value is not a valid JSON")
                     sys.exit(1)
 
                 for ssh_object in json_object:
