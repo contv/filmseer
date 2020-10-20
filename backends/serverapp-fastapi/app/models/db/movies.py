@@ -17,7 +17,7 @@ class Movies(Model):
     image = fields.CharField(max_length=300, null=True)
     trailer = fields.CharField(max_length=300, null=True)
     num_reviews = fields.IntField(default=0)
-    cumulative_rating = fields.IntField(default=0)
+    cumulative_rating = fields.FloatField(default=0)
     num_votes = fields.IntField(default=0)
     create_date = fields.DatetimeField(auto_now_add=True)
     delete_date = fields.DatetimeField(null=True)
@@ -37,6 +37,7 @@ class Movies(Model):
         backward_key="movie_id",
         forward_key="person_id",
     )
+    ratings: fields.ReverseRelation["Ratings"]
 
     class Meta:
         table = "movies"

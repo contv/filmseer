@@ -19,7 +19,7 @@ class Positions(Model):
 
     class Meta:
         table = "positions"
-        unique_together = (("movie", "person"))
+        unique_together = ("movie", "person")
 
 
 __all__ = ["Positions"]

@@ -17,6 +17,7 @@ class MovieGenres(Model):
 
     class Meta:
         table = "movie_genres"
-        unique_together = (("movie", "genre"))
+        unique_together = ("movie", "genre")
+
 
 __all__ = ["MovieGenres"]
