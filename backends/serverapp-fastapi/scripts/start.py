@@ -269,10 +269,16 @@ def start():
             uvicorn_instances[server_port].start()
         try:
             import time
-            ssh_server_list=[]
-            if (env_dict.get("SSH_TUNNEL_ENABLED", "True").lower().strip()) in ["y", "yes", "1", "true"]:
+
+            ssh_server_list = []
+            if (env_dict.get("SSH_TUNNEL_ENABLED", "True").lower().strip()) in [
+                "y",
+                "yes",
+                "1",
+                "true",
+            ]:
                 try:
-                    json_object = json.loads(env_dict.get("SSH_TUNNEL_LIST_JSON",""))
+                    json_object = json.loads(env_dict.get("SSH_TUNNEL_LIST_JSON", ""))
                 except ValueError as e:
                     print("ERROR: SSH_TUNNEL_LIST_JSON value is not a valid JSON")
                     sys.exit(1)
@@ -285,9 +291,13 @@ def start():
                     try:
                         bastion_parsed = urlparse(bastion_url)
                     except ValueError as e:
-                        print("ERROR: Bastion value " + bastion_url + " is not a valid value. Valid value is ssh://user(:password)@host:port")
+                        print(
+                            "ERROR: Bastion value "
+                            + bastion_url
+                            + " is not a valid value. Valid value is ssh://user(:password)@host:port"
+                        )
                         sys.exit(1)
-                    
+
                     bastion_user = bastion_parsed.username
                     bastion_host = bastion_parsed.hostname
                     bastion_port = bastion_parsed.port
@@ -295,31 +305,39 @@ def start():
                     try:
                         remote_regex = re.search(r"(.*):(.*)", remote_bind)
                     except ValueError as e:
-                        print("ERROR: Remote value " + remote_bind + " is not a valid value. Valid value is host:port")
+                        print(
+                            "ERROR: Remote value "
+                            + remote_bind
+                            + " is not a valid value. Valid value is host:port"
+                        )
                         sys.exit(1)
-                    
+
                     remote_host = remote_regex.group(1)
                     remote_port = int(remote_regex.group(2))
-                    
+
                     try:
                         local_regex = re.search(r"(.*):(.*)", local_bind)
                     except ValueError as e:
-                        print("ERROR: Local value " + local_bind + " is not a valid value. Valid value is host:port")
+                        print(
+                            "ERROR: Local value "
+                            + local_bind
+                            + " is not a valid value. Valid value is host:port"
+                        )
                         sys.exit(1)
-                    
+
                     local_host = local_regex.group(1)
                     local_port = int(local_regex.group(2))
 
-                    serverSSH = SSHTunnelForwarder(
-                           (bastion_host, bastion_port),
-                           ssh_username=bastion_user,
-                           ssh_password=bastion_password,
-                           ssh_pkey=ssh_key,
-                           remote_bind_address=(remote_host, remote_port),
-                           local_bind_address=(local_host, local_port)
+                    server_ssh = SSHTunnelForwarder(
+                        (bastion_host, bastion_port),
+                        ssh_username=bastion_user,
+                        ssh_password=bastion_password,
+                        ssh_pkey=ssh_key,
+                        remote_bind_address=(remote_host, remote_port),
+                        local_bind_address=(local_host, local_port),
                     )
 
-                    ssh_server_list.append(serverSSH)
+                    ssh_server_list.append(server_ssh)
 
                 for ssh_tunnel in ssh_server_list:
                     ssh_tunnel.start()
@@ -331,7 +349,12 @@ def start():
                 print("INFO: Stopping the instance on port " + str(server_port))
                 instance.terminate()
             print("INFO: Shutting down the main thread...")
-            if (env_dict.get("SSH_TUNNEL_ENABLED", "True").lower().strip()) in ["y", "yes", "1", "true"]:
+            if (env_dict.get("SSH_TUNNEL_ENABLED", "True").lower().strip()) in [
+                "y",
+                "yes",
+                "1",
+                "true",
+            ]:
                 for ssh_tunnel in ssh_server_list:
                     ssh_tunnel.stop()
             sys.exit(0)
