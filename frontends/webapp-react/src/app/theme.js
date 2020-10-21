@@ -4,24 +4,24 @@
 // e.g. ".MuiButton-root" is selected as Muibutton: { root: {...}} under overrides below
 // These style overrides can be localised per component later if desired
 
-import { createMuiTheme }  from '@material-ui/core/styles';
+import { createMuiTheme } from "@material-ui/core/styles";
 
 const theme = createMuiTheme({
   // Global styling
   palette: {
-    primary: { 500: '#467fcf' },
+    primary: { 500: "#467fcf" },
   },
   typography: {
     subtitle1: {
       fontSize: "0.7rem",
-    }
+    },
   },
 
   props: {
     // Set default props for a Mui component
     MuiCard: {
       variant: "outlined",
-    }
+    },
   },
 
   overrides: {
@@ -29,18 +29,18 @@ const theme = createMuiTheme({
     MuiCard: {
       root: {
         maxWidth: 150,
-      }
+      },
     },
     MuiCardMedia: {
       root: {
         height: 0,
-        paddingTop: '148.15%',
+        paddingTop: "148.15%",
       },
     },
     MuiCardHeader: {
       root: {
-        display: 'flex',
-        alignItems: 'center',
+        display: "flex",
+        alignItems: "center",
         padding: 8,
       },
       title: {
@@ -51,21 +51,20 @@ const theme = createMuiTheme({
         wordWrap: "break-word",
       },
       subheader: {
-        fontSize: "0.7rem"
-      }      
+        fontSize: "0.7rem",
+      },
     },
     MuiCardContent: {
       root: {
         display: "flex",
         paddingTop: 0,
         paddingLeft: 8,
-        '&:last-child': {
+        "&:last-child": {
           paddingBottom: 8,
         },
       },
-    }
-  }
-  
-})
+    },
+  },
+});
 
 export default theme;
