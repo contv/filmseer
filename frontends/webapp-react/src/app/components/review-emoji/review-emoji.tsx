@@ -3,6 +3,7 @@ import React from "react";
 import "./review_emoji.scss";
 
 type ReviewEmojiProps = {
+  reviewId: string;
   helpfulPressed?: boolean;
   funnyPressed?: boolean;
   spoilerPressed?: boolean;
