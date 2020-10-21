@@ -42,6 +42,10 @@
     border: 1px solid #000;
     box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.3);
     padding: 0;
+
+    &--no-title {
+      grid-column: header / span 2;
+    }
   }
 
   &__title,
@@ -63,6 +67,12 @@
     background-color: var(--gray-4);
     font-size: 30px;
     margin-top: -0.45ex; // Adjust x-height
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--gray-1);
+    font-weight: bold;
+    background-color: var(--gray-5);
   }
 
   &__tab {
@@ -88,5 +98,14 @@
     justify-content: center;
     align-items: center;
     padding: 24px;
+
+    &--no-title {
+      grid-row: header / span 2;
+      grid-column: header / span 2;
+    }
+
+    &--no-padding {
+      padding: 0;
+    }
   }
 }

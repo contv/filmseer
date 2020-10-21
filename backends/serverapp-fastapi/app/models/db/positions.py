@@ -9,7 +9,7 @@ def _new_uuid():
 
 
 class Positions(Model):
-    position_id = fields.UUIDField(pk=True, default=_new_uuid)
+    position_id = fields.UUIDField(pk=True)
     movie = fields.ForeignKeyField("models.Movies")
     person = fields.ForeignKeyField("models.People")
     position = fields.CharField(max_length=300, null=True)
@@ -19,6 +19,7 @@ class Positions(Model):
 
     class Meta:
         table = "positions"
+        unique_together = ("movie", "person")
 
 
 __all__ = ["Positions"]
