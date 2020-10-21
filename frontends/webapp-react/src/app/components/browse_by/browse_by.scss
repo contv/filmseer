@@ -38,7 +38,8 @@
 
 .BrowseBy{
   position: relative;
-  left:1100px
+  left:1100px;
+  width:350px;
 }
 
 .box{
@@ -79,4 +80,22 @@ input:checked+label:after{
   height: 1px;
   background: #CCCCCC;
   opacity: 0.3;
+}
+
+.Input{
+  outline-style: none ;
+  border: 1px solid #ccc;
+  position: relative;
+  display: inline-block;
+  width: 80px;
+  height:20px;
+}
+.btn2{
+  position: relative;
+  display: inline-block;
+  width: 30px;
+  height:20px;
+  top:2px;
+  left:3px;
+  text-align: left;
 }
