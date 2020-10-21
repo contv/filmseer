@@ -23,7 +23,7 @@ class Movies(Model):
     delete_date = fields.DatetimeField(null=True)
 
     # Relational fields
-    genre: fields.ManyToManyRelation["Genres"] = fields.ManyToManyField(  # noqa: F821
+    genres: fields.ManyToManyRelation["Genres"] = fields.ManyToManyField(  # noqa: F821
         "models.Genres",
         related_name="movies",
         through="movie_genres",
@@ -37,6 +37,8 @@ class Movies(Model):
         backward_key="movie_id",
         forward_key="person_id",
     )
+
+    reviews: fields.ReverseRelation["Reviews"]
     ratings: fields.ReverseRelation["Ratings"]
 
     class Meta:

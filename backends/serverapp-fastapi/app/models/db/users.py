@@ -26,7 +26,7 @@ class Users(Model):
     delete_date = fields.DatetimeField(null=True)
 
     # Relational fields
-    ratings: fields.ManyToManyRelation["Ratings"]
+    reviews = fields.ReverseRelation["Reviews"]
 
 
 __all__ = ["Users"]
