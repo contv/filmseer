@@ -26,7 +26,8 @@ class Users(Model):
     delete_date = fields.DatetimeField(null=True)
 
     # Relational fields
+    reports: fields.ReverseRelation["Reports"]
+    ratings: fields.ReverseRelation["Ratings"]
     reviews = fields.ReverseRelation["Reviews"]
-
 
 __all__ = ["Users"]
