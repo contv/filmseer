@@ -9,49 +9,46 @@ type BrowseByProps = {
 };
 
 const BrowseBy = (props:BrowseByProps  & { className?: string }) => {
-    function handleClick() {
-
+    function handleClick_browse() {
+    }
+    function handleClick_year() {
+    }
+    function f1() {
     }
     return <div className="BrowseBy">
-        <div className="dropdown">
-            <button className="dropbtn">Browse By</button>
-            <div className="dropdown-content">
-                <div className="box">
-                    <input type="checkbox" id="checkbox1"/><label htmlFor="checkbox1"> Genre</label>
-                </div>
-                <div className="line"></div>
-                <div className="box">
-                    <input type="checkbox" id="checkbox2"/><label htmlFor="checkbox2"> Year</label>
-                </div>
-                <div className="line"></div>
-                <div className="box">
-                    <input type="checkbox" id="checkbox3"/><label htmlFor="checkbox3"> Director</label>
-                </div>
-                <div className="line"></div>
-            </div>
-        </div>
+        <button className="dropbtn" id="BrowseByBtn" onMouseOver={f1} onClick={handleClick_browse}>Browse By</button>
         <div className="dropdown">
             <button className="dropbtn">Genre</button>
             <div className="dropdown-content">
-                <div><button className="content" onClick={handleClick}>Genre_1</button></div>
-                <div><button className="content" onClick={handleClick}>Genre_2</button></div>
-                <div><button className="content" onClick={handleClick}>Genre_3</button></div>
+                <div className="box">
+                    <input type="checkbox" id="checkbox1"/><label htmlFor="checkbox1"> Genre_1</label>
+                </div>
+                <div className="line"></div>
+                <div className="box">
+                    <input type="checkbox" id="checkbox2"/><label htmlFor="checkbox2"> Genre_2</label>
+                </div>
+                <div className="line"></div>
+                <div className="box">
+                    <input type="checkbox" id="checkbox3"/><label htmlFor="checkbox3"> Genre_2</label>
+                </div>
+                <div className="line"></div>
             </div>
         </div>
         <div className="dropdown">
             <button className="dropbtn">Year</button>
             <div className="dropdown-content">
-                <div><button className="content" onClick={handleClick}>2015</button></div>
-                <div><button className="content" onClick={handleClick}>2016</button></div>
-                <div><button className="content" onClick={handleClick}>2017</button></div>
+                <div><button className="content" onClick={handleClick_year}>2015</button></div>
+                <div><button className="content" onClick={handleClick_year}>2016</button></div>
+                <div><button className="content" onClick={handleClick_year}>2017</button></div>
             </div>
         </div>
         <div className="dropdown">
             <button className="dropbtn">Director</button>
             <div className="dropdown-content">
-                <div><button className="content"onClick={handleClick}>Director_1</button></div>
-                <div><button className="content"onClick={handleClick}>Director_2</button></div>
-                <div><button className="content"onClick={handleClick}>Director_3</button></div>
+                <div>
+                    <input className="Input" type="text"/>
+                    <button className="btn2">OK</button>
+                </div>
             </div>
         </div>
     </div>;

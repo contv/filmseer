@@ -13,7 +13,7 @@ class Ratings(Model):
     rating_id = fields.UUIDField(pk=True, default=_new_uuid)
     user = fields.ForeignKeyField("models.Users", related_name="ratings")
     movie = fields.ForeignKeyField("models.Movies",  related_names="ratings")
-    rating = fields.FloatField(null=True)  # eg -1 to represent 'Watched' only
+    rating = fields.FloatField(null=True)
     create_date = fields.DatetimeField(auto_now_add=True)
     delete_date = fields.DatetimeField(null=True)
 

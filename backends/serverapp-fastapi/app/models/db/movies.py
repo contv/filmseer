@@ -13,7 +13,7 @@ class Movies(Model):
     movie_id = fields.UUIDField(pk=True, default=_new_uuid)
     title = fields.CharField(max_length=300)
     release_date = fields.DatetimeField()
-    description = fields.CharField(max_length=1000, null=True)
+    description = fields.TextField(default="")
     image = fields.CharField(max_length=300, null=True)
     trailer = fields.CharField(max_length=300, null=True)
     num_reviews = fields.IntField(default=0)
@@ -23,7 +23,7 @@ class Movies(Model):
     delete_date = fields.DatetimeField(null=True)
 
     # Relational fields
-    genre: fields.ManyToManyRelation["Genres"] = fields.ManyToManyField(  # noqa: F821
+    genres: fields.ManyToManyRelation["Genres"] = fields.ManyToManyField(  # noqa: F821
         "models.Genres",
         related_name="movies",
         through="movie_genres",
@@ -37,6 +37,9 @@ class Movies(Model):
         backward_key="movie_id",
         forward_key="person_id",
     )
+
+    reports: fields.ReverseRelation["Reports"]
+    reviews: fields.ReverseRelation["Reviews"]
     ratings: fields.ReverseRelation["Ratings"]
 
     class Meta:
