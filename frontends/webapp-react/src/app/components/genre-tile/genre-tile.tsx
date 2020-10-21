@@ -1,18 +1,17 @@
 import { view } from "@risingstack/react-easy-state";
 import React from "react";
+import Typography from '@material-ui/core/Typography';
 import "./genre-tile.scss";
 
 type GenreTileProps = {
-  id: string;
   text: string;
-  onClick?: () => void;
 };
 
 const GenreTile = (props: GenreTileProps & { className?: string }) => {
   return (
-    <li className={`GenreTile ${(props.className || "").trim()}`}>
-      {props.text}
-    </li>
+    <div className={`GenreTile ${(props.className || "").trim()}`}>
+      <Typography variant="subtitle1" display="inline" >{props.text}</Typography>
+    </div>
   );
 };
 
