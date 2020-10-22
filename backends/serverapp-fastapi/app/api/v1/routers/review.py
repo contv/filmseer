@@ -56,12 +56,12 @@ async def mark_review_spoiler(request: Request, id: str) -> Wrapper[dict]:
     try:
         async with in_transaction():
             await SpoilerVotes(review_id=id, user_id=user_id).get_or_create()
-            count_spoiler = await SpoilerVotes.filter(review_id=id).count()
-            if count_spoiler >= 10:
-                await Reviews.filter(review_id=id).update(contains_spoiler=True)
-            else:
-                await Reviews.filter(review_id=id).update(contains_spoiler=False)
-            # PENDING Update spoiler vote count in Reviews?
+        #    count_spoiler = await SpoilerVotes.filter(review_id=id).count()
+        #    if count_spoiler >= 10:
+        #        await Reviews.filter(review_id=id).update(contains_spoiler=True)
+        #    else:
+        #        await Reviews.filter(review_id=id).update(contains_spoiler=False)
+        #    # PENDING Update spoiler vote count in Reviews?
     except OperationalError:
         return ApiException(401, 2501, "An exception occurred")
     return wrap({})
@@ -109,11 +109,11 @@ async def unmark_review_spoiler(request: Request, id: str) -> Wrapper[dict]:
     try:
         async with in_transaction():
             await SpoilerVotes.filter(review_id=id, user_id=user_id).delete()
-            count_spoiler = await SpoilerVotes.filter(review_id=id).count()
-            if count_spoiler >= 10:
-                await Reviews.filter(review_id=id).update(contains_spoiler=True)
-            else:
-                await Reviews.filter(review_id=id).update(contains_spoiler=False)
+        #    count_spoiler = await SpoilerVotes.filter(review_id=id).count()
+        #    if count_spoiler >= 10:
+        #        await Reviews.filter(review_id=id).update(contains_spoiler=True)
+        #    else:
+        #        await Reviews.filter(review_id=id).update(contains_spoiler=False)
     except OperationalError:
         return ApiException(401, 2501, "An exception occurred")
     return wrap({})
