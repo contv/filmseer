@@ -25,7 +25,7 @@ async def mark_review_helpful(request: Request, id: str) -> Wrapper[dict]:
         async with in_transaction():
             await HelpfulVotes.get_or_create(review_id=id, user_id=user_id)
         num_helpful = await HelpfulVotes.filter(review_id=id).count()
-        # PENDING Update helpful vote count in Reviews?
+        await Reviews.filter(review_id=id).update(helpful_count=num_helpful)
     except OperationalError:
         return ApiException(401, 2501, "An exception occurred")
     return wrap(num_helpful)
@@ -42,7 +42,7 @@ async def mark_review_funny(request: Request, id: str) -> Wrapper[dict]:
         async with in_transaction():
             await FunnyVotes.get_or_create(review_id=id, user_id=user_id)
         num_funny = await FunnyVotes.filter(review_id=id).count()
-        # PENDING Update funny vote count in Reviews?
+        await Reviews.filter(review_id=id).update(funny_count=num_funny)
     except OperationalError:
         return ApiException(401, 2501, "An exception occurred")
     return wrap(num_funny)
@@ -59,7 +59,7 @@ async def mark_review_spoiler(request: Request, id: str) -> Wrapper[dict]:
         async with in_transaction():
             await SpoilerVotes.get_or_create(review_id=id, user_id=user_id)
         num_spoiler = await SpoilerVotes.filter(review_id=id).count()
-        # PENDING Update spoiler vote count in Reviews?
+        await Reviews.filter(review_id=id).update(spoiler_count=num_spoiler)
     except OperationalError:
         return ApiException(401, 2501, "An exception occurred")
     return wrap(num_spoiler)
@@ -76,7 +76,7 @@ async def unmark_review_helpful(request: Request, id: str) -> Wrapper[dict]:
         async with in_transaction():
             await HelpfulVotes.filter(review_id=id, user_id=user_id).delete()
         num_helpful = await HelpfulVotes.filter(review_id=id).count()
-        # PENDING Update helpful vote count in Reviews?
+        await Reviews.filter(review_id=id).update(helpful_count=num_helpful)
     except OperationalError:
         return ApiException(401, 2501, "An exception occurred")
     return wrap(num_helpful)
@@ -93,7 +93,7 @@ async def unmark_review_funny(request: Request, id: str) -> Wrapper[dict]:
         async with in_transaction():
             await FunnyVotes.filter(review_id=id, user_id=user_id).delete()
         num_funny = await FunnyVotes.filter(review_id=id).count()    
-        # PENDING Update funny vote count in Reviews?
+        await Reviews.filter(review_id=id).update(funny_count=num_funny)
     except OperationalError:
         return ApiException(401, 2501, "An exception occurred")
     return wrap(num_funny)
@@ -110,7 +110,7 @@ async def unmark_review_spoiler(request: Request, id: str) -> Wrapper[dict]:
         async with in_transaction():
             await SpoilerVotes.filter(review_id=id, user_id=user_id).delete()
         num_spoiler = await SpoilerVotes.filter(review_id=id).count()    
-        # PENDING Update spoiler vote count in Reviews?
+        await Reviews.filter(review_id=id).update(spoiler_count=num_spoiler)
     except OperationalError:
         return ApiException(401, 2501, "An exception occurred")
     return wrap(num_spoiler)
