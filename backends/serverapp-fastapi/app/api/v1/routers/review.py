@@ -109,7 +109,7 @@ async def unmark_review_funny(request: Request, id: str) -> Wrapper[dict]:
         )
     try:
         async with in_transaction():
-            await FunnyVotes.filter(review_id=id, user_id=user_id).delete()
+            await FunnyVotes.get_or_create(review_id=id, user_id=user_id)
             await FunnyVotes.filter(review_id=id, user_id=user_id).update(
                 delete_date=datetime.now()
             )
@@ -129,7 +129,7 @@ async def unmark_review_spoiler(request: Request, id: str) -> Wrapper[dict]:
         )
     try:
         async with in_transaction():
-            await SpoilerVotes.filter(review_id=id, user_id=user_id).delete()
+            await SpoilerVotes.get_or_create(review_id=id, user_id=user_id)
             await SpoilerVotes.filter(review_id=id, user_id=user_id).update(
                 delete_date=datetime.now()
             )
