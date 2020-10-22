@@ -82,7 +82,7 @@ async def mark_review_spoiler(request: Request, id: str) -> Wrapper[dict]:
 
 @router.delete("/{id}/helpful", response_model=Wrapper[NumVote])
 async def unmark_review_helpful(request: Request, id: str) -> Wrapper[dict]:
-    user_id = "058ffe8f-d27c-5e6a-21aa-c41401b996f9"
+    user_id = request.session.get("user_id")
     if not user_id:
         return ApiException(
             401, 2603, "You must be logged in to unmark the review as helpful."
