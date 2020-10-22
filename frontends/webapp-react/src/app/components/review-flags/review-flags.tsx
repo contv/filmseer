@@ -14,7 +14,7 @@ type ReviewFlagsProps = {
 
 const ReviewFlags = (props: ReviewFlagsProps & { className?: string }) => {
   return (
-    <div className={`ReviewEmoji ${(props.className || "").trim()}`}></div>
+    <div className={`ReviewFlags ${(props.className || "").trim()}`}></div>
   );
 };
 
