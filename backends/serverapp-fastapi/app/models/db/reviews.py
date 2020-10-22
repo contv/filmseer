@@ -16,12 +16,14 @@ class Reviews(Model):
     rating = fields.ForeignKeyField("models.Ratings")
     description = fields.TextField(default="")
     contains_spoiler = fields.BooleanField(default=False)
+    spoiler_votes = fields.IntField(default=0)
     create_date = fields.DatetimeField(auto_now_add=True)
     delete_date = fields.DatetimeField(null=True)
-    
+
     # Relational fields
     helpful_votes = fields.ReverseRelation["HelpfulVotes"]
     funny_votes = fields.ReverseRelation["FunnyVotes"]
+    spoiler_votes = fields.ReverseRelation["SpoilerVotes"]
 
     class Meta:
         table = "reviews"
