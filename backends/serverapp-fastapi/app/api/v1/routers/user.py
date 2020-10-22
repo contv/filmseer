@@ -17,9 +17,11 @@ class Register(BaseModel):
 
 @router.post("/", tags=["user"])
 async def create_user(register: Register, request: Request) -> Wrapper[dict]:
-    user = await Users.filter(username=register.username).first()
+    user = await Users.filter(username=register.username, delete_date=None).first()
     if user:
         raise ApiException(500, 2021, "This username already exists")
     # TODO: Validation
-    await Users(username=register.username, password_hash=hash(register.password)).save()
+    await Users(
+        username=register.username, password_hash=hash(register.password)
+    ).save()
     return wrap({})
