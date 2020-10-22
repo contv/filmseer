@@ -1,0 +1,21 @@
+import { view } from "@risingstack/react-easy-state";
+import React from "react";
+import "./review_flags.scss";
+
+type ReviewFlagsProps = {
+  reviewId: string;
+  flaggedHelpful?: boolean;
+  flaggedFunny?: boolean;
+  flaggedSpoiler?: boolean;
+  numHelpful?: number;
+  numFunny?: number;
+  numSpoiler?: number;
+};
+
+const ReviewFlags = (props: ReviewFlagsProps & { className?: string }) => {
+  return (
+    <div className={`ReviewEmoji ${(props.className || "").trim()}`}></div>
+  );
+};
+
+export default view(ReviewFlags);
