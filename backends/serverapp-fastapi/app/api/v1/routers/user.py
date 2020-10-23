@@ -2,7 +2,6 @@ from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
 from app.models.db.users import Users
-from app.models.db.wishlists import Wishlists
 from app.utils.password import hash
 from app.utils.wrapper import ApiException, Wrapper, wrap
 

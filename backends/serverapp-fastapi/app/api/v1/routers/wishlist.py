@@ -1,8 +1,6 @@
 from fastapi import APIRouter, Request
-# from tortoise.exceptions import OperationalError
 from typing import List
 
-# from app.models.db.wishlists import Wishlists
 from app.utils.wrapper import wrap
 
 router = APIRouter()
