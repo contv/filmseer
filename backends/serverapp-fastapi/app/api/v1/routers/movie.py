@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import Optional, List
+from tortoise.exceptions import OperationalError
 from humps import camelize
 
 from app.models.db.movies import Movies
@@ -42,29 +43,45 @@ class MovieResponse(BaseModel):
         allow_population_by_field_name = True
 
 
-def calc_average_rating(cumulative_rating, num_votes):
-    return round(cumulative_rating / num_votes if num_votes > 0 else 0, 1)
+def calc_average_rating(cumulative_rating, num_votes) -> float:
+    return round(cumulative_rating / num_votes if num_votes > 0 else 0.0, 1)
 
 
 @router.get("/{movie_id}/ratings")
-async def get_average_rating(movie_id: str) -> float:
-    movie = await Movies.filter(movie_id=movie_id).first()
+async def get_average_rating(movie_id: str) -> Wrapper[dict]:
+    try:
+        movie = await Movies.filter(
+            movie_id=movie_id, delete_date=None
+        ).first()
+    except OperationalError:
+        return ApiException(
+            401, 2501, "You cannot do that."
+        )
 
     if movie is None:
         return ApiException(404, 2100, "That movie doesn't exist")
 
     # TODO remove ratings from blocked users
-    return wrap(calc_average_rating(movie.cumulative_rating, movie.num_votes))
+    return wrap({"average": calc_average_rating(
+        movie.cumulative_rating, movie.num_votes
+    )})
 
 
 @router.get(
     "/{movie_id}", tags=["movies"], response_model=Wrapper[MovieResponse]
 )
 async def get_movie(movie_id: str):
-    movie = await Movies.filter(movie_id=movie_id).first()
+    try:
+        movie = await Movies.filter(
+            movie_id=movie_id, delete_date=None
+        ).first()
+    except OperationalError:
+        return ApiException(
+            401, 2501, "You cannot do that."
+        )
 
     if movie is None:
-        return ApiException(404, 2100, "That movie doesn't exist")
+        raise ApiException(404, 2100, "That movie doesn't exist")
 
     crew = [
         CrewMember(
