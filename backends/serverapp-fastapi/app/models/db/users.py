@@ -9,6 +9,7 @@ def _new_uuid():
 
 
 class Users(Model):
+    # Data fields
     user_id = fields.UUIDField(pk=True, default=_new_uuid)
     username = fields.CharField(max_length=32)
     password_hash = fields.CharField(max_length=255)
@@ -24,5 +25,9 @@ class Users(Model):
     create_date = fields.DatetimeField(auto_now_add=True)
     delete_date = fields.DatetimeField(null=True)
 
+    # Relational fields
+    reports: fields.ReverseRelation["Reports"]
+    ratings: fields.ReverseRelation["Ratings"]
+    reviews = fields.ReverseRelation["Reviews"]
 
 __all__ = ["Users"]

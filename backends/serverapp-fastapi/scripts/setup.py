@@ -50,3 +50,10 @@ async def add_constraints(conn):
         SET DEFAULT gen_random_uuid()
         '''
     )
+    await conn.execute_query(
+        '''
+        ALTER TABLE public.ratings
+        ALTER COLUMN rating_id
+        SET DEFAULT gen_random_uuid()
+        '''
+    ) 
