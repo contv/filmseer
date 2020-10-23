@@ -8,11 +8,12 @@ type PopupProps = {
   title?: React.ReactNode;
   transitionTimeMs?: number;
   closeOnBackground?: boolean;
+  noPadding?: boolean;
   onClose: () => void;
 };
 
 const Popup: React.FC<PopupProps & { className?: string }> = (props) => {
-  const [visible, setVisible] = React.useState(false);
+  const [visible, setVisible] = React.useState(true);
   const nodeRef = React.useRef(null);
   return (
     <CSSTransition
@@ -30,13 +31,24 @@ const Popup: React.FC<PopupProps & { className?: string }> = (props) => {
         ></div>
         <div className="Popup">
           <button
-            className="Popup__close-button"
+            className={
+              "Popup__close-button" +
+              (props.title ? "" : " Popup__close-button--no-title")
+            }
             onClick={() => setVisible(false)}
           >
             <X size={34} />
           </button>
-          <div className="Popup__title">{props.title}</div>
-          <div className="Popup__content">
+          {props.title ? (
+            <div className="Popup__title">{props.title}</div>
+          ) : null}
+          <div
+            className={
+              "Popup__content" +
+              (props.title ? "" : " Popup__content--no-title") +
+              (props.noPadding ? " Popup__content--no-padding" : "")
+            }
+          >
             {React.Children.map(props.children, (child) => {
               if (React.isValidElement(child)) {
                 return React.cloneElement(child, { onClose: props.onClose });

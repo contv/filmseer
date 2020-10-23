@@ -14,5 +14,7 @@ class ProfileImages(Model):
     create_date = fields.DatetimeField(auto_now_add=True)
     delete_date = fields.DatetimeField(null=True)
 
+    class Meta:
+        table = "profile_images"
 
 __all__ = ["ProfileImages"]

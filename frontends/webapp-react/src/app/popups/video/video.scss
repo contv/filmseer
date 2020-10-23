@@ -1,0 +1,10 @@
+@import "./../popup.scss";
+
+.Video {
+  margin-bottom: -6px;
+
+  &__iframe {
+    width: 640px;
+    height: 360px;
+  }
+}
