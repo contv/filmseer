@@ -67,8 +67,8 @@ const ReviewFlags = (props: ReviewFlagsProps & { className?: string }) => {
     }
   };
 
-  const clickFunny = async (event: React.MouseEvent<HTMLButtonElement>) => {}
-  const clickSpoiler = async (event: React.MouseEvent<HTMLButtonElement>) => {}
+  const clickFunny = async (event: React.MouseEvent<HTMLButtonElement>) => {};
+  const clickSpoiler = async (event: React.MouseEvent<HTMLButtonElement>) => {};
 
   return (
     <div
