@@ -33,8 +33,10 @@ async def mark_review_helpful(id: str, request: Request):
             await HelpfulVotes.filter(review_id=id, user_id=user_id).update(
                 delete_date=None
             )
-        num_helpful = await HelpfulVotes.filter(review_id=id, delete_date=None).count()
-        await Reviews.filter(review_id=id).update(num_helpful=num_helpful)
+            num_helpful = await HelpfulVotes.filter(
+                review_id=id, delete_date=None
+            ).count()
+            await Reviews.filter(review_id=id).update(num_helpful=num_helpful)
     except OperationalError:
         return ApiException(500, 2501, "An exception occurred")
     return wrap({"count": num_helpful})
@@ -53,8 +55,8 @@ async def mark_review_funny(request: Request, id: str) -> Wrapper[dict]:
             await FunnyVotes.filter(review_id=id, user_id=user_id).update(
                 delete_date=None
             )
-        num_funny = await FunnyVotes.filter(review_id=id, delete_date=None).count()
-        await Reviews.filter(review_id=id).update(num_funny=num_funny)
+            num_funny = await FunnyVotes.filter(review_id=id, delete_date=None).count()
+            await Reviews.filter(review_id=id).update(num_funny=num_funny)
     except OperationalError:
         return ApiException(500, 2501, "An exception occurred")
     return wrap({"count": num_funny})
@@ -73,8 +75,10 @@ async def mark_review_spoiler(request: Request, id: str) -> Wrapper[dict]:
             await SpoilerVotes.filter(review_id=id, user_id=user_id).update(
                 delete_date=None
             )
-        num_spoiler = await SpoilerVotes.filter(review_id=id, delete_date=None).count()
-        await Reviews.filter(review_id=id).update(num_spoiler=num_spoiler)
+            num_spoiler = await SpoilerVotes.filter(
+                review_id=id, delete_date=None
+            ).count()
+            await Reviews.filter(review_id=id).update(num_spoiler=num_spoiler)
     except OperationalError:
         return ApiException(500, 2501, "An exception occurred")
     return wrap({"count": num_spoiler})
@@ -93,8 +97,10 @@ async def unmark_review_helpful(request: Request, id: str) -> Wrapper[dict]:
             await HelpfulVotes.filter(review_id=id, user_id=user_id).update(
                 delete_date=datetime.now()
             )
-        num_helpful = await HelpfulVotes.filter(review_id=id, delete_date=None).count()
-        await Reviews.filter(review_id=id).update(num_helpful=num_helpful)
+            num_helpful = await HelpfulVotes.filter(
+                review_id=id, delete_date=None
+            ).count()
+            await Reviews.filter(review_id=id).update(num_helpful=num_helpful)
     except OperationalError:
         return ApiException(500, 2501, "An exception occurred")
     return wrap({"count": num_helpful})
@@ -113,8 +119,8 @@ async def unmark_review_funny(request: Request, id: str) -> Wrapper[dict]:
             await FunnyVotes.filter(review_id=id, user_id=user_id).update(
                 delete_date=datetime.now()
             )
-        num_funny = await FunnyVotes.filter(review_id=id, delete_date=None).count()
-        await Reviews.filter(review_id=id).update(num_funny=num_funny)
+            num_funny = await FunnyVotes.filter(review_id=id, delete_date=None).count()
+            await Reviews.filter(review_id=id).update(num_funny=num_funny)
     except OperationalError:
         return ApiException(500, 2501, "An exception occurred")
     return wrap({"count": num_funny})
@@ -133,8 +139,10 @@ async def unmark_review_spoiler(request: Request, id: str) -> Wrapper[dict]:
             await SpoilerVotes.filter(review_id=id, user_id=user_id).update(
                 delete_date=datetime.now()
             )
-        num_spoiler = await SpoilerVotes.filter(review_id=id, delete_date=None).count()
-        await Reviews.filter(review_id=id).update(num_spoiler=num_spoiler)
+            num_spoiler = await SpoilerVotes.filter(
+                review_id=id, delete_date=None
+            ).count()
+            await Reviews.filter(review_id=id).update(num_spoiler=num_spoiler)
     except OperationalError:
         return ApiException(500, 2501, "An exception occurred")
     return wrap({"count": num_spoiler})
