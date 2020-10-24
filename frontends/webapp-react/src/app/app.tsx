@@ -8,10 +8,12 @@ import logo from "./logo.svg";
 import HomePage from "./routes/home";
 import UserPage from "./routes/user";
 import BrowseBy from "./components/browse_by"
+import ReviewFlags from "./components/review-flags"
 
 const App = () => {
   return (
     <div className="App">
+      <ReviewFlags reviewId="abc" flaggedHelpful={false}></ReviewFlags>
       <Router>
         <header className="App__header Header">
           <Link to="/" className="Header__logo">
