@@ -2,11 +2,11 @@ import { view } from "@risingstack/react-easy-state";
 import React from "react";
 import Popup from "src/app/popups/popup-base";
 import state from "src/app/states";
-import { api } from "src/utils";
+import { api, ApiError } from "src/utils";
 import funny from "./funny.svg";
 import helpful from "./helpful.svg";
-import spoiler from "./spoiler.svg";
 import "./review-flags.scss";
+import spoiler from "./spoiler.svg";
 
 type ReviewFlagsProps = {
   reviewId: string;
@@ -36,6 +36,7 @@ const ReviewFlags = (props: ReviewFlagsProps & { className?: string }) => {
   );
 
   const [popupVisible, setPopupVisible] = React.useState(false);
+
   const clickHelpful = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
@@ -43,19 +44,31 @@ const ReviewFlags = (props: ReviewFlagsProps & { className?: string }) => {
     if (!state.loggedIn) {
       setPopupVisible(true);
     } else {
-      if (!flagHelpful) {
-        setNumHelpful(numHelpful + 1);
-      } else {
-        setNumHelpful(numHelpful - 1);
+      try {
+        if (!flagHelpful) {
+          const response = await api({
+            path: "/review/" + props.reviewId + "/helpful",
+            method: "POST",
+          });
+          setNumHelpful(JSON.parse(JSON.stringify(response.data))["count"]);
+        } else {
+          const response = await api({
+            path: "/review/" + props.reviewId + "/helpful",
+            method: "DELETE",
+          });
+          setNumHelpful(JSON.parse(JSON.stringify(response.data))["count"]);
+        }
+        setflagHelpful(!flagHelpful);
+      } catch (error) {
+        if (!(error instanceof ApiError)) {
+          throw error;
+        }
       }
-
-      setflagHelpful(!flagHelpful);
-      await api({
-        path: "/review/" + props.reviewId + "/helpful",
-        method: "POST",
-      });
     }
   };
+
+  const clickFunny = async (event: React.MouseEvent<HTMLButtonElement>) => {}
+  const clickSpoiler = async (event: React.MouseEvent<HTMLButtonElement>) => {}
 
   return (
     <div
@@ -75,25 +88,25 @@ const ReviewFlags = (props: ReviewFlagsProps & { className?: string }) => {
         <span className="ReviewFlags__text">Helpful</span>
       </button>
 
-      <button onClick={clickHelpful} className="ReviewFlags__button">
+      <button onClick={clickFunny} className="ReviewFlags__button">
         <img
           src={funny}
           alt="Funny"
           className={
             "ReviewFlags__img" +
-            (flagHelpful ? "" : " ReviewFlags__img--grayscale")
+            (flagFunny ? "" : " ReviewFlags__img--grayscale")
           }
         />
         <span className="ReviewFlags__text">Funny</span>
       </button>
 
-      <button onClick={clickHelpful} className="ReviewFlags__button">
+      <button onClick={clickSpoiler} className="ReviewFlags__button">
         <img
           src={spoiler}
           alt="Spoiler"
           className={
             "ReviewFlags__img" +
-            (flagHelpful ? "" : " ReviewFlags__img--grayscale")
+            (flagSpoiler ? "" : " ReviewFlags__img--grayscale")
           }
         />
         <span className="ReviewFlags__text">Spoiler</span>
