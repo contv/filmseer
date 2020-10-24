@@ -16,7 +16,9 @@ class Reviews(Model):
     rating = fields.ForeignKeyField("models.Ratings")
     description = fields.TextField(default="")
     contains_spoiler = fields.BooleanField(default=False)
-    spoiler_votes = fields.IntField(default=0)
+    num_spoiler = fields.IntField(default=0)
+    num_helpful = fields.IntField(default=0)
+    num_funny = fields.IntField(default=0)
     create_date = fields.DatetimeField(auto_now_add=True)
     delete_date = fields.DatetimeField(null=True)
 
