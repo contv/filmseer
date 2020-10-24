@@ -5,8 +5,8 @@ import state from "src/app/states";
 import { api } from "src/utils";
 import funny from "./funny.svg";
 import helpful from "./helpful.svg";
-import "./review-flags.scss";
 import spoiler from "./spoiler.svg";
+import "./review-flags.scss";
 
 type ReviewFlagsProps = {
   reviewId: string;
@@ -44,9 +44,9 @@ const ReviewFlags = (props: ReviewFlagsProps & { className?: string }) => {
       setPopupVisible(true);
     } else {
       if (!flagHelpful) {
-        setNumHelpful(numHelpful + 1)
+        setNumHelpful(numHelpful + 1);
       } else {
-        setNumHelpful(numHelpful - 1)
+        setNumHelpful(numHelpful - 1);
       }
 
       setflagHelpful(!flagHelpful);
@@ -110,7 +110,7 @@ const ReviewFlags = (props: ReviewFlagsProps & { className?: string }) => {
             setPopupVisible(false);
           }}
         >
-          <div>Please login to mark this review as helpful</div>
+          <div>Please login to express your opinion with this review</div>
         </Popup>
       ) : null}
     </div>
