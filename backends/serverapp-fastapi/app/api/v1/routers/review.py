@@ -19,7 +19,7 @@ override_prefix_all = None
 class NumVote(BaseModel):
     count: int
 
-# This 2 APIs are in the next sprint (follow)
+# TODO LATER: This 2 APIs are in the next sprint (follow)
 
 # GET /reviews?keyword=sometext
 # This lists all of your reviews.
