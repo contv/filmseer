@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Request
+from typing import Optional
 from pydantic import BaseModel
 from tortoise.exceptions import OperationalError
 from tortoise.transactions import in_transaction
@@ -19,14 +20,17 @@ override_prefix_all = None
 class NumVote(BaseModel):
     count: int
 
-# TODO LATER: This 2 APIs are in the next sprint (follow)
 
-# GET /reviews?keyword=sometext
-# This lists all of your reviews.
-#
+# TODO LATER: This API is in the next sprint (follow) and should be in follow route
+
 # GET /followed/reviews
 # This lists all recent reviews from followed users.
 #
+
+
+@router.get("/", tags=["review"])
+async def search_user_review(request: Request, keyword: Optional[str] = None):
+    return wrap({})
 
 
 @router.put("/{id}", tags=["review"])
