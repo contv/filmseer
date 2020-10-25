@@ -19,35 +19,27 @@ override_prefix_all = None
 class NumVote(BaseModel):
     count: int
 
+# This 2 APIs are in the next sprint (follow)
 
 # GET /reviews?keyword=sometext
 # This lists all of your reviews.
-# 
+#
 # GET /followed/reviews
 # This lists all recent reviews from followed users.
-# 
-# GET /user/{username}/reviews
-# This lists all reviews from one specific user.
-# 
-# GET /movie/{moviename}/reviews
-# This lists all reviews for one specific user.
-# 
-# POST /movie/{moviename}/review
-# This creates one review for the movie. It is review, not reviews.
-# 
-# PUT /movie/{moviename}/review
-# This modifies your review of the movie.
-# 
-# DELETE /movie/{moviename}/review
-# This deletes your review of this movie.
-# 
-# PUT /review/{id}
-# This modifies the review if you are the author. This should be used in the settings page.
-# 
-# DELETE /review/{id}
-# This deletes the review if you are the author. This should be used in the settings page.
+#
 
-@router.post("/{id}/helpful", response_model=Wrapper[NumVote])
+
+@router.put("/{id}", tags=["review"])
+async def update_author_review(id: str, request: Request):
+    return wrap({})
+
+
+@router.delete("/{id}", tags=["review"])
+async def delete_author_review(id: str, request: Request):
+    return wrap({})
+
+
+@router.post("/{id}/helpful", tags=["review"], response_model=Wrapper[NumVote])
 async def mark_review_helpful(id: str, request: Request):
     user_id = request.session.get("user_id")
     if not user_id:
@@ -69,7 +61,7 @@ async def mark_review_helpful(id: str, request: Request):
     return wrap({"count": num_helpful})
 
 
-@router.post("/{id}/funny", response_model=Wrapper[NumVote])
+@router.post("/{id}/funny", tags=["review"], response_model=Wrapper[NumVote])
 async def mark_review_funny(request: Request, id: str) -> Wrapper[dict]:
     user_id = request.session.get("user_id")
     if not user_id:
@@ -89,7 +81,7 @@ async def mark_review_funny(request: Request, id: str) -> Wrapper[dict]:
     return wrap({"count": num_funny})
 
 
-@router.post("/{id}/spoiler", response_model=Wrapper[NumVote])
+@router.post("/{id}/spoiler", tags=["review"], response_model=Wrapper[NumVote])
 async def mark_review_spoiler(request: Request, id: str) -> Wrapper[dict]:
     user_id = request.session.get("user_id")
     if not user_id:
@@ -111,7 +103,7 @@ async def mark_review_spoiler(request: Request, id: str) -> Wrapper[dict]:
     return wrap({"count": num_spoiler})
 
 
-@router.delete("/{id}/helpful", response_model=Wrapper[NumVote])
+@router.delete("/{id}/helpful", tags=["review"], response_model=Wrapper[NumVote])
 async def unmark_review_helpful(request: Request, id: str) -> Wrapper[dict]:
     user_id = request.session.get("user_id")
     if not user_id:
@@ -133,7 +125,7 @@ async def unmark_review_helpful(request: Request, id: str) -> Wrapper[dict]:
     return wrap({"count": num_helpful})
 
 
-@router.delete("/{id}/funny", response_model=Wrapper[NumVote])
+@router.delete("/{id}/funny", tags=["review"], response_model=Wrapper[NumVote])
 async def unmark_review_funny(request: Request, id: str) -> Wrapper[dict]:
     user_id = request.session.get("user_id")
     if not user_id:
@@ -153,7 +145,7 @@ async def unmark_review_funny(request: Request, id: str) -> Wrapper[dict]:
     return wrap({"count": num_funny})
 
 
-@router.delete("/{id}/spoiler", response_model=Wrapper[NumVote])
+@router.delete("/{id}/spoiler", tags=["review"], response_model=Wrapper[NumVote])
 async def unmark_review_spoiler(request: Request, id: str) -> Wrapper[dict]:
     user_id = request.session.get("user_id")
     if not user_id:

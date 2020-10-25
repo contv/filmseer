@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import BaseModel
 from typing import Optional, List
 from tortoise.exceptions import OperationalError
@@ -115,3 +115,29 @@ async def get_movie(movie_id: str):
     )
 
     return wrap(movie_detail)
+
+
+## REVIEW RELATED START
+
+
+@router.get("/{movie_id}/reviews", tags=["movies"])
+async def get_reviews_movie(movieid: str, request: Request):
+    return wrap({})
+
+
+@router.post("/{movie_id}/review", tags=["movies"])
+async def create_user_review(movieid: str, request: Request):
+    return wrap({})
+
+
+@router.put("/{movie_id}/review", tags=["movies"])
+async def update_user_review(movieid: str, request: Request):
+    return wrap({})
+
+
+@router.delete("/{movie_id}/review", tags=["movies"])
+async def delete_user_review(movieid: str, request: Request):
+    return wrap({})
+
+
+## REVIEW RELATED END
