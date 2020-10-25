@@ -20,7 +20,9 @@ async def check_session(request: Request) -> Wrapper[dict]:
     username = request.session.get("username")
     user_id = request.session.get("user_id")
     if username:
-        if await Users.filter(username=username, user_id=user_id).exists():
+        if await Users.filter(
+            username=username, user_id=user_id, delete_date=None
+        ).exists():
             return wrap({})
         else:
             del request.session["username"]
@@ -35,7 +37,7 @@ async def create_session(login: Login, request: Request) -> Wrapper[dict]:
         del request.session["username"]
     if "user_id" in request.session:
         del request.session["user_id"]
-    user = await Users.filter(username=login.username).first()
+    user = await Users.filter(username=login.username, delete_date=None).first()
     if not user:
         raise ApiException(500, 2010, "Incorrect username or password")
     if verify(user.password_hash, login.password):
