@@ -121,7 +121,7 @@ async def get_movie(movie_id: str):
 
 
 @router.get("/{movie_id}/reviews", tags=["movies"])
-async def get_reviews_movie(movieid: str, request: Request):
+async def get_movie_reviews(movieid: str):
     return wrap({})
 
 
@@ -136,7 +136,7 @@ async def update_user_review(movieid: str, request: Request):
 
 
 @router.delete("/{movie_id}/review", tags=["movies"])
-async def delete_user_review(movieid: str, request: Request):
+async def delete_user_review(movie_id: str, request: Request):
     return wrap({})
 
 
