@@ -1,0 +1,45 @@
+.MuiCard {
+    &-root {
+        max-width: 150px;
+    }
+}
+
+.MuiCardMedia {
+    &-root {
+        padding-top: 148.15%;
+    }
+}
+
+.MuiCardHeader {
+    &-root {
+        display: flex;
+        align-items: "center";
+        padding: 8px;
+    }
+    &-title {
+        font-size: 0.8rem;
+    }    
+}
+
+.MuiCardContent {
+    &-root {
+        display: flex;
+        padding-left: 8px;
+        padding-top: 0px;
+        padding-right: 8px;
+
+        &:last-child {
+            padding-bottom: 4px,
+        }
+    }
+}
+
+.MuiTypography {
+    &-body1 {
+        font-size: 0.8rem;
+    }
+
+    &-body2 {
+        font-size: 0.6rem;
+    }
+}

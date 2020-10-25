@@ -13,7 +13,7 @@ type MovieItemProps = {
   movieId: string;
   title: string;
   year: number;
-  genres: { text: string }[];
+  genres: { id: string, text: string }[];
   imageUrl?: string;
   cumulativeRating: number;
   numRatings: number;
@@ -51,32 +51,34 @@ const MovieItem = (props: MovieItemProps & { className?: string }) => {
 
   let genres = [];
   for (const genre of props.genres) {
-    genres.push(<GenreTile {...genre} />);
+    genres.push(<GenreTile key={genre.id} {...genre} />);
   }
 
   return (
-    <Card>
-      <CardMedia
-        image={props.imageUrl}
-        title={props.title + " (" + props.year + ")"}
-        onClick={handleClick}
-      />
-      <CardHeader
-        title={props.title + " (" + props.year + ")"}
-        subheader={genres}
-      />
-      <CardContent>
-        <Stars
-          movieId={props.movieId}
-          rating={avgRating}
-          size="small"
-          votable={false}
-        />
-        <Typography variant="subtitle1" display="inline">
-          {avgRating}({formattedNumRatings})
-        </Typography>
-      </CardContent>
-    </Card>
+    <div className={`MovieItem ${(props.className || "").trim()}`}>
+      <Card>
+          <CardMedia
+            image={props.imageUrl}
+            title={props.title + " (" + props.year + ")"}
+            onClick={handleClick}
+          />
+          <CardHeader 
+            title={props.title + " (" + props.year + ")"}
+            subheader={genres}
+          ></CardHeader>
+        <CardContent>
+          <Stars
+            movieId={props.movieId}
+            rating={avgRating}
+            size="small"
+            votable={false}
+          />
+          <Typography>
+            {avgRating}({formattedNumRatings})
+          </Typography>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
