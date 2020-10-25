@@ -20,6 +20,33 @@ class NumVote(BaseModel):
     count: int
 
 
+# GET /reviews?keyword=sometext
+# This lists all of your reviews.
+# 
+# GET /followed/reviews
+# This lists all recent reviews from followed users.
+# 
+# GET /user/{username}/reviews
+# This lists all reviews from one specific user.
+# 
+# GET /movie/{moviename}/reviews
+# This lists all reviews for one specific user.
+# 
+# POST /movie/{moviename}/review
+# This creates one review for the movie. It is review, not reviews.
+# 
+# PUT /movie/{moviename}/review
+# This modifies your review of the movie.
+# 
+# DELETE /movie/{moviename}/review
+# This deletes your review of this movie.
+# 
+# PUT /review/{id}
+# This modifies the review if you are the author. This should be used in the settings page.
+# 
+# DELETE /review/{id}
+# This deletes the review if you are the author. This should be used in the settings page.
+
 @router.post("/{id}/helpful", response_model=Wrapper[NumVote])
 async def mark_review_helpful(id: str, request: Request):
     user_id = request.session.get("user_id")
