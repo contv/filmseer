@@ -7,6 +7,7 @@ import SearchBar from "./components/search-bar";
 import UserMenu from "./components/user-menu";
 import logo from "./logo.svg";
 import HomePage from "./routes/home";
+import MovieDetailPage from "./routes/movie";
 import UserPage from "./routes/user";
 
 const App = () => {
@@ -31,12 +32,16 @@ const App = () => {
               <Route path="/user/:username?">
                 <UserPage className="Main__user" />
               </Route>
+              <Route path="/movie/:movieId?">
+                <MovieDetailPage className="Main__movie" />
+              </Route>
               <Route path="/">
                 <HomePage className="Main__home" />
               </Route>
             </Switch>
           </article>
         </Router>
+          <BrowseBy/>
       </div>
     </StylesProvider>
   );
