@@ -109,7 +109,7 @@ async def mark_review_spoiler(request: Request, review_id: str):
     return wrap({"count": num_spoiler})
 
 
-@router.delete("/{id}/helpful", tags=["review"], response_model=Wrapper[NumVote])
+@router.delete("/{review_id}/helpful", tags=["review"], response_model=Wrapper[NumVote])
 async def unmark_review_helpful(request: Request, review_id: str):
     user_id = request.session.get("user_id")
     if not user_id:
