@@ -1,0 +1,32 @@
+.ReviewFlags {
+  &__outer {
+    display: flex;
+  }
+
+  &__button {
+    vertical-align: middle;
+    padding: 5px;
+    margin-left: 10px;
+  }
+
+  &__image {
+    width: 24px;
+    height: 24px;
+    vertical-align: middle;
+    padding-right: 2px;
+    &--grayscale {
+      filter: grayscale(100%);
+    }
+  }
+
+  &__name {
+    vertical-align: middle;
+  }
+
+  &__numvote {
+    display: flex;
+    flex-direction: column;
+    margin-left: 20px;
+    font-size: 9pt;
+  }
+}
