@@ -9,12 +9,12 @@ override_prefix_all = None
 
 
 @router.get("/")
-async def get_wishlist(request: Request) -> List[dict]:
+async def get_wishlist(request: Request):
     return wrap({"items": []})
 
 
 @router.get("/{movie_id}")
-async def is_movie_wishlist(request: Request, movie_id: str) -> bool:
+async def is_movie_wishlist(request: Request, movie_id: str):
     return wrap({"added": True})
 
 
