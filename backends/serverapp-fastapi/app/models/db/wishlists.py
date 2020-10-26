@@ -8,16 +8,17 @@ def _new_uuid():
     return to_uuid(id())
 
 
-class MovieGenres(Model):
-    moviegenre_id = fields.UUIDField(pk=True)
+class Wishlists(Model):
+    # Data fields
+    wishlist_id = fields.UUIDField(pk=True, default=_new_uuid)
+    user = fields.ForeignKeyField("models.Users")
     movie = fields.ForeignKeyField("models.Movies")
-    genre = fields.ForeignKeyField("models.Genres")
     create_date = fields.DatetimeField(auto_now_add=True)
     delete_date = fields.DatetimeField(null=True)
 
     class Meta:
-        table = "movie_genres"
-        unique_together = ("movie", "genre")
+        table = "wishlists"
+        unique_together = (("movie", "user"))
 
 
-__all__ = ["MovieGenres"]
+__all__ = ["Wishlists"]
