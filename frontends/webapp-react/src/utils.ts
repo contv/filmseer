@@ -23,14 +23,14 @@ type WrapperType = {
   code: number;
   message: string;
   exceptions?: WrapperExceptionType[];
-  data: object;
+  data: { [key: string]: any };
 };
 
 class ApiError extends Error {
   status: number;
   code: number;
   exceptions: WrapperExceptionType[];
-  data: object;
+  data: { [key: string]: any };
 
   constructor({
     message = "",
@@ -43,7 +43,7 @@ class ApiError extends Error {
     status?: number;
     code?: number;
     exceptions?: WrapperExceptionType[];
-    data?: object;
+    data?: { [key: string]: any };
   } = {}) {
     super(message);
     this.name = "ApiError";
@@ -99,7 +99,8 @@ const api = (
   }
 
   return fetch(
-    ((process.env || {}).REACT_APP_API_BASEURL || "http://localhost:8000/api/v1") +
+    ((process.env || {}).REACT_APP_API_BASEURL ||
+      "http://localhost:8000/api/v1") +
       path +
       (!params
         ? ""
@@ -122,7 +123,7 @@ const api = (
       keepalive: true,
       referrerPolicy: "no-referrer-when-downgrade",
       body:
-        (!body || (Object.keys(body).length === 0 && body.constructor === Object))
+        !body || (Object.keys(body).length === 0 && body.constructor === Object)
           ? undefined
           : JSON.stringify(body),
     }
@@ -163,7 +164,7 @@ const apiEffect = (
   apiParams: ApiParamType,
   onsuccess: (wrapper: WrapperType) => void,
   onerror: (error: ApiError) => void = (_error) => undefined,
-  precondition: () => (boolean | Promise<boolean>) = () => true
+  precondition: () => boolean | Promise<boolean> = () => true
 ) => {
   return () => {
     let didCancel = false;

@@ -26,10 +26,16 @@ async def create_user(register: Register, request: Request) -> Wrapper[dict]:
     ).save()
     return wrap({})
 
-## REVIEW RELATED START
+# REVIEW RELATED START
+
 
 @router.get("/{username}/reviews", tags=["user"])
 async def get_reviews_user(username: str, request: Request):
     return wrap({})
 
-## REVIEW RELATED END
+# REVIEW RELATED END
+
+
+@router.get("/{username}/wishlist")
+async def get_user_wishlist(username: str):
+    return wrap({"items": []})
