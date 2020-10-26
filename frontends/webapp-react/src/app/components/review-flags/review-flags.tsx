@@ -10,7 +10,7 @@ import spoiler from "./spoiler.svg";
 import state from "src/app/states";
 import { view } from "@risingstack/react-easy-state";
 
-type ReviewFlagsProps = {
+export type ReviewFlagsProps = {
   reviewId: string;
   flaggedHelpful?: boolean;
   flaggedFunny?: boolean;
