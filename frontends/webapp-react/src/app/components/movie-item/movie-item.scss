@@ -1,45 +1,44 @@
-.MuiCard {
-    &-root {
-        max-width: 150px;
-    }
+.MovieItem__card.MuiCard {
+  &-root {
+    max-width: 150px;
+  }
 }
 
-.MuiCardMedia {
-    &-root {
-        padding-top: 148.15%;
-    }
+.MovieItem__media.MuiCardMedia {
+  &-root {
+    padding-top: 150%;
+  }
 }
 
-.MuiCardHeader {
-    &-root {
-        display: flex;
-        align-items: "center";
-        padding: 8px;
-    }
-    &-title {
-        font-size: 0.8rem;
-    }    
+.MovieItem__header.MuiCardHeader {
+  &-root {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+  }
 }
 
-.MuiCardContent {
-    &-root {
-        display: flex;
-        padding-left: 8px;
-        padding-top: 0px;
-        padding-right: 8px;
+.MovieItem__content.MuiCardContent {
+  &-root {
+    display: flex;
+    padding: 0 8px 0 8px;
 
-        &:last-child {
-            padding-bottom: 4px,
-        }
+    &:last-child {
+      padding-bottom: 4px;
     }
+  }
 }
 
 .MuiTypography {
-    &-body1 {
-        font-size: 0.8rem;
-    }
+  &-body1 {
+    font-size: 0.8rem;
+  }
 
-    &-body2 {
-        font-size: 0.6rem;
-    }
+  &-body2 {
+    font-size: 0.6rem;
+  }
+
+  &-h5 {
+    font-size: 0.8rem;
+  }
 }

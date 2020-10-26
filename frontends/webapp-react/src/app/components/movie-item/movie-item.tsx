@@ -1,19 +1,19 @@
-import { view } from "@risingstack/react-easy-state";
-import React from "react";
 import Card from "@material-ui/core/Card";
+import CardContent from "@material-ui/core/CardContent";
 import CardHeader from "@material-ui/core/CardHeader";
 import CardMedia from "@material-ui/core/CardMedia";
-import CardContent from "@material-ui/core/CardContent";
 import Typography from "@material-ui/core/Typography";
-import Stars from "../stars";
+import { view } from "@risingstack/react-easy-state";
+import React from "react";
 import GenreTile from "../genre-tile";
+import Stars from "../stars";
 import "./movie-item.scss";
 
 type MovieItemProps = {
   movieId: string;
   title: string;
   year: number;
-  genres: { id: string, text: string }[];
+  genres: { id: string; text: string }[];
   imageUrl?: string;
   cumulativeRating: number;
   numRatings: number;
@@ -27,7 +27,7 @@ const nFormatter = (num: number, digits: number) => {
     { value: 1e3, symbol: "K" },
     { value: 1e6, symbol: "M" },
   ];
-  var rx = /\.0+$|(\.[0-9]*[1-9])0+$/;
+  var digitsAfterDecimalRx = /\.0+$|(\.[0-9]*[1-9])0+$/;
   var i;
   for (i = suffix.length - 1; i > 0; i--) {
     if (num >= suffix[i].value) {
@@ -35,7 +35,9 @@ const nFormatter = (num: number, digits: number) => {
     }
   }
   return (
-    (num / suffix[i].value).toFixed(digits).replace(rx, "$1") + suffix[i].symbol
+    (num / suffix[i].value)
+      .toFixed(digits)
+      .replace(digitsAfterDecimalRx, "$1") + suffix[i].symbol
   );
 };
 
@@ -56,17 +58,19 @@ const MovieItem = (props: MovieItemProps & { className?: string }) => {
 
   return (
     <div className={`MovieItem ${(props.className || "").trim()}`}>
-      <Card>
-          <CardMedia
-            image={props.imageUrl}
-            title={props.title + " (" + props.year + ")"}
-            onClick={handleClick}
-          />
-          <CardHeader 
-            title={props.title + " (" + props.year + ")"}
-            subheader={genres}
-          ></CardHeader>
-        <CardContent>
+      <Card className="MovieItem__card">
+        <CardMedia
+          className="MovieItem__media"
+          image={props.imageUrl}
+          title={props.title + " (" + props.year + ")"}
+          onClick={handleClick}
+        />
+        <CardHeader
+          className="MovieItem__header"
+          title={props.title + " (" + props.year + ")"}
+          subheader={genres}
+        ></CardHeader>
+        <CardContent className="MovieItem__content">
           <Stars
             movieId={props.movieId}
             rating={avgRating}
