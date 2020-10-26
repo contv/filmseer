@@ -2,7 +2,7 @@ import { view } from "@risingstack/react-easy-state";
 import React from "react";
 import "./review_flags.scss";
 
-type ReviewFlagsProps = {
+export type ReviewFlagsProps = {
   reviewId: string;
   flaggedHelpful?: boolean;
   flaggedFunny?: boolean;
