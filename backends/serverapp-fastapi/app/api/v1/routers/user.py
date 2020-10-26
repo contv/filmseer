@@ -27,4 +27,4 @@ async def create_user(register: Register, request: Request) -> Wrapper[dict]:
 
 @router.get("/{username}/wishlist")
 async def get_user_wishlist(username: str):
-    return wrap([])
+    return wrap({"items": []})
