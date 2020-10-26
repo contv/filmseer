@@ -7,7 +7,9 @@ type ReviewProps = {
   reviewId: string;
   reviewText: string;
   reviewerUsername: string;
-  flags: ReviewFlagsProps;
+  reviewerImageUrl?: string;
+  reviewDate: Date;
+  flags?: ReviewFlagsProps;
 };
 
 const Review = (props: ReviewProps & { className?: string }) => {
