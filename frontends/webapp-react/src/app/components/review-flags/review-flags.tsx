@@ -1,12 +1,14 @@
-import { view } from "@risingstack/react-easy-state";
-import React from "react";
+import "./review-flags.scss";
+
+import { ApiError, api } from "src/utils";
+
 import Popup from "src/app/popups/popup-base";
-import state from "src/app/states";
-import { api, ApiError } from "src/utils";
+import React from "react";
 import funny from "./funny.svg";
 import helpful from "./helpful.svg";
-import "./review-flags.scss";
 import spoiler from "./spoiler.svg";
+import state from "src/app/states";
+import { view } from "@risingstack/react-easy-state";
 
 type ReviewFlagsProps = {
   reviewId: string;
@@ -19,21 +21,17 @@ type ReviewFlagsProps = {
 };
 
 const ReviewFlags = (props: ReviewFlagsProps & { className?: string }) => {
-  const [flagHelpful, setflagHelpful] = React.useState(props.flaggedHelpful);
-  const [flagFunny, setflagFunny] = React.useState(props.flaggedFunny);
-  const [flagSpoiler, setflagSpoiler] = React.useState(props.flaggedSpoiler);
-
-  const [numHelpful, setNumHelpful] = React.useState(
-    props.numHelpful ? props.numHelpful : 0
+  const [flaggedHelpful, setFlaggedHelpful] = React.useState(
+    props.flaggedHelpful
+  );
+  const [flaggedFunny, setFlaggedFunny] = React.useState(props.flaggedFunny);
+  const [flaggedSpoiler, setFlaggedSpoiler] = React.useState(
+    props.flaggedSpoiler
   );
 
-  const [numFunny, setNumFunny] = React.useState(
-    props.numFunny ? props.numFunny : 0
-  );
-
-  const [numSpoiler, setNumSpoiler] = React.useState(
-    props.numSpoiler ? props.numSpoiler : 0
-  );
+  const [numHelpful, setNumHelpful] = React.useState(props.numHelpful || 0);
+  const [numFunny, setNumFunny] = React.useState(props.numFunny || 0);
+  const [numSpoiler, setNumSpoiler] = React.useState(props.numSpoiler || 0);
 
   const [popupVisible, setPopupVisible] = React.useState(false);
 
@@ -45,20 +43,12 @@ const ReviewFlags = (props: ReviewFlagsProps & { className?: string }) => {
       setPopupVisible(true);
     } else {
       try {
-        if (!flagHelpful) {
-          const response = await api({
-            path: "/review/" + props.reviewId + "/helpful",
-            method: "POST",
-          });
-          setNumHelpful(JSON.parse(JSON.stringify(response.data))["count"]);
-        } else {
-          const response = await api({
-            path: "/review/" + props.reviewId + "/helpful",
-            method: "DELETE",
-          });
-          setNumHelpful(JSON.parse(JSON.stringify(response.data))["count"]);
-        }
-        setflagHelpful(!flagHelpful);
+        const response = await api({
+          path: "/review/" + props.reviewId + "/helpful",
+          method: flaggedHelpful ? "DELETE" : "POST",
+        });
+        setNumHelpful(JSON.parse(JSON.stringify(response.data))["count"]);
+        setFlaggedHelpful(!flaggedHelpful);
       } catch (error) {
         if (!(error instanceof ApiError)) {
           throw error;
@@ -67,8 +57,49 @@ const ReviewFlags = (props: ReviewFlagsProps & { className?: string }) => {
     }
   };
 
-  const clickFunny = async (event: React.MouseEvent<HTMLButtonElement>) => {};
-  const clickSpoiler = async (event: React.MouseEvent<HTMLButtonElement>) => {};
+  const clickFunny = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    event.nativeEvent.stopImmediatePropagation();
+    if (!state.loggedIn) {
+      setPopupVisible(true);
+    } else {
+      try {
+        const response = await api({
+          path: "/review/" + props.reviewId + "/funny",
+          method: flaggedFunny ? "DELETE" : "POST",
+        });
+        setNumFunny(JSON.parse(JSON.stringify(response.data))["count"]);
+        setFlaggedFunny(!flaggedFunny);
+      } catch (error) {
+        if (!(error instanceof ApiError)) {
+          throw error;
+        }
+      }
+    }
+  };
+
+  const clickSpoiler = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    event.nativeEvent.stopImmediatePropagation();
+    if (!state.loggedIn) {
+      setPopupVisible(true);
+    } else {
+      try {
+        const response = await api({
+          path: "/review/" + props.reviewId + "/spoiler",
+          method: flaggedSpoiler ? "DELETE" : "POST",
+        });
+        setNumSpoiler(JSON.parse(JSON.stringify(response.data))["count"]);
+        setFlaggedSpoiler(!flaggedSpoiler);
+      } catch (error) {
+        if (!(error instanceof ApiError)) {
+          throw error;
+        }
+      }
+    }
+  };
 
   return (
     <div
@@ -81,11 +112,11 @@ const ReviewFlags = (props: ReviewFlagsProps & { className?: string }) => {
           src={helpful}
           alt="Helpful"
           className={
-            "ReviewFlags__img" +
-            (flagHelpful ? "" : " ReviewFlags__img--grayscale")
+            "ReviewFlags__image" +
+            (flaggedHelpful ? "" : " ReviewFlags__image--grayscale")
           }
         />
-        <span className="ReviewFlags__text">Helpful</span>
+        <span className="ReviewFlags__name">Helpful</span>
       </button>
 
       <button onClick={clickFunny} className="ReviewFlags__button">
@@ -93,11 +124,11 @@ const ReviewFlags = (props: ReviewFlagsProps & { className?: string }) => {
           src={funny}
           alt="Funny"
           className={
-            "ReviewFlags__img" +
-            (flagFunny ? "" : " ReviewFlags__img--grayscale")
+            "ReviewFlags__image" +
+            (flaggedFunny ? "" : " ReviewFlags__image--grayscale")
           }
         />
-        <span className="ReviewFlags__text">Funny</span>
+        <span className="ReviewFlags__name">Funny</span>
       </button>
 
       <button onClick={clickSpoiler} className="ReviewFlags__button">
@@ -105,11 +136,11 @@ const ReviewFlags = (props: ReviewFlagsProps & { className?: string }) => {
           src={spoiler}
           alt="Spoiler"
           className={
-            "ReviewFlags__img" +
-            (flagSpoiler ? "" : " ReviewFlags__img--grayscale")
+            "ReviewFlags__image" +
+            (flaggedSpoiler ? "" : " ReviewFlags__image--grayscale")
           }
         />
-        <span className="ReviewFlags__text">Spoiler</span>
+        <span className="ReviewFlags__name">Spoiler</span>
       </button>
 
       <div className="ReviewFlags__numvote">
