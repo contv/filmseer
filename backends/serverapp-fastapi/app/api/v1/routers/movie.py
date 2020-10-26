@@ -121,17 +121,17 @@ async def get_movie(movie_id: str):
 
 
 @router.get("/{movie_id}/reviews", tags=["movies"])
-async def get_movie_reviews(movieid: str):
+async def get_movie_reviews(movie_id: str):
     return wrap({})
 
 
 @router.post("/{movie_id}/review", tags=["movies"])
-async def create_user_review(movieid: str, request: Request):
+async def create_user_review(movie_id: str, request: Request):
     return wrap({})
 
 
 @router.put("/{movie_id}/review", tags=["movies"])
-async def update_user_review(movieid: str, request: Request):
+async def update_user_review(movie_id: str, request: Request):
     return wrap({})
 
 
