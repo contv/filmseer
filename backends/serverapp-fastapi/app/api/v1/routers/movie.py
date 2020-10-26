@@ -13,9 +13,6 @@ from app.models.db.reviews import Reviews
 from app.models.db.users import Users
 from app.utils.wrapper import ApiException, Wrapper, wrap
 
-# from elasticsearch import Elasticsearch
-# from elasticsearch_dsl import Search, Q
-
 
 router = APIRouter()
 override_prefix = None
