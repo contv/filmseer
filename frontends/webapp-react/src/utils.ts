@@ -99,7 +99,7 @@ const api = (
   }
 
   return fetch(
-    ((process.env || {}).REACT_APP_API_BASEURL || "/api/v1") +
+    ((process.env || {}).REACT_APP_API_BASEURL || "http://localhost:8000/api/v1") +
       path +
       (!params
         ? ""

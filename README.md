@@ -1,4 +1,6 @@
 # COMP9900_FilmFinder
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
+
 The FilmFinder Project for COMP9900-W17B-FilmSeer Group.
 
 ## Directory Structure
@@ -62,3 +64,48 @@ The main database should be stored here. Please remember to keep the permission 
 #### `~/storages/sessions`
 
 This can be either a file based session storage, or a persistent storage of Redis if we use Redis.
+
+
+
+
+## Style & Naming Conventions
+
+
+1. **Python**
+
+For python we should use official python conventions, e.g.:
+
+* lowercase snake case for regular variables
+* uppercase snake case for constants
+* Pascal case for classes
+
+For more details of the official style guide:  https://www.python.org/dev/peps/pep-0008/#naming-conventions
+
+
+2. **PostgreSQL**
+
+For Postgres we should be doing the following
+
+* Plural for table names: e.g. `people`, `movies`, etc.
+* Snake case for schemas, tables and fields `movie_genres`, `imdb_data.principals`, `users.password_hash`,
+* Lower case for in-line queries: `select * from users limit 5;`
+
+
+3. **JavaScript**
+
+* Pascal case for Classes
+* Camel case for variables, functions, modules
+* Upper snake case for constants
+
+For more details of the style guide we should be following: https://google.github.io/styleguide/jsguide.html#naming
+
+
+4. **CSS and ClassName** 
+
+* ClassNames follow a varient of BEM: `ComponentName__inner-content-name--one-state` (e.g. `Register__form-message--error`).
+* As BEM classes are a bit incompatible with CSS modules, we don't use CSS modules in our project.
+
+For more details: http://getbem.com/naming/ 
+
+(The only difference is that our "block" name is the same as the component name, and is in CamelCase)
+

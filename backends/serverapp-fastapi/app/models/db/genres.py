@@ -13,7 +13,7 @@ def _new_uuid():
 class Genres(Model):
     # Data fields
     genre_id = fields.UUIDField(pk=True, default=_new_uuid)
-    name = fields.CharField(max_length=50)
+    name = fields.CharField(max_length=50, unique=True)
     create_date = fields.DatetimeField(auto_now_add=True)
     delete_date = fields.DatetimeField(null=True)
 
