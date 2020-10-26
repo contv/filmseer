@@ -2,6 +2,7 @@ from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
 from app.models.db.users import Users
+from app.models.db.wishlists import Wishlists
 from app.utils.password import hash
 from app.utils.wrapper import ApiException, Wrapper, wrap
 
@@ -29,4 +30,15 @@ async def create_user(register: Register, request: Request) -> Wrapper[dict]:
 
 @router.get("/{username}/wishlist")
 async def get_user_wishlist(username: str):
-    return wrap({"items": []})
+    user = await Users.filter(username=username).first()
+
+    if not user:
+        return ApiException(
+            404, 2031, "That user doesn't exist."
+        )
+
+    items = await Wishlists.filter(
+        user_id=user.user_id
+    ).prefetch_related("movie")
+
+    return wrap({"items": items})
