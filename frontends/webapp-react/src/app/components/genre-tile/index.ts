@@ -1,1 +1,1 @@
-export { default } from "./genre-tile"
+export { default } from "./genre-tile";
