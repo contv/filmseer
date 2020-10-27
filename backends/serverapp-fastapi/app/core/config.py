@@ -82,7 +82,7 @@ class Settings(BaseSettings):
 
     # Elasticsearch Settings
     ELASTICSEARCH_URI: AnyUrl
-    ELASTICSEARCH_ALIAS: str = "filmseer"
+    ELASTICSEARCH_ALIAS: str = ""
     ELASTICSEARCH_TRANSPORTCLASS: str = (
         "RequestsHttpConnection",
         "Urllib3HttpConnection",
