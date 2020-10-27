@@ -1,8 +1,8 @@
+import Rating from "@material-ui/lab/Rating";
 import { view } from "@risingstack/react-easy-state";
 import React, { useEffect, useState } from "react";
-import Rating from "@material-ui/lab/Rating";
+import { api } from "../../../utils";
 import "./stars.scss";
-import { api } from "../../../utils"
 
 type StarsProps = {
   movieId: string;
@@ -13,22 +13,26 @@ type StarsProps = {
 
 const Stars = (props: StarsProps & { className?: string }) => {
   const [rating, setRating] = useState(props.rating || 0);
-  const [didMount, setDidMount] = useState(false)
+  const [didMount, setDidMount] = useState(false);
   const [hover, setHover] = useState(0);
 
   function handleClick() {
     setRating(hover);
   }
 
-  useEffect(() => setDidMount(true), [])
+  useEffect(() => setDidMount(true), []);
 
   useEffect(() => {
     if (props.votable && didMount) {
-      api({path:`/movie/${props.movieId}/rating/`, method:"POST", params:{'rating': rating}})
+      api({
+        path: `/movie/${props.movieId}/rating/`,
+        method: "POST",
+        params: { rating: rating },
+      });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rating])
-  
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rating]);
+
   return (
     <div className={`Stars ${(props.className || "").trim()}`}>
       <Rating
