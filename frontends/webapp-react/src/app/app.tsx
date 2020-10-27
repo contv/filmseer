@@ -41,7 +41,6 @@ const App = () => {
             </Switch>
           </article>
         </Router>
-          <BrowseBy/>
       </div>
     </StylesProvider>
   );
