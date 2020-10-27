@@ -23,7 +23,7 @@ const Stars = (props: StarsProps & { className?: string }) => {
   useEffect(() => setDidMount(true), [])
 
   useEffect(() => {
-    if (didMount) {
+    if (props.votable && didMount) {
       api({path:`/movie/${props.movieId}/rating/`, method:"POST", params:{'rating': rating}})
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
