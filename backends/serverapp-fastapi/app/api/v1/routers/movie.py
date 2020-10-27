@@ -48,7 +48,8 @@ class MovieResponse(BaseModel):
 
 
 class SearchResponse(BaseModel):
-    ids: List[str]
+    id: str
+    score: float
 
 
 def calc_average_rating(cumulative_rating, num_votes) -> float:
@@ -137,7 +138,7 @@ async def delete_user_review(movie_id: str, request: Request):
 ## REVIEW RELATED END
 
 
-@router.get("/", tags=["movies"], response_model=Wrapper[SearchResponse])
+@router.get("/", tags=["movies"], response_model=Wrapper[List[SearchResponse]])
 async def search_movies(
     keywords: str = "",
     genres: Optional[List[str]] = Query(None),
@@ -172,5 +173,5 @@ async def search_movies(
     # TODO filter for genres, years, directors
 
     response = search.execute()
-    movies = SearchResponse(ids=[str(hit.meta.id) for hit in response])
+    movies = [SearchResponse(id=str(hit.meta.id), score=hit.meta.score) for hit in response]
     return wrap(movies)
