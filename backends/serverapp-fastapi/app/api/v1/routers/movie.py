@@ -2,9 +2,17 @@ from fastapi import APIRouter, Request
 from pydantic import BaseModel
 from typing import Optional, List
 from tortoise.exceptions import OperationalError
+from tortoise.transactions import in_transaction
 from humps import camelize
+from datetime import datetime
 
 from app.models.db.movies import Movies
+from app.models.db.reviews import Reviews
+from app.models.db.ratings import Ratings
+from app.models.db.helpful_votes import HelpfulVotes
+from app.models.db.funny_votes import FunnyVotes
+from app.models.db.spoiler_votes import SpoilerVotes
+
 from app.models.db.positions import Positions
 from app.utils.wrapper import ApiException, Wrapper, wrap
 
@@ -43,6 +51,26 @@ class MovieResponse(BaseModel):
         allow_population_by_field_name = True
 
 
+class ReviewResponse(BaseModel):
+    review_id: str
+    create_date: str
+    description: str
+    contains_spoiler: bool
+    rating: float
+    num_helpful: int
+    num_funny: int
+    num_spoiler: int
+    flagged_helpful: bool
+    flagged_funny: bool
+    flagged_spoiler: bool
+
+
+class ReviewRequest(BaseModel):
+    description: str
+    contains_spoiler: bool
+    rating: float
+
+
 def calc_average_rating(cumulative_rating, num_votes) -> float:
     return round(cumulative_rating / num_votes if num_votes > 0 else 0.0, 1)
 
@@ -50,35 +78,25 @@ def calc_average_rating(cumulative_rating, num_votes) -> float:
 @router.get("/{movie_id}/ratings")
 async def get_average_rating(movie_id: str) -> Wrapper[dict]:
     try:
-        movie = await Movies.filter(
-            movie_id=movie_id, delete_date=None
-        ).first()
+        movie = await Movies.filter(movie_id=movie_id, delete_date=None).first()
     except OperationalError:
-        return ApiException(
-            401, 2501, "You cannot do that."
-        )
+        return ApiException(401, 2501, "You cannot do that.")
 
     if movie is None:
         return ApiException(404, 2100, "That movie doesn't exist")
 
     # TODO remove ratings from blocked users
-    return wrap({"average": calc_average_rating(
-        movie.cumulative_rating, movie.num_votes
-    )})
+    return wrap(
+        {"average": calc_average_rating(movie.cumulative_rating, movie.num_votes)}
+    )
 
 
-@router.get(
-    "/{movie_id}", tags=["movies"], response_model=Wrapper[MovieResponse]
-)
+@router.get("/{movie_id}", tags=["movies"], response_model=Wrapper[MovieResponse])
 async def get_movie(movie_id: str):
     try:
-        movie = await Movies.filter(
-            movie_id=movie_id, delete_date=None
-        ).first()
+        movie = await Movies.filter(movie_id=movie_id, delete_date=None).first()
     except OperationalError:
-        return ApiException(
-            401, 2501, "You cannot do that."
-        )
+        return ApiException(401, 2501, "You cannot do that.")
 
     if movie is None:
         raise ApiException(404, 2100, "That movie doesn't exist")
@@ -90,15 +108,11 @@ async def get_movie(movie_id: str):
             position=p.position,
             image=p.person.image,
         )
-        for p in await Positions.filter(
-            movie_id=movie_id
-        ).prefetch_related("person")
+        for p in await Positions.filter(movie_id=movie_id).prefetch_related("person")
     ]
 
     # TODO remove ratings from blocked users
-    average_rating = calc_average_rating(
-        movie.cumulative_rating, movie.num_votes
-    )
+    average_rating = calc_average_rating(movie.cumulative_rating, movie.num_votes)
 
     movie_detail = MovieResponse(
         id=str(movie.movie_id),
@@ -121,22 +135,118 @@ async def get_movie(movie_id: str):
 
 
 @router.get("/{movie_id}/reviews", tags=["movies"])
-async def get_movie_reviews(movie_id: str):
-    return wrap({})
+async def get_movie_reviews(movie_id: str, request: Request):
+    user_id = request.session.get("user_id")
+    reviews = [
+        ReviewResponse(
+            review_id=str(r.review_id),
+            create_date=str(r.create_date),
+            description=r.description,
+            contains_spoiler=r.contains_spoiler,
+            rating=r.rating.rating,
+            num_helpful=r.num_helpful,
+            num_funny=r.num_funny,
+            num_spoiler=r.num_spoiler,
+            flagged_helpful=await r.helpful_votes.filter(
+                user_id=user_id, delete_date=None
+            ).count(),
+            flagged_funny=await r.funny_votes.filter(
+                user_id=user_id, delete_date=None
+            ).count(),
+            flagged_spoiler=await r.spoiler_votes.filter(
+                user_id=user_id, delete_date=None
+            ).count(),
+        )
+        for r in await Reviews.filter(
+            movie_id=movie_id, delete_date=None
+        ).prefetch_related("rating", "helpful_votes", "funny_votes", "spoiler_votes")
+    ]
+
+    return wrap({"items": reviews})
 
 
 @router.post("/{movie_id}/review", tags=["movies"])
-async def create_user_review(movie_id: str, request: Request):
-    return wrap({})
-
-
 @router.put("/{movie_id}/review", tags=["movies"])
-async def update_user_review(movie_id: str, request: Request):
+async def create_update_user_review(
+    movie_id: str, review: ReviewRequest, request: Request
+):
+    try:
+        movie = await Movies.filter(movie_id=movie_id, delete_date=None).first()
+    except OperationalError:
+        return ApiException(401, 2501, "You cannot do that.")
+
+    if movie is None:
+        return ApiException(404, 2100, "That movie doesn't exist")
+
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return ApiException(
+            401, 2607, "You must be logged in to submit/update/delete a review"
+        )
+
+    try:
+        async with in_transaction():
+            rating = await (
+                Ratings.get_or_create(
+                    user_id=user_id,
+                    movie_id=movie_id,
+                )
+            )
+
+            await Ratings.filter(
+                user_id=user_id,
+                movie_id=movie_id,
+            ).update(delete_date=None, rating=review.rating)
+
+            if await Reviews.filter(user_id=user_id, movie_id=movie_id):
+                await Reviews.filter(user_id=user_id, movie_id=movie_id,).update(
+                    rating_id=rating[0].rating_id,
+                    delete_date=None,
+                    description=review.description,
+                    contains_spoiler=review.contains_spoiler,
+                )
+            else:
+                await Reviews(
+                    user_id=user_id,
+                    movie_id=movie_id,
+                    rating_id=rating[0].rating_id,
+                    description=review.description,
+                    contains_spoiler=review.contains_spoiler,
+                    delete_date=None,
+                ).save()
+    except OperationalError:
+        return ApiException(500, 2501, "An exception occurred")
+
     return wrap({})
 
 
 @router.delete("/{movie_id}/review", tags=["movies"])
 async def delete_user_review(movie_id: str, request: Request):
+    user_id = "058ffe8f-d27c-5e6a-21aa-c41401b996f9"
+    if not user_id:
+        return ApiException(
+            401, 2607, "You must be logged in to submit/update/delete a review"
+        )
+    try:
+        async with in_transaction():
+            review = await Reviews.get_or_create(user_id=user_id, movie_id=movie_id)
+            await Reviews.filter(
+                user_id=user_id,
+                movie_id=movie_id,
+            ).update(delete_date=datetime.now())
+
+            await HelpfulVotes.filter(review_id=review[0].review_id).update(
+                delete_date=datetime.now()
+            )
+            await FunnyVotes.filter(review_id=review[0].review_id).update(
+                delete_date=datetime.now()
+            )
+            await SpoilerVotes.filter(review_id=review[0].review_id).update(
+                delete_date=datetime.now()
+            )
+    except OperationalError:
+        return ApiException(500, 2501, "An exception occurred")
+
     return wrap({})
 
 
