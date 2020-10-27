@@ -82,9 +82,7 @@ async def search_user_review(request: Request, keyword: Optional[str] = ""):
 
 
 @router.put("/{review_id}", tags=["review"])
-async def update_author_review(
-    review_id: str, review: ReviewRequest, request: Request
-):
+async def update_author_review(review_id: str, review: ReviewRequest, request: Request):
     session_user_id = request.session.get("user_id")
     if not session_user_id:
         return ApiException(401, 2001, "You are not logged in")
