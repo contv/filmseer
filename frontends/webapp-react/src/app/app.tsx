@@ -8,7 +8,6 @@ import logo from "./logo.svg";
 import HomePage from "./routes/home";
 import MovieDetailPage from "./routes/movie";
 import UserPage from "./routes/user";
-import BrowseBy from "./components/browse_by"
 
 const App = () => {
   return (
@@ -40,8 +39,6 @@ const App = () => {
           </Switch>
         </article>
       </Router>
-        <BrowseBy/>
-
     </div>
   );
 };
