@@ -51,9 +51,7 @@ class ReviewResponse(BaseModel):
 async def search_user_review(request: Request, keyword: Optional[str] = ""):
     user_id = request.session.get("user_id")
     if not user_id:
-        return ApiException(
-            401, 2001, "You are not logged in"
-        )
+        return ApiException(401, 2001, "You are not logged in")
 
     reviews = [
         ReviewResponse(
@@ -89,21 +87,21 @@ async def update_author_review(
 ):
     session_user_id = request.session.get("user_id")
     if not session_user_id:
-        return ApiException(
-            401, 2001, "You are not logged in"
-        )
+        return ApiException(401, 2001, "You are not logged in")
 
-    review = await Reviews.filter(review_id=review_id, delete_date=None)
-    if not review:
+    review_user_id = (
+        await Reviews.filter(review_id=review_id, delete_date=None).values("user_id")
+    )[0]["user_id"]
+    if not review_user_id:
         return ApiException(404, 2610, "Invalid review id.")
 
-    review_user_id = (await review.values("user_id"))[0]["user_id"]
-    if session_user_id != review_user_id:
+    if str(session_user_id) != str(review_user_id):
         return ApiException(
             401, 2609, "You must be the author to update/delete the review."
         )
 
     try:
+        # should we update create_date?
         await Reviews.filter(review_id=review_id).update(
             delete_date=None,
             description=review_request.description,
@@ -119,16 +117,16 @@ async def update_author_review(
 async def delete_author_review(review_id: str, request: Request):
     session_user_id = request.session.get("user_id")
     if not session_user_id:
-        return ApiException(
-            401, 2001, "You are not logged in"
-        )
+        return ApiException(401, 2001, "You are not logged in")
 
-    review = await Reviews.filter(review_id=review_id, delete_date=None)
-    if not review:
+    review_user_id = (
+        await Reviews.filter(review_id=review_id, delete_date=None).values("user_id")
+    )[0]["user_id"]
+
+    if not review_user_id:
         return ApiException(404, 2610, "Invalid review id.")
 
-    review_user_id = (await review.values("user_id"))[0]["user_id"]
-    if session_user_id != review_user_id:
+    if str(session_user_id) != str(review_user_id):
         return ApiException(
             401, 2609, "You must be the author to update/delete the review."
         )
