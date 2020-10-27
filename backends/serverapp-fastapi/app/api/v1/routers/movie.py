@@ -39,6 +39,7 @@ class MovieResponse(BaseModel):
     image_url: Optional[str]
     description: Optional[str]
     trailers: List[Trailer]
+    genres: List[str]
     num_reviews: int
     num_votes: int
     average_rating: float
@@ -61,7 +62,9 @@ def calc_average_rating(cumulative_rating, num_votes) -> float:
 @router.get("/{movie_id}/ratings")
 async def get_average_rating(movie_id: str) -> Wrapper[dict]:
     try:
-        movie = await Movies.filter(movie_id=movie_id, delete_date=None).first()
+        movie = await Movies.filter(
+            movie_id=movie_id, delete_date=None
+        ).prefetch_related("genres").first()
     except OperationalError:
         return ApiException(401, 2501, "You cannot do that.")
 
@@ -84,6 +87,7 @@ async def get_movie(movie_id: str):
     if movie is None:
         raise ApiException(404, 2100, "That movie doesn't exist")
 
+    genres = [genre.name for genre in await movie.genres]
     crew = [
         CrewMember(
             id=str(p.person_id),
@@ -108,13 +112,11 @@ async def get_movie(movie_id: str):
         num_reviews=movie.num_reviews,
         num_votes=movie.num_votes,
         average_rating=average_rating,
+        genres=genres,
         crew=crew,
     )
 
     return wrap(movie_detail)
-
-
-## REVIEW RELATED START
 
 
 @router.get("/{movie_id}/reviews", tags=["movies"])
@@ -135,9 +137,6 @@ async def update_user_review(movie_id: str, request: Request):
 @router.delete("/{movie_id}/review", tags=["movies"])
 async def delete_user_review(movie_id: str, request: Request):
     return wrap({})
-
-
-## REVIEW RELATED END
 
 
 @router.post(
