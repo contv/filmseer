@@ -139,8 +139,7 @@ async def delete_user_review(movie_id: str, request: Request):
 
 @router.get("/", tags=["movies"], response_model=Wrapper[SearchResponse])
 async def search_movies(
-    request: Request,
-    keywords: str,
+    keywords: str = "",
     genres: Optional[List[str]] = Query(None),
     years: Optional[List[str]] = Query(None),
     directors: Optional[List[str]] = Query(None),
@@ -153,7 +152,6 @@ async def search_movies(
         use_ssl=True,
         verify_certs=False,
     )
-
     queries = [
         Q(
             "multi_match",
@@ -167,7 +165,6 @@ async def search_movies(
             ],
         ),  # Add year, genre and people once server-side schema has been updated
     ]
-
     search = Search(using=conn, index="movie")
     for query in queries:
         search = search.query(query)
@@ -175,7 +172,5 @@ async def search_movies(
     # TODO filter for genres, years, directors
 
     response = search.execute()
-
     movies = SearchResponse(ids=[str(hit.meta.id) for hit in response])
-
     return wrap(movies)
