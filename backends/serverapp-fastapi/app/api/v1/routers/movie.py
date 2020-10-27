@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from elasticsearch import Elasticsearch, RequestsHttpConnection
+from elasticsearch import Elasticsearch, RequestsHttpConnection, Urllib3HttpConnection
 from elasticsearch_dsl import Q, Search, connections
 
 from app.models.db.movies import Movies
@@ -10,6 +10,8 @@ from fastapi import APIRouter, Query, Request
 from humps import camelize
 from pydantic import BaseModel
 from tortoise.exceptions import OperationalError
+
+from app.core.config import settings
 
 router = APIRouter()
 override_prefix = None
@@ -139,18 +141,29 @@ async def delete_user_review(movie_id: str, request: Request):
 
 @router.get("/", tags=["movies"], response_model=Wrapper[List[SearchResponse]])
 async def search_movies(
+    request: Request,
     keywords: str = "",
     genres: Optional[List[str]] = Query(None),
     years: Optional[List[str]] = Query(None),
     directors: Optional[List[str]] = Query(None),
 ):
     conn = connections.create_connection(
-        alias="filmseer",
-        hosts=["127.0.0.1:2900"],
-        timeout=20,
-        connection_class=RequestsHttpConnection,
-        use_ssl=True,
-        verify_certs=False,
+        hosts=settings.ELASTICSEARCH_URI,
+        alias=settings.ELASTICSEARCH_ALIAS,
+        connection_class=
+            RequestsHttpConnection
+            if settings.ELASTICSEARCH_TRANSPORTCLASS == "RequestsHttpConnection"
+            else Urllib3HttpConnection,
+        timeout=settings.ELASTICSEARCH_TIMEOUT,
+        use_ssl=settings.ELASTICSEARCH_USESSL,
+        verify_certs=settings.ELASTICSEARCH_VERIFYCERTS,
+        ssl_show_warn=settings.ELASTICSEARCH_SHOWSSLWARNINGS,
+        opaque_id=
+            request.session.get("user_id")
+            or str(request.client.host) + ":" + str(request.client.port)
+            or None
+            if settings.ELASTICSEARCH_TRACEREQUESTS
+            else None
     )
     queries = [
         Q(

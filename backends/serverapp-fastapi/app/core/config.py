@@ -79,7 +79,19 @@ class Settings(BaseSettings):
     REDIS_URI: AnyUrl
     REDIS_POOL_MIN: int = 1
     REDIS_POOL_MAX: int = 20
+
+    # Elasticsearch Settings
     ELASTICSEARCH_URI: AnyUrl
+    ELASTICSEARCH_ALIAS: str = "filmseer"
+    ELASTICSEARCH_TRANSPORTCLASS: str = (
+        "RequestsHttpConnection",
+        "Urllib3HttpConnection",
+    )[1]
+    ELASTICSEARCH_TIMEOUT: int = 10
+    ELASTICSEARCH_USESSL: bool = True
+    ELASTICSEARCH_VERIFYCERTS: bool = True
+    ELASTICSEARCH_SHOWSSLWARNINGS: bool = True
+    ELASTICSEARCH_TRACEREQUESTS: bool = False
 
     # Email Settings
     EMAIL_ENABLED: bool = False
