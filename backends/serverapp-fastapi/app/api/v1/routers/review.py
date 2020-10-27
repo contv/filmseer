@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel
 from tortoise.exceptions import OperationalError
 from tortoise.transactions import in_transaction
@@ -40,6 +40,10 @@ class ReviewResponse(BaseModel):
     flagged_spoiler: bool
 
 
+class ListReviewResponse(BaseModel):
+    items: List[ReviewResponse]
+
+
 # TODO LATER: This API is in the next sprint (follow) and should be in follow route
 
 # GET /followed/reviews
@@ -47,7 +51,7 @@ class ReviewResponse(BaseModel):
 #
 
 
-@router.get("/reviews", tags=["review"])
+@router.get("/reviews", tags=["review"], response_model=Wrapper[ListReviewResponse])
 async def search_user_review(request: Request, keyword: Optional[str] = ""):
     user_id = request.session.get("user_id")
     if not user_id:
@@ -116,7 +120,7 @@ async def update_author_review(review_id: str, review: ReviewRequest, request: R
 
 @router.delete("/{review_id}", tags=["review"])
 async def delete_author_review(review_id: str, request: Request):
-    session_user_id = "058ffe8f-d27c-5e6a-21aa-c41401b996f9"
+    session_user_id = request.session.get("user_id")
     if not session_user_id:
         return ApiException(401, 2001, "You are not logged in")
 

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Request
+from typing import List
 from pydantic import BaseModel
 
 from app.models.db.users import Users
@@ -31,6 +32,10 @@ class ReviewResponse(BaseModel):
     flagged_spoiler: bool
 
 
+class ListReviewResponse(BaseModel):
+    items: List[ReviewResponse]
+
+
 @router.post("/", tags=["user"])
 async def create_user(register: Register, request: Request) -> Wrapper[dict]:
     user = await Users.filter(username=register.username, delete_date=None).first()
@@ -46,7 +51,9 @@ async def create_user(register: Register, request: Request) -> Wrapper[dict]:
 # REVIEW RELATED START
 
 
-@router.get("/{username}/reviews", tags=["user"])
+@router.get(
+    "/{username}/reviews", tags=["user"], response_model=Wrapper[ListReviewResponse]
+)
 async def get_reviews_user(username: str):
     user = (
         await Users.filter(username=username, delete_date=None)

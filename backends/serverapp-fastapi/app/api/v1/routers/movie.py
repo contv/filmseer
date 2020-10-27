@@ -12,10 +12,9 @@ from app.models.db.ratings import Ratings
 from app.models.db.helpful_votes import HelpfulVotes
 from app.models.db.funny_votes import FunnyVotes
 from app.models.db.spoiler_votes import SpoilerVotes
-
 from app.models.db.positions import Positions
-from app.models.db.reviews import Reviews
 from app.models.db.users import Users
+
 from app.utils.wrapper import ApiException, Wrapper, wrap
 
 
@@ -72,6 +71,12 @@ class ReviewResponse(BaseModel):
 class ReviewRequest(BaseModel):
     description: str
     contains_spoiler: bool
+
+
+class ListReviewResponse(BaseModel):
+    items: List[ReviewResponse]
+
+
 class RatingResponse(BaseModel):
     id: str
     rating: float
@@ -144,7 +149,9 @@ async def get_movie(movie_id: str):
 # REVIEW RELATED START
 
 
-@router.get("/{movie_id}/reviews", tags=["movies"])
+@router.get(
+    "/{movie_id}/reviews", tags=["movies"], response_model=Wrapper[ListReviewResponse]
+)
 async def get_movie_reviews(movie_id: str, request: Request):
     user_id = request.session.get("user_id")
     # No need to raise exception if user_id = None because guest user should see the review
