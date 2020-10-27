@@ -83,7 +83,7 @@ async def search_user_review(request: Request, keyword: Optional[str] = ""):
 
 @router.put("/{review_id}", tags=["review"])
 async def update_author_review(
-    review_id: str, review_request: ReviewRequest, request: Request
+    review_id: str, review: ReviewRequest, request: Request
 ):
     session_user_id = request.session.get("user_id")
     if not session_user_id:
@@ -107,8 +107,8 @@ async def update_author_review(
         # should we update create_date?
         await Reviews.filter(review_id=review_id).update(
             delete_date=None,
-            description=review_request.description,
-            contains_spoiler=review_request.contains_spoiler,
+            description=review.description,
+            contains_spoiler=review.contains_spoiler,
         )
     except OperationalError:
         return ApiException(500, 2501, "An exception occurred")
