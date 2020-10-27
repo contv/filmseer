@@ -16,7 +16,6 @@ export type ReviewProps = {
 };
 
 const Review = (props: ReviewProps & { className?: string }) => {
-  console.log(props.flags)
   return (
     <div className={`Review ${(props.className || "").trim()}`}>
       <a href={`/user/${props.username}`}><img
