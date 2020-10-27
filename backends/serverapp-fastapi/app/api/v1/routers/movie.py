@@ -1,16 +1,15 @@
-from fastapi import APIRouter, Request, Query
-from pydantic import BaseModel
-from typing import Optional, List
-from tortoise.exceptions import OperationalError
-from humps import camelize
+from typing import List, Optional
+
+from elasticsearch import Elasticsearch, RequestsHttpConnection
+from elasticsearch_dsl import Q, Search, connections
 
 from app.models.db.movies import Movies
 from app.models.db.positions import Positions
 from app.utils.wrapper import ApiException, Wrapper, wrap
-
-from elasticsearch import Elasticsearch, RequestsHttpConnection
-from elasticsearch_dsl import Search, connections, Q
-
+from fastapi import APIRouter, Query, Request
+from humps import camelize
+from pydantic import BaseModel
+from tortoise.exceptions import OperationalError
 
 router = APIRouter()
 override_prefix = None
