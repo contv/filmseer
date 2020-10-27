@@ -33,6 +33,7 @@ class MovieResponse(BaseModel):
     image_url: Optional[str]
     description: Optional[str]
     trailers: List[Trailer]
+    genres: List[str]
     num_reviews: int
     num_votes: int
     average_rating: float
@@ -52,7 +53,7 @@ async def get_average_rating(movie_id: str) -> Wrapper[dict]:
     try:
         movie = await Movies.filter(
             movie_id=movie_id, delete_date=None
-        ).first()
+        ).prefetch_related("genres").first()
     except OperationalError:
         return ApiException(
             401, 2501, "You cannot do that."
@@ -83,6 +84,7 @@ async def get_movie(movie_id: str):
     if movie is None:
         raise ApiException(404, 2100, "That movie doesn't exist")
 
+    genres = [genre.name for genre in await movie.genres]
     crew = [
         CrewMember(
             id=str(p.person_id),
@@ -111,6 +113,7 @@ async def get_movie(movie_id: str):
         num_reviews=movie.num_reviews,
         num_votes=movie.num_votes,
         average_rating=average_rating,
+        genres=genres,
         crew=crew,
     )
 
