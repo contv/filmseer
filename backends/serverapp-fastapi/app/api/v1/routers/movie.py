@@ -131,12 +131,14 @@ async def get_movie(movie_id: str):
     return wrap(movie_detail)
 
 
-## REVIEW RELATED START
+# REVIEW RELATED START
 
 
 @router.get("/{movie_id}/reviews", tags=["movies"])
 async def get_movie_reviews(movie_id: str, request: Request):
     user_id = request.session.get("user_id")
+    # No need to raise exception if user_id = None because guest user should see the review
+    # TO DO: Filter reviews from Ban List
     reviews = [
         ReviewResponse(
             review_id=str(r.review_id),
@@ -222,7 +224,7 @@ async def create_update_user_review(
 
 @router.delete("/{movie_id}/review", tags=["movies"])
 async def delete_user_review(movie_id: str, request: Request):
-    user_id = "058ffe8f-d27c-5e6a-21aa-c41401b996f9"
+    user_id = request.session.get("user_id")
     if not user_id:
         return ApiException(
             401, 2607, "You must be logged in to submit/update/delete a review"
@@ -250,4 +252,4 @@ async def delete_user_review(movie_id: str, request: Request):
     return wrap({})
 
 
-## REVIEW RELATED END
+# REVIEW RELATED END

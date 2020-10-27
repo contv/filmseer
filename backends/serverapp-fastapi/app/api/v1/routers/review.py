@@ -21,6 +21,25 @@ class NumVote(BaseModel):
     count: int
 
 
+class ReviewRequest(BaseModel):
+    description: str
+    contains_spoiler: bool
+
+
+class ReviewResponse(BaseModel):
+    review_id: str
+    create_date: str
+    description: str
+    contains_spoiler: bool
+    rating: float
+    num_helpful: int
+    num_funny: int
+    num_spoiler: int
+    flagged_helpful: bool
+    flagged_funny: bool
+    flagged_spoiler: bool
+
+
 # TODO LATER: This API is in the next sprint (follow) and should be in follow route
 
 # GET /followed/reviews
@@ -28,18 +47,107 @@ class NumVote(BaseModel):
 #
 
 
-@router.get("/", tags=["review"])
-async def search_user_review(request: Request, keyword: Optional[str] = None):
-    return wrap({})
+@router.get("/reviews", tags=["review"])
+async def search_user_review(request: Request, keyword: Optional[str] = ""):
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return ApiException(
+            401, 2001, "You are not logged in"
+        )
+
+    reviews = [
+        ReviewResponse(
+            review_id=str(r.review_id),
+            create_date=str(r.create_date),
+            description=r.description,
+            contains_spoiler=r.contains_spoiler,
+            rating=r.rating.rating,
+            num_helpful=r.num_helpful,
+            num_funny=r.num_funny,
+            num_spoiler=r.num_spoiler,
+            flagged_helpful=await r.helpful_votes.filter(
+                user_id=user_id, delete_date=None
+            ).count(),
+            flagged_funny=await r.funny_votes.filter(
+                user_id=user_id, delete_date=None
+            ).count(),
+            flagged_spoiler=await r.spoiler_votes.filter(
+                user_id=user_id, delete_date=None
+            ).count(),
+        )
+        for r in await Reviews.filter(
+            user_id=user_id, delete_date=None, description__icontains=keyword
+        ).prefetch_related("rating", "helpful_votes", "funny_votes", "spoiler_votes")
+    ]
+
+    return wrap({"items": reviews})
 
 
 @router.put("/{review_id}", tags=["review"])
-async def update_author_review(review_id: str, request: Request):
+async def update_author_review(
+    review_id: str, review_request: ReviewRequest, request: Request
+):
+    session_user_id = request.session.get("user_id")
+    if not session_user_id:
+        return ApiException(
+            401, 2001, "You are not logged in"
+        )
+
+    review = await Reviews.filter(review_id=review_id, delete_date=None)
+    if not review:
+        return ApiException(404, 2610, "Invalid review id.")
+
+    review_user_id = (await review.values("user_id"))[0]["user_id"]
+    if session_user_id != review_user_id:
+        return ApiException(
+            401, 2609, "You must be the author to update/delete the review."
+        )
+
+    try:
+        await Reviews.filter(review_id=review_id).update(
+            delete_date=None,
+            description=review_request.description,
+            contains_spoiler=review_request.contains_spoiler,
+        )
+    except OperationalError:
+        return ApiException(500, 2501, "An exception occurred")
+
     return wrap({})
 
 
 @router.delete("/{review_id}", tags=["review"])
 async def delete_author_review(review_id: str, request: Request):
+    session_user_id = request.session.get("user_id")
+    if not session_user_id:
+        return ApiException(
+            401, 2001, "You are not logged in"
+        )
+
+    review = await Reviews.filter(review_id=review_id, delete_date=None)
+    if not review:
+        return ApiException(404, 2610, "Invalid review id.")
+
+    review_user_id = (await review.values("user_id"))[0]["user_id"]
+    if session_user_id != review_user_id:
+        return ApiException(
+            401, 2609, "You must be the author to update/delete the review."
+        )
+
+    try:
+        await Reviews.filter(review_id=review_id).update(
+            delete_date=datetime.now(),
+        )
+
+        await HelpfulVotes.filter(review_id=review_id).update(
+            delete_date=datetime.now()
+        )
+        await FunnyVotes.filter(review_id=review_id).update(delete_date=datetime.now())
+        await SpoilerVotes.filter(review_id=review_id).update(
+            delete_date=datetime.now()
+        )
+    except OperationalError:
+        return ApiException(500, 2501, "An exception occurred")
+
     return wrap({})
 
 
