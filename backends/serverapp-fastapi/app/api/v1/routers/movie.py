@@ -173,5 +173,7 @@ async def search_movies(
     # TODO filter for genres, years, directors
 
     response = search.execute()
-    movies = [SearchResponse(id=str(hit.meta.id), score=hit.meta.score) for hit in response]
+    movies = [
+        SearchResponse(id=str(hit.meta.id), score=hit.meta.score) for hit in response
+    ]
     return wrap(movies)
