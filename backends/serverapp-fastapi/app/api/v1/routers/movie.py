@@ -3,13 +3,25 @@ from typing import List, Optional
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from elasticsearch_dsl import Q, Search, connections
 
+from fastapi import APIRouter, Request
+from pydantic import BaseModel
+from typing import Optional, List
+from tortoise.exceptions import OperationalError, IntegrityError
+from tortoise.transactions import in_transaction
+from humps import camelize
+from datetime import datetime
+
 from app.models.db.movies import Movies
+from app.models.db.ratings import Ratings
 from app.models.db.positions import Positions
+from app.models.db.reviews import Reviews
+from app.models.db.users import Users
 from app.utils.wrapper import ApiException, Wrapper, wrap
 from fastapi import APIRouter, Query, Request
 from humps import camelize
 from pydantic import BaseModel
 from tortoise.exceptions import OperationalError
+
 
 router = APIRouter()
 override_prefix = None
@@ -36,6 +48,7 @@ class MovieResponse(BaseModel):
     image_url: Optional[str]
     description: Optional[str]
     trailers: List[Trailer]
+    genres: List[str]
     num_reviews: int
     num_votes: int
     average_rating: float
@@ -45,11 +58,14 @@ class MovieResponse(BaseModel):
         alias_generator = camelize
         allow_population_by_field_name = True
 
-
 class SearchResponse(BaseModel):
     id: str
     score: float
 
+class RatingResponse(BaseModel):
+    id: str
+    rating: float
+      
 
 def calc_average_rating(cumulative_rating, num_votes) -> float:
     return round(cumulative_rating / num_votes if num_votes > 0 else 0.0, 1)
@@ -58,7 +74,9 @@ def calc_average_rating(cumulative_rating, num_votes) -> float:
 @router.get("/{movie_id}/ratings")
 async def get_average_rating(movie_id: str) -> Wrapper[dict]:
     try:
-        movie = await Movies.filter(movie_id=movie_id, delete_date=None).first()
+        movie = await Movies.filter(
+            movie_id=movie_id, delete_date=None
+        ).prefetch_related("genres").first()
     except OperationalError:
         return ApiException(401, 2501, "You cannot do that.")
 
@@ -81,6 +99,7 @@ async def get_movie(movie_id: str):
     if movie is None:
         raise ApiException(404, 2100, "That movie doesn't exist")
 
+    genres = [genre.name for genre in await movie.genres]
     crew = [
         CrewMember(
             id=str(p.person_id),
@@ -105,13 +124,11 @@ async def get_movie(movie_id: str):
         num_reviews=movie.num_reviews,
         num_votes=movie.num_votes,
         average_rating=average_rating,
+        genres=genres,
         crew=crew,
     )
 
     return wrap(movie_detail)
-
-
-## REVIEW RELATED START
 
 
 @router.get("/{movie_id}/reviews", tags=["movies"])
@@ -176,3 +193,72 @@ async def search_movies(
         SearchResponse(id=str(hit.meta.id), score=hit.meta.score) for hit in response
     ]
     return wrap(movies)
+
+@router.post(
+    "/{movie_id}/rating", tags=["movies"], response_model=Wrapper[RatingResponse]
+)
+async def rate_movie(request: Request, movie_id: str, rating: float):
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return ApiException(500, 2001, "You are not logged in!")
+    if not 0 <= rating <= 5.0 or rating % 0.5 != 0.0:
+        return ApiException(500, 2101, "Invalid rating")
+
+    try:
+        async with in_transaction():
+            existing_rating = await Ratings.get_or_none(
+                user_id=user_id, movie_id=movie_id
+            )
+            if existing_rating:
+                existing_rating.delete_date = None
+                existing_rating.rating = rating
+                await existing_rating.save(update_fields=["rating", "delete_date"])
+            else:
+                await Ratings.create(user_id=user_id, movie_id=movie_id, rating=rating)
+
+            current_rating = await Ratings.get(user_id=user_id, movie_id=movie_id)
+            existing_review = await Reviews.get_or_none(
+                user_id=user_id, movie_id=movie_id
+            )
+            if existing_review:
+                existing_review.rating = current_rating
+                await existing_review.save(update_fields=["rating_id"])
+    except OperationalError:
+        return ApiException(500, 2102, "Could not rate movie")
+    except IntegrityError:
+        return ApiException(500, 2104, "Could not update fields")
+
+    return wrap({"id": str(current_rating.rating_id), "rating": current_rating.rating})
+
+
+@router.delete(
+    "/{movie_id}/rating", tags=["movies"], response_model=Wrapper[RatingResponse]
+)
+async def delete_rating(request: Request, movie_id: str) -> Wrapper[dict]:
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return ApiException(500, 2001, "You are not logged in!")
+    rating_id = ""
+    rating = None
+    try:
+        async with in_transaction():
+            existing_rating = await Ratings.get_or_none(
+                user_id=user_id, movie_id=movie_id
+            )
+            if existing_rating:
+                rating_id = existing_rating.rating_id
+                rating = existing_rating.rating
+                existing_rating.delete_date = datetime.now()
+                await existing_rating.save(update_fields=["delete_date"])
+                related_review = await Reviews.get_or_none(
+                    user_id=user_id, movie_id=movie_id
+                )
+                if related_review:
+                    related_review.rating = None
+                    await related_review.save(update_fields=["rating_id"])
+    except OperationalError:
+        return ApiException(500, 2103, "Could not find or delete rating")
+    except IntegrityError:
+        return ApiException(500, 2104, "Could not update fields")
+
+    return wrap({"id": str(rating_id), "rating": rating})
