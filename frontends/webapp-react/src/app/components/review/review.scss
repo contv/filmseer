@@ -1,5 +1,5 @@
 .Review {
-    border-bottom: 1px solid #4F4F4F;
+    border-bottom: 1px solid var(--gray-2);
     padding-bottom: 8px;
 }
 
@@ -17,5 +17,5 @@
 }
 
 .ReviewDate {
-    color: #4F4F4F;
+    color: var(--gray-2);
 }
