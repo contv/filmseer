@@ -1,0 +1,21 @@
+.Review {
+    border-bottom: 1px solid var(--gray-2);
+    padding-bottom: 8px;
+}
+
+.ReviewerProfilePicture{
+    float: left;
+    padding-right:10px;
+}
+
+.ReviewMeta{
+    font-weight: 1.2;
+}
+
+.ReviewContent{
+    font-size: 16px;
+}
+
+.ReviewDate {
+    color: var(--gray-2);
+}

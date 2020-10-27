@@ -2,6 +2,8 @@ import { view } from "@risingstack/react-easy-state";
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import MovieSection from "src/app/components/movie-section";
+import Review from "src/app/components/review"
+import {ReviewProps} from "src/app/components/review/review"
 import Trailer from "src/app/components/trailer";
 import { api } from "src/utils";
 import "./movie.scss";
@@ -31,48 +33,73 @@ type Movie = {
   genres: Array<string>;
 };
 
-type Review = {
-  text: string;
-  date: Date;
-  reviewerImage: string;
-  reviewerName: string;
-  rating: Number;
-};
-
 const dummyReviews = [
   {
+    id: "someid",
     text: "Great Movie!",
     rating: 4.8,
     date: new Date(),
-    reviewerName: "alice",
+    username: "alice",
+    containsSpoiler: false,
     reviewerImage: "https://material-ui.com/static/images/avatar/3.jpg",
+    flags:{
+      reviewId: "someid",
+      flaggedFunny: true,
+      flaggedHelpful: true,
+      flaggedSpoiler: false,
+      numFunny: 3,
+      numHelpful: 12,
+      numSpoiler: 5,
+    }
   },
   {
+    id: "someid",
     text: "Pretty terrible movie in my opinion",
     rating: 1.2,
     date: new Date(),
-    reviewerName: "bob",
+    username: "bob",
+    containsSpoiler: false,
     reviewerImage: "https://material-ui.com/static/images/avatar/2.jpg",
+    flags:{
+      reviewId: "someid",
+      flaggedFunny: false,
+      flaggedHelpful: true,
+      flaggedSpoiler: false,
+      numFunny: 0,
+      numHelpful: 4,
+      numSpoiler: 5,
+    }
   },
   {
+    id: "someid",
     text: "it was okay...",
     date: new Date(),
     rating: 3.2,
-    reviewerName: "john",
+    username: "john",
+    containsSpoiler: false,
     reviewerImage: "https://material-ui.com/static/images/avatar/1.jpg",
+    flags:{
+      reviewId: "someid",
+      flaggedFunny: true,
+      flaggedHelpful: true,
+      flaggedSpoiler: false,
+      numFunny: 5,
+      numHelpful: 7,
+      numSpoiler: 9,
+    }
   },
 ];
 
 const MovieDetailPage = (props: { className?: string }) => {
   const { movieId } = useParams<{ movieId: string }>();
   const [movieDetails, setMovie] = useState<Movie>();
-  const [reviews, setReviews] = useState<Array<Review>>();
+  const [reviews, setReviews] = useState<Array<ReviewProps>>();
 
   useEffect(() => {
     api({ path: `/movie/${movieId}`, method: "GET" }).then((res) =>
       setMovie(res.data as Movie)
     );
-    setReviews(dummyReviews as Array<Review>)
+    setReviews(dummyReviews as Array<ReviewProps>)
   }, [movieId]);
 
   if (movieDetails) {
@@ -129,20 +156,9 @@ const MovieDetailPage = (props: { className?: string }) => {
         <MovieSection heading="Reviews">
           <div className="Reviews">
             {reviews &&
-              reviews.map((review) => (
-                <div className="Review">
-                  <img src={review.reviewerImage} width={60}/>
-                  <div>
-                    <i>
-                      posted at {review.date.toDateString()} - {review.rating}{" "}
-                      stars{" "}
-                    </i>
-                    <p>
-                      {review.reviewerName} : {review.text}
-                    </p>
-                  </div>
-                </div>
-              ))}
+              reviews.map((review) => 
+                <ReviewProps id={review.id}></ReviewProps>
+              )}
           </div>
         </MovieSection>
       </div>
