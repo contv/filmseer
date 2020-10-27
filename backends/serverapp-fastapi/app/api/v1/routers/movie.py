@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Query
 from pydantic import BaseModel
 from typing import Optional, List
 from tortoise.exceptions import OperationalError
@@ -7,6 +7,10 @@ from humps import camelize
 from app.models.db.movies import Movies
 from app.models.db.positions import Positions
 from app.utils.wrapper import ApiException, Wrapper, wrap
+
+from elasticsearch import Elasticsearch, RequestsHttpConnection
+from elasticsearch_dsl import Search, connections, Q
+
 
 router = APIRouter()
 override_prefix = None
@@ -43,6 +47,10 @@ class MovieResponse(BaseModel):
         allow_population_by_field_name = True
 
 
+class SearchResponse(BaseModel):
+    ids: List[str]
+
+
 def calc_average_rating(cumulative_rating, num_votes) -> float:
     return round(cumulative_rating / num_votes if num_votes > 0 else 0.0, 1)
 
@@ -50,35 +58,25 @@ def calc_average_rating(cumulative_rating, num_votes) -> float:
 @router.get("/{movie_id}/ratings")
 async def get_average_rating(movie_id: str) -> Wrapper[dict]:
     try:
-        movie = await Movies.filter(
-            movie_id=movie_id, delete_date=None
-        ).first()
+        movie = await Movies.filter(movie_id=movie_id, delete_date=None).first()
     except OperationalError:
-        return ApiException(
-            401, 2501, "You cannot do that."
-        )
+        return ApiException(401, 2501, "You cannot do that.")
 
     if movie is None:
         return ApiException(404, 2100, "That movie doesn't exist")
 
     # TODO remove ratings from blocked users
-    return wrap({"average": calc_average_rating(
-        movie.cumulative_rating, movie.num_votes
-    )})
+    return wrap(
+        {"average": calc_average_rating(movie.cumulative_rating, movie.num_votes)}
+    )
 
 
-@router.get(
-    "/{movie_id}", tags=["movies"], response_model=Wrapper[MovieResponse]
-)
+@router.get("/{movie_id}", tags=["movies"], response_model=Wrapper[MovieResponse])
 async def get_movie(movie_id: str):
     try:
-        movie = await Movies.filter(
-            movie_id=movie_id, delete_date=None
-        ).first()
+        movie = await Movies.filter(movie_id=movie_id, delete_date=None).first()
     except OperationalError:
-        return ApiException(
-            401, 2501, "You cannot do that."
-        )
+        return ApiException(401, 2501, "You cannot do that.")
 
     if movie is None:
         raise ApiException(404, 2100, "That movie doesn't exist")
@@ -90,15 +88,11 @@ async def get_movie(movie_id: str):
             position=p.position,
             image=p.person.image,
         )
-        for p in await Positions.filter(
-            movie_id=movie_id
-        ).prefetch_related("person")
+        for p in await Positions.filter(movie_id=movie_id).prefetch_related("person")
     ]
 
     # TODO remove ratings from blocked users
-    average_rating = calc_average_rating(
-        movie.cumulative_rating, movie.num_votes
-    )
+    average_rating = calc_average_rating(movie.cumulative_rating, movie.num_votes)
 
     movie_detail = MovieResponse(
         id=str(movie.movie_id),
@@ -141,3 +135,47 @@ async def delete_user_review(movie_id: str, request: Request):
 
 
 ## REVIEW RELATED END
+
+
+@router.get("/", tags=["movies"], response_model=Wrapper[SearchResponse])
+async def search_movies(
+    request: Request,
+    keywords: str,
+    genres: Optional[List[str]] = Query(None),
+    years: Optional[List[str]] = Query(None),
+    directors: Optional[List[str]] = Query(None),
+):
+    conn = connections.create_connection(
+        alias="filmseer",
+        hosts=["127.0.0.1:2900"],
+        timeout=20,
+        connection_class=RequestsHttpConnection,
+        use_ssl=True,
+        verify_certs=False,
+    )
+
+    queries = [
+        Q(
+            "multi_match",
+            query=keywords,
+            fields=[
+                "title^10",
+                "description",
+                "genres.name",
+                "people.name^10",
+                "positions.char_name",
+            ],
+        ),  # Add year, genre and people once server-side schema has been updated
+    ]
+
+    search = Search(using=conn, index="movie")
+    for query in queries:
+        search = search.query(query)
+
+    # TODO filter for genres, years, directors
+
+    response = search.execute()
+
+    movies = SearchResponse(ids=[str(hit.meta.id) for hit in response])
+
+    return wrap(movies)
