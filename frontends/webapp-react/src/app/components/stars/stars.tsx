@@ -1,7 +1,7 @@
 import Rating from "@material-ui/lab/Rating";
 import { view } from "@risingstack/react-easy-state";
 import React, { useEffect, useState } from "react";
-import { api } from "../../../utils";
+import { apiEffect } from "src/utils";
 import "./stars.scss";
 
 type StarsProps = {
@@ -13,8 +13,10 @@ type StarsProps = {
 
 const Stars = (props: StarsProps & { className?: string }) => {
   const [rating, setRating] = useState(props.rating || 0);
-  const [didMount, setDidMount] = useState(false);
+  const [prevRating, setPrevRating] = useState(props.rating || 0);
   const [hover, setHover] = useState(0);
+  const [didMount, setDidMount] = useState(false);
+  const [awaiting, setAwaiting] = useState(false);
 
   function handleClick() {
     setRating(hover);
@@ -24,11 +26,35 @@ const Stars = (props: StarsProps & { className?: string }) => {
 
   useEffect(() => {
     if (props.votable && didMount) {
-      api({
-        path: `/movie/${props.movieId}/rating/`,
-        method: "POST",
-        params: { rating: rating },
-      });
+      let didCancel = false;
+      const updateRatingAPI = apiEffect(
+        {
+          path: `/movie/${props.movieId}/rating/`,
+          method: "POST",
+          params: { rating: rating },
+        },
+        (response) => {
+          setRating(response.data.rating);
+          setPrevRating(response.data.rating);
+          setAwaiting(false);
+        },
+        () => {
+          setRating(prevRating);
+          setAwaiting(false);
+        },
+        () => {
+          return !didCancel;
+        }
+      );
+
+      if (!awaiting) {
+        setAwaiting(true);
+        updateRatingAPI();
+      }
+
+      return () => {
+        didCancel = true;
+      };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rating]);
