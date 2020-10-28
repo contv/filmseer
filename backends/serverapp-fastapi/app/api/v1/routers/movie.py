@@ -289,7 +289,7 @@ async def delete_user_review(movie_id: str, request: Request):
     return wrap({})
 
 
-## REVIEW RELATED END
+# REVIEW RELATED END
 
 
 @router.get("/", tags=["movies"], response_model=Wrapper[List[SearchResponse]])
