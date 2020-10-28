@@ -221,7 +221,7 @@ async def create_update_user_review(
     if movie is None:
         return ApiException(404, 2100, "That movie doesn't exist")
 
-    user_id = "059088df-5fa8-1197-4765-a32401b9908d"
+    user_id = request.session.get("user_id")
     if not user_id:
         return ApiException(
             401, 2607, "You must be logged in to submit/update/delete a review"
