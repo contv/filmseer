@@ -201,7 +201,7 @@ async def search_movies(
             ],
         ),  # Add year, genre and people once server-side schema has been updated
     ]
-    search = Search(using=conn, index="movie").extra(size=20)
+    search = Search(using=conn, index="movie").extra(size=100)
     for query in queries:
         search = search.query(query)
 
