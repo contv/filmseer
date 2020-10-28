@@ -166,10 +166,10 @@ const MovieDetailPage = (props: { className?: string }) => {
 
   useEffect(() => {
     api({ path: `/movie/${movieId}`, method: "GET" }).then((res) => {
-      if (res.code != 0) setHasError(true)
+      if (res.code !== 0) setHasError(true);
       else {
         setMovie(res.data as Movie);
-        setHasError(false)
+        setHasError(false);
       }
     });
     setReviews(dummyReviews as Array<ReviewProps>);
@@ -181,7 +181,7 @@ const MovieDetailPage = (props: { className?: string }) => {
       <div className={`MovieDetailPage ${(props.className || "").trim()}`}>
         <MovieSection>
           <div className="MoviePoster">
-            <img src={movieDetails.imageUrl} />
+            <img src={movieDetails.imageUrl} alt="" />
           </div>
           <div className="MovieAbout">
             <h3 className="MovieTitle">
@@ -200,34 +200,34 @@ const MovieDetailPage = (props: { className?: string }) => {
             <p className="MovieDescription">{movieDetails.description}</p>
           </div>
           <div className="MovieInteract">
-            <p>
+            <div>
               <VisibilityIcon />
               <Typography variant="body2" display="inline">
                 Watched
               </Typography>
-            </p>
-            <p>
+            </div>
+            <div>
               <BookmarkIcon></BookmarkIcon>
               <Typography variant="body2" display="inline">
                 Add to wishlist
               </Typography>
-            </p>
-            <p>
+            </div>
+            <div>
               <FlagIcon />
               <Typography variant="body2" display="inline">
                 Flag inaccurate
               </Typography>
-            </p>
-            <p>
+            </div>
+            <div>
               <Typography variant="body2">Your rating</Typography>
               <Rating />
-            </p>
-            <p>
+            </div>
+            <div>
               <ChatBubble />
               <Typography variant="body2" display="inline">
                 Post a review
               </Typography>
-            </p>
+            </div>
           </div>
         </MovieSection>
         <MovieSection heading="Trailers">
@@ -248,6 +248,7 @@ const MovieDetailPage = (props: { className?: string }) => {
                       castMember.image ||
                       "https://m.media-amazon.com/images/G/01/imdb/images/nopicture/medium/name-2135195744._CB466677935_.png"
                     }
+                    alt=""
                   ></img>
                   {castMember.name} - <i>{castMember.position}</i>
                 </div>
@@ -295,11 +296,10 @@ const MovieDetailPage = (props: { className?: string }) => {
         </MovieSection>
       </div>
     );
-  } 
-  if (hasError){
-  return(<div>There have been errors</div>);
   }
-  else return null;
+  if (hasError) {
+    return <div>There have been errors</div>;
+  } else return null;
 };
 
 export default view(MovieDetailPage);
