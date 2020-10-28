@@ -204,6 +204,14 @@ async def create_update_user_review(
         )
 
     try:
+        if (
+            await Reviews.filter(user_id=user_id, movie_id=movie_id, delete_date=None)
+        ) and (request.method == "POST"):
+            return ApiException(401, 2608, "You already posted a review for this movie.")
+    except OperationalError:
+        return ApiException(500, 2501, "An exception occurred")
+
+    try:
         async with in_transaction():
             rating = await (
                 Ratings.get_or_create(

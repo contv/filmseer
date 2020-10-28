@@ -20,6 +20,7 @@ class Register(BaseModel):
 class ReviewResponse(BaseModel):
     review_id: str
     movie_id: str
+    movie_name: str
     create_date: str
     description: str
     contains_spoiler: bool
@@ -69,6 +70,7 @@ async def get_reviews_user(username: str):
         ReviewResponse(
             review_id=str(r.review_id),
             movie_id=str(r.movie_id),
+            movie_name=str(r.movie.title),
             create_date=str(r.create_date),
             description=r.description,
             contains_spoiler=r.contains_spoiler,
@@ -88,7 +90,9 @@ async def get_reviews_user(username: str):
         )
         for r in await Reviews.filter(
             user_id=user_id, delete_date=None
-        ).prefetch_related("rating", "helpful_votes", "funny_votes", "spoiler_votes")
+        ).prefetch_related(
+            "rating", "helpful_votes", "funny_votes", "spoiler_votes", "movie"
+        )
     ]
 
     return wrap({"items": reviews})
