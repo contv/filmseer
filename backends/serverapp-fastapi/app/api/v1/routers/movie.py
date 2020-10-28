@@ -182,7 +182,9 @@ async def get_movie_reviews(movie_id: str, request: Request):
         )
         for r in await Reviews.filter(
             movie_id=movie_id, delete_date=None
-        ).prefetch_related("rating", "helpful_votes", "funny_votes", "spoiler_votes", "user")
+        ).prefetch_related(
+            "rating", "helpful_votes", "funny_votes", "spoiler_votes", "user"
+        )
     ]
 
     return wrap({"items": reviews})
