@@ -1,8 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from elasticsearch import (Elasticsearch, RequestsHttpConnection,
-                           Urllib3HttpConnection)
+from elasticsearch import Elasticsearch, RequestsHttpConnection, Urllib3HttpConnection
 from elasticsearch_dsl import Q, Search, connections
 
 from app.core.config import settings
@@ -42,7 +41,7 @@ class MovieResponse(BaseModel):
     release_year: str
     image_url: Optional[str]
     description: Optional[str]
-    trailers: List[Trailer]
+    trailers: Optional[List[Trailer]]
     genres: List[str]
     num_reviews: int
     num_votes: int
@@ -53,13 +52,27 @@ class MovieResponse(BaseModel):
         alias_generator = camelize
         allow_population_by_field_name = True
 
+
 class SearchResponse(BaseModel):
-    id: str
+    movie_id: str
+    title: str
+    year: str
+    genres: Optional[List[str]]
+    image_url: Optional[str]
+    cumulative_rating: float
+    num_votes: int
+    num_reviews: int
     score: float
+
+    class Config:
+        alias_generator = camelize
+        allow_population_by_field_name = True
+
 
 class RatingResponse(BaseModel):
     id: str
     rating: float
+
 
 def calc_average_rating(cumulative_rating, num_votes) -> float:
     return round(cumulative_rating / num_votes if num_votes > 0 else 0.0, 1)
@@ -68,9 +81,11 @@ def calc_average_rating(cumulative_rating, num_votes) -> float:
 @router.get("/{movie_id}/ratings")
 async def get_average_rating(movie_id: str) -> Wrapper[dict]:
     try:
-        movie = await Movies.filter(
-            movie_id=movie_id, delete_date=None
-        ).prefetch_related("genres").first()
+        movie = (
+            await Movies.filter(movie_id=movie_id, delete_date=None)
+            .prefetch_related("genres")
+            .first()
+        )
     except OperationalError:
         return ApiException(401, 2501, "You cannot do that.")
 
@@ -159,20 +174,18 @@ async def search_movies(
     conn = connections.create_connection(
         hosts=settings.ELASTICSEARCH_URI,
         alias=settings.ELASTICSEARCH_ALIAS,
-        connection_class=
-            RequestsHttpConnection
-            if settings.ELASTICSEARCH_TRANSPORTCLASS == "RequestsHttpConnection"
-            else Urllib3HttpConnection,
+        connection_class=RequestsHttpConnection
+        if settings.ELASTICSEARCH_TRANSPORTCLASS == "RequestsHttpConnection"
+        else Urllib3HttpConnection,
         timeout=settings.ELASTICSEARCH_TIMEOUT,
         use_ssl=settings.ELASTICSEARCH_USESSL,
         verify_certs=settings.ELASTICSEARCH_VERIFYCERTS,
         ssl_show_warn=settings.ELASTICSEARCH_SHOWSSLWARNINGS,
-        opaque_id=
-            request.session.get("user_id")
-            or str(request.client.host) + ":" + str(request.client.port)
-            or None
-            if settings.ELASTICSEARCH_TRACEREQUESTS
-            else None
+        opaque_id=request.session.get("user_id")
+        or str(request.client.host) + ":" + str(request.client.port)
+        or None
+        if settings.ELASTICSEARCH_TRACEREQUESTS
+        else None,
     )
     queries = [
         Q(
@@ -180,24 +193,52 @@ async def search_movies(
             query=keywords,
             fields=[
                 "title^10",
+                "year^8",
                 "description",
                 "genres.name",
-                "people.name^10",
+                "people.name",
                 "positions.char_name",
             ],
         ),  # Add year, genre and people once server-side schema has been updated
     ]
-    search = Search(using=conn, index="movie")
+    search = Search(using=conn, index="movie").extra(size=20)
     for query in queries:
         search = search.query(query)
 
     # TODO filter for genres, years, directors
 
     response = search.execute()
-    movies = [
-        SearchResponse(id=str(hit.meta.id), score=hit.meta.score) for hit in response
-    ]
-    return wrap(movies)
+    preprocessed = [(hit.meta.id, hit.meta.score) for hit in response]
+    postprocessed = await batched_movie_fetcher(
+        request.session.get("user_id"), preprocessed
+    )
+    return wrap(postprocessed)
+
+
+async def batched_movie_fetcher(user_id: Optional[str], preprocessed: List[tuple]):
+    # TODO FIL-15 Grab blocked users and postprocess ratings
+    blocked_users = []
+
+    movies = []
+    for movie_id, score in preprocessed:
+        async with in_transaction():
+            movie = await Movies.get_or_none(movie_id=movie_id)
+            if movie:
+                await movie.fetch_related("genres")
+                movieResponse = SearchResponse(
+                    movie_id=str(movie.movie_id),
+                    title=movie.title,
+                    year=movie.release_date.year,
+                    genres=[genre.name for genre in movie.genres],
+                    image_url=movie.image,
+                    cumulative_rating=movie.cumulative_rating,
+                    num_votes=movie.num_votes,
+                    num_reviews=movie.num_reviews,
+                    score=score,
+                )
+                movies.append(movieResponse)
+    return movies
+
 
 @router.post(
     "/{movie_id}/rating", tags=["movies"], response_model=Wrapper[RatingResponse]
