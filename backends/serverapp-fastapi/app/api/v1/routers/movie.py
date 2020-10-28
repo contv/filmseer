@@ -64,7 +64,7 @@ class SearchResponse(BaseModel):
 class ReviewResponse(BaseModel):
     review_id: str
     user_id: str
-    user_name: str
+    username: str
     create_date: str
     description: str
     contains_spoiler: bool
@@ -168,7 +168,7 @@ async def get_movie_reviews(movie_id: str, request: Request):
         ReviewResponse(
             review_id=str(r.review_id),
             user_id=str(r.user_id),
-            user_name=r.user.username,
+            username=r.user.username,
             create_date=str(r.create_date),
             description=r.description,
             contains_spoiler=r.contains_spoiler,
