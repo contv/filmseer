@@ -54,9 +54,9 @@ class MovieResponse(BaseModel):
 
 
 class SearchResponse(BaseModel):
-    movie_id: str
+    id: str
     title: str
-    year: str
+    release_year: str
     genres: Optional[List[str]]
     image_url: Optional[str]
     cumulative_rating: float
@@ -226,9 +226,9 @@ async def batched_movie_fetcher(user_id: Optional[str], preprocessed: List[tuple
             if movie:
                 await movie.fetch_related("genres")
                 movieResponse = SearchResponse(
-                    movie_id=str(movie.movie_id),
+                    id=str(movie.movie_id),
                     title=movie.title,
-                    year=movie.release_date.year,
+                    release_year=movie.release_date.year,
                     genres=[genre.name for genre in movie.genres],
                     image_url=movie.image,
                     cumulative_rating=movie.cumulative_rating,
