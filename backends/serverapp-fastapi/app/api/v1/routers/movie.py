@@ -1,8 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from elasticsearch import (Elasticsearch, RequestsHttpConnection,
-                           Urllib3HttpConnection)
+from elasticsearch import Elasticsearch, RequestsHttpConnection, Urllib3HttpConnection
 from elasticsearch_dsl import Q, Search, connections
 
 from app.core.config import settings
@@ -57,9 +56,11 @@ class MovieResponse(BaseModel):
         alias_generator = camelize
         allow_population_by_field_name = True
 
+
 class SearchResponse(BaseModel):
     id: str
     score: float
+
 
 class ReviewResponse(BaseModel):
     review_id: str
@@ -68,7 +69,7 @@ class ReviewResponse(BaseModel):
     create_date: str
     description: str
     contains_spoiler: bool
-    rating: float
+    rating: Optional[float]
     num_helpful: int
     num_funny: int
     num_spoiler: int
@@ -90,6 +91,7 @@ class RatingResponse(BaseModel):
     id: str
     rating: float
 
+
 def calc_average_rating(cumulative_rating, num_votes) -> float:
     return round(cumulative_rating / num_votes if num_votes > 0 else 0.0, 1)
 
@@ -97,9 +99,11 @@ def calc_average_rating(cumulative_rating, num_votes) -> float:
 @router.get("/{movie_id}/ratings")
 async def get_average_rating(movie_id: str) -> Wrapper[dict]:
     try:
-        movie = await Movies.filter(
-            movie_id=movie_id, delete_date=None
-        ).prefetch_related("genres").first()
+        movie = (
+            await Movies.filter(movie_id=movie_id, delete_date=None)
+            .prefetch_related("genres")
+            .first()
+        )
     except OperationalError:
         return ApiException(401, 2501, "You cannot do that.")
 
@@ -160,7 +164,13 @@ async def get_movie(movie_id: str):
 @router.get(
     "/{movie_id}/reviews", tags=["movies"], response_model=Wrapper[ListReviewResponse]
 )
-async def get_movie_reviews(movie_id: str, request: Request):
+async def get_movie_reviews(
+    movie_id: str, request: Request, page: int = 0, per_page: int = 0
+):
+    if per_page >= 42:
+        return ApiException(400, 2700, "Please limit the numer of items per page")
+    if (per_page < 0) or (page < 0):
+        return ApiException(400, 2701, "Invalid page/per_page parameter")
     user_id = request.session.get("user_id")
     # No need to raise exception if user_id = None because guest user should see the review
     # TO DO: Filter reviews from Ban List
@@ -186,9 +196,11 @@ async def get_movie_reviews(movie_id: str, request: Request):
                 user_id=user_id, delete_date=None
             ).count(),
         )
-        for r in await Reviews.filter(
-            movie_id=movie_id, delete_date=None
-        ).prefetch_related(
+        for r in await Reviews.filter(movie_id=movie_id, delete_date=None)
+        .order_by("-create_date")
+        .offset((page - 1) * per_page)
+        .limit(per_page)
+        .prefetch_related(
             "rating", "helpful_votes", "funny_votes", "spoiler_votes", "user"
         )
     ]
@@ -209,7 +221,7 @@ async def create_update_user_review(
     if movie is None:
         return ApiException(404, 2100, "That movie doesn't exist")
 
-    user_id = request.session.get("user_id")
+    user_id = "059088df-5fa8-1197-4765-a32401b9908d"
     if not user_id:
         return ApiException(
             401, 2607, "You must be logged in to submit/update/delete a review"
@@ -219,7 +231,9 @@ async def create_update_user_review(
         if (
             await Reviews.filter(user_id=user_id, movie_id=movie_id, delete_date=None)
         ) and (request.method == "POST"):
-            return ApiException(401, 2608, "You already posted a review for this movie.")
+            return ApiException(
+                401, 2608, "You already posted a review for this movie."
+            )
     except OperationalError:
         return ApiException(500, 2501, "An exception occurred")
 
@@ -232,13 +246,8 @@ async def create_update_user_review(
                 )
             )
 
-            await Ratings.filter(
-                user_id=user_id,
-                movie_id=movie_id,
-            ).update(delete_date=None, rating=review.rating)
-
             if await Reviews.filter(user_id=user_id, movie_id=movie_id):
-                await Reviews.filter(user_id=user_id, movie_id=movie_id,).update(
+                await Reviews.filter(user_id=user_id, movie_id=movie_id).update(
                     rating_id=rating[0].rating_id,
                     delete_date=None,
                     description=review.description,
@@ -303,20 +312,18 @@ async def search_movies(
     conn = connections.create_connection(
         hosts=settings.ELASTICSEARCH_URI,
         alias=settings.ELASTICSEARCH_ALIAS,
-        connection_class=
-            RequestsHttpConnection
-            if settings.ELASTICSEARCH_TRANSPORTCLASS == "RequestsHttpConnection"
-            else Urllib3HttpConnection,
+        connection_class=RequestsHttpConnection
+        if settings.ELASTICSEARCH_TRANSPORTCLASS == "RequestsHttpConnection"
+        else Urllib3HttpConnection,
         timeout=settings.ELASTICSEARCH_TIMEOUT,
         use_ssl=settings.ELASTICSEARCH_USESSL,
         verify_certs=settings.ELASTICSEARCH_VERIFYCERTS,
         ssl_show_warn=settings.ELASTICSEARCH_SHOWSSLWARNINGS,
-        opaque_id=
-            request.session.get("user_id")
-            or str(request.client.host) + ":" + str(request.client.port)
-            or None
-            if settings.ELASTICSEARCH_TRACEREQUESTS
-            else None
+        opaque_id=request.session.get("user_id")
+        or str(request.client.host) + ":" + str(request.client.port)
+        or None
+        if settings.ELASTICSEARCH_TRACEREQUESTS
+        else None,
     )
     queries = [
         Q(
@@ -342,6 +349,7 @@ async def search_movies(
         SearchResponse(id=str(hit.meta.id), score=hit.meta.score) for hit in response
     ]
     return wrap(movies)
+
 
 @router.post(
     "/{movie_id}/rating", tags=["movies"], response_model=Wrapper[RatingResponse]

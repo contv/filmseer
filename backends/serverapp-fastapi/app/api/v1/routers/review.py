@@ -31,7 +31,7 @@ class ReviewResponse(BaseModel):
     create_date: str
     description: str
     contains_spoiler: bool
-    rating: float
+    rating: Optional[float]
     num_helpful: int
     num_funny: int
     num_spoiler: int
@@ -52,7 +52,13 @@ class ListReviewResponse(BaseModel):
 
 
 @router.get("/reviews", tags=["review"], response_model=Wrapper[ListReviewResponse])
-async def search_user_review(request: Request, keyword: Optional[str] = ""):
+async def search_user_review(
+    request: Request, keyword: Optional[str] = "", page: int = 0, per_page: int = 0
+):
+    if per_page >= 42:
+        return ApiException(400, 2700, "Please limit the numer of items per page")
+    if (per_page < 0) or (page < 0):
+        return ApiException(400, 2701, "Invalid page/per_page parameter")
     user_id = request.session.get("user_id")
     if not user_id:
         return ApiException(401, 2001, "You are not logged in")
@@ -79,7 +85,11 @@ async def search_user_review(request: Request, keyword: Optional[str] = ""):
         )
         for r in await Reviews.filter(
             user_id=user_id, delete_date=None, description__icontains=keyword
-        ).prefetch_related("rating", "helpful_votes", "funny_votes", "spoiler_votes")
+        )
+        .order_by("-create_date")
+        .offset((page - 1) * per_page)
+        .limit(per_page)
+        .prefetch_related("rating", "helpful_votes", "funny_votes", "spoiler_votes")
     ]
 
     return wrap({"items": reviews})

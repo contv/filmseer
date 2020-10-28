@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
 
 from app.models.db.users import Users
@@ -24,7 +24,7 @@ class ReviewResponse(BaseModel):
     create_date: str
     description: str
     contains_spoiler: bool
-    rating: float
+    rating: Optional[float]
     num_helpful: int
     num_funny: int
     num_spoiler: int
@@ -55,7 +55,12 @@ async def create_user(register: Register, request: Request) -> Wrapper[dict]:
 @router.get(
     "/{username}/reviews", tags=["user"], response_model=Wrapper[ListReviewResponse]
 )
-async def get_reviews_user(username: str):
+async def get_reviews_user(username: str, page: int = 0, per_page: int = 0):
+    if per_page >= 42:
+        return ApiException(400, 2700, "Please limit the numer of items per page")
+    if (per_page < 0) or (page < 0):
+        return ApiException(400, 2701, "Invalid page/per_page parameter")
+
     user = (
         await Users.filter(username=username, delete_date=None)
         .first()
@@ -88,9 +93,11 @@ async def get_reviews_user(username: str):
                 user_id=user_id, delete_date=None
             ).count(),
         )
-        for r in await Reviews.filter(
-            user_id=user_id, delete_date=None
-        ).prefetch_related(
+        for r in await Reviews.filter(user_id=user_id, delete_date=None)
+        .order_by("-create_date")
+        .offset((page - 1) * per_page)
+        .limit(per_page)
+        .prefetch_related(
             "rating", "helpful_votes", "funny_votes", "spoiler_votes", "movie"
         )
     ]
