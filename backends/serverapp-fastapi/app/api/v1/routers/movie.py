@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Request
-from pydantic import BaseModel
-from typing import Optional, List
-from tortoise.exceptions import OperationalError, IntegrityError
-from tortoise.transactions import in_transaction
-from humps import camelize
 from datetime import datetime
+from typing import List, Optional
 
+from elasticsearch import (Elasticsearch, RequestsHttpConnection,
+                           Urllib3HttpConnection)
+from elasticsearch_dsl import Q, Search, connections
+
+from app.core.config import settings
 from app.models.db.movies import Movies
 from app.models.db.reviews import Reviews
 from app.models.db.ratings import Ratings
@@ -16,7 +16,11 @@ from app.models.db.positions import Positions
 from app.models.db.users import Users
 
 from app.utils.wrapper import ApiException, Wrapper, wrap
-
+from fastapi import APIRouter, Query, Request
+from humps import camelize
+from pydantic import BaseModel
+from tortoise.exceptions import IntegrityError, OperationalError
+from tortoise.transactions import in_transaction
 
 router = APIRouter()
 override_prefix = None
@@ -53,6 +57,9 @@ class MovieResponse(BaseModel):
         alias_generator = camelize
         allow_population_by_field_name = True
 
+class SearchResponse(BaseModel):
+    id: str
+    score: float
 
 class ReviewResponse(BaseModel):
     review_id: str
@@ -82,7 +89,6 @@ class ListReviewResponse(BaseModel):
 class RatingResponse(BaseModel):
     id: str
     rating: float
-
 
 def calc_average_rating(cumulative_rating, num_votes) -> float:
     return round(cumulative_rating / num_votes if num_votes > 0 else 0.0, 1)
@@ -283,8 +289,59 @@ async def delete_user_review(movie_id: str, request: Request):
     return wrap({})
 
 
-# REVIEW RELATED END
+## REVIEW RELATED END
 
+
+@router.get("/", tags=["movies"], response_model=Wrapper[List[SearchResponse]])
+async def search_movies(
+    request: Request,
+    keywords: str = "",
+    genres: Optional[List[str]] = Query(None),
+    years: Optional[List[str]] = Query(None),
+    directors: Optional[List[str]] = Query(None),
+):
+    conn = connections.create_connection(
+        hosts=settings.ELASTICSEARCH_URI,
+        alias=settings.ELASTICSEARCH_ALIAS,
+        connection_class=
+            RequestsHttpConnection
+            if settings.ELASTICSEARCH_TRANSPORTCLASS == "RequestsHttpConnection"
+            else Urllib3HttpConnection,
+        timeout=settings.ELASTICSEARCH_TIMEOUT,
+        use_ssl=settings.ELASTICSEARCH_USESSL,
+        verify_certs=settings.ELASTICSEARCH_VERIFYCERTS,
+        ssl_show_warn=settings.ELASTICSEARCH_SHOWSSLWARNINGS,
+        opaque_id=
+            request.session.get("user_id")
+            or str(request.client.host) + ":" + str(request.client.port)
+            or None
+            if settings.ELASTICSEARCH_TRACEREQUESTS
+            else None
+    )
+    queries = [
+        Q(
+            "multi_match",
+            query=keywords,
+            fields=[
+                "title^10",
+                "description",
+                "genres.name",
+                "people.name^10",
+                "positions.char_name",
+            ],
+        ),  # Add year, genre and people once server-side schema has been updated
+    ]
+    search = Search(using=conn, index="movie")
+    for query in queries:
+        search = search.query(query)
+
+    # TODO filter for genres, years, directors
+
+    response = search.execute()
+    movies = [
+        SearchResponse(id=str(hit.meta.id), score=hit.meta.score) for hit in response
+    ]
+    return wrap(movies)
 
 @router.post(
     "/{movie_id}/rating", tags=["movies"], response_model=Wrapper[RatingResponse]
