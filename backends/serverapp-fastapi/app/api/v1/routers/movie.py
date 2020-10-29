@@ -279,7 +279,7 @@ async def search_movies(
         )
     ]
 
-    search = Search(using=conn, index=settings.ELASTICSEARCH_MOVIEINDEX).extra(size=100)
+    search = Search(using=conn, index=settings.ELASTICSEARCH_MOVIEINDEX).extra(size=settings.ELASTICSEARCH_RESPONSESIZE)
 
     # Load query context and filter context
     for q in queries:

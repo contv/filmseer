@@ -84,6 +84,7 @@ class Settings(BaseSettings):
     ELASTICSEARCH_URI: AnyUrl
     ELASTICSEARCH_MOVIEINDEX: str = ""
     ELASTICSEARCH_ALIAS: str = ""
+    ELASTICSEARCH_RESPONSESIZE: int = 10
     ELASTICSEARCH_TRANSPORTCLASS: str = (
         "RequestsHttpConnection",
         "Urllib3HttpConnection",
