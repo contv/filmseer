@@ -208,20 +208,18 @@ async def search_movies(
         Q(
             "bool",
             should=[
-                *[
-                    Q(
-                        {
-                            "range": {
-                                "release_date": {
-                                    "gte": year + "||/y",
-                                    "lte": year + "||/y",
-                                    "format": "yyyy",
-                                }
+                Q(
+                    {
+                        "range": {
+                            "release_date": {
+                                "gte": year + "||/y",
+                                "lte": year + "||/y",
+                                "format": "yyyy",
                             }
                         }
-                    )
-                    for year in years_in_keywords
-                ]
+                    }
+                )
+                for year in years_in_keywords
             ],
             minimum_should_match=1,
         ),
@@ -230,18 +228,18 @@ async def search_movies(
     # Construct intermediate filter context
     at_least_one_genre = Q(
         "bool",
-        should=[*[Q({"match_phrase": {"genres.name": genre}}) for genre in genres]],
+        should=[Q({"match_phrase": {"genres.name": genre}}) for genre in genres],
         minimum_should_match=1,
     )
 
+    # TODO Bug: Cannot restrict to positions.position = 'director' AND positions.people = 'name' for same sub-object
+    # because pgsync does not support nested data type
+    # Accordingly, this may return false positives where the person appears in the movie in a non-director role
     at_least_one_director = Q(
         "bool",
         should=[
-            *[
-                Q({"match_phrase": {"positions.people": director}})
-                & Q({"match_phrase": {"positions.position": "director"}})
-                for director in directors
-            ]
+            Q({"match_phrase": {"positions.people": director}})
+            for director in directors
         ],
         minimum_should_match=1,
     )
@@ -290,6 +288,9 @@ async def search_movies(
         search = search.filter(f)
 
     response = search.execute()
+    for hit in response:
+        print(hit.to_dict())
+
     preprocessed = [(hit.meta.id, hit.meta.score) for hit in response]
     postprocessed = await batched_movie_fetcher(
         request.session.get("user_id"), preprocessed
