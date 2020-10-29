@@ -1,6 +1,6 @@
+import re
 from datetime import datetime
 from typing import List, Optional
-import re
 
 from elasticsearch import Elasticsearch, RequestsHttpConnection, Urllib3HttpConnection
 from elasticsearch_dsl import Q, Search, connections
@@ -188,7 +188,7 @@ async def search_movies(
         if settings.ELASTICSEARCH_TRACEREQUESTS
         else None,
     )
-    
+
     # Build query context for scoring results
     years_in_keywords = re.findall("(\d{4})", keywords)
     queries = [
@@ -279,7 +279,9 @@ async def search_movies(
         )
     ]
 
-    search = Search(using=conn, index=settings.ELASTICSEARCH_MOVIEINDEX).extra(size=settings.ELASTICSEARCH_RESPONSESIZE)
+    search = Search(using=conn, index=settings.ELASTICSEARCH_MOVIEINDEX).extra(
+        size=settings.ELASTICSEARCH_RESPONSESIZE
+    )
 
     # Load query context and filter context
     for q in queries:
