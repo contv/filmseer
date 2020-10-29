@@ -247,7 +247,6 @@ async def search_movies(
     at_least_one_year = Q(
         "bool",
         should=[
-            *[
                 Q(
                     {
                         "range": {
@@ -260,7 +259,6 @@ async def search_movies(
                     }
                 )
                 for year in years
-            ]
         ],
         minimum_should_match=1,
     )
