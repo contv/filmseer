@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import List, Optional
+import re
 
 from elasticsearch import Elasticsearch, RequestsHttpConnection, Urllib3HttpConnection
 from elasticsearch_dsl import Q, Search, connections
@@ -167,9 +168,9 @@ async def delete_user_review(movie_id: str, request: Request):
 async def search_movies(
     request: Request,
     keywords: str = "",
-    genres: Optional[List[str]] = Query(None),
-    years: Optional[List[str]] = Query(None),
-    directors: Optional[List[str]] = Query(None),
+    genres: Optional[List[str]] = Query([]),
+    years: Optional[List[str]] = Query([]),
+    directors: Optional[List[str]] = Query([]),
 ):
     conn = connections.create_connection(
         hosts=settings.ELASTICSEARCH_URI,
@@ -187,25 +188,104 @@ async def search_movies(
         if settings.ELASTICSEARCH_TRACEREQUESTS
         else None,
     )
+    
+    # Build query context for scoring results
+    years_in_keywords = re.findall("(\d{4})", keywords)
     queries = [
+        # Match keywords against main fields
         Q(
             "multi_match",
             query=keywords,
             fields=[
                 "title^10",
-                "year^8",
                 "description",
                 "genres.name",
-                "people.name",
+                "positions.people",
                 "positions.char_name",
             ],
-        ),  # Add year, genre and people once server-side schema has been updated
+        ),
+        # Also match any years in keyword against release_date (at least one year must match if multiple provided)
+        Q(
+            "bool",
+            should=[
+                *[
+                    Q(
+                        {
+                            "range": {
+                                "release_date": {
+                                    "gte": year + "||/y",
+                                    "lte": year + "||/y",
+                                    "format": "yyyy",
+                                }
+                            }
+                        }
+                    )
+                    for year in years_in_keywords
+                ]
+            ],
+            minimum_should_match=1,
+        ),
     ]
-    search = Search(using=conn, index="movie").extra(size=100)
-    for query in queries:
-        search = search.query(query)
 
-    # TODO filter for genres, years, directors
+    # Construct intermediate filter context
+    at_least_one_genre = Q(
+        "bool",
+        should=[*[Q({"match_phrase": {"genres.name": genre}}) for genre in genres]],
+        minimum_should_match=1,
+    )
+
+    at_least_one_director = Q(
+        "bool",
+        should=[
+            *[
+                Q({"match_phrase": {"positions.people": director}})
+                & Q({"match_phrase": {"positions.position": "director"}})
+                for director in directors
+            ]
+        ],
+        minimum_should_match=1,
+    )
+
+    at_least_one_year = Q(
+        "bool",
+        should=[
+            *[
+                Q(
+                    {
+                        "range": {
+                            "release_date": {
+                                "gte": year + "||/y",
+                                "lte": year + "||/y",
+                                "format": "yyyy",
+                            }
+                        }
+                    }
+                )
+                for year in years
+            ]
+        ],
+        minimum_should_match=1,
+    )
+
+    # Combine filters
+    filters = [
+        Q(
+            "bool",
+            must=[
+                at_least_one_genre,  # and
+                at_least_one_director,  # and
+                at_least_one_year,
+            ],
+        )
+    ]
+
+    search = Search(using=conn, index=settings.ELASTICSEARCH_MOVIEINDEX).extra(size=100)
+
+    # Load query context and filter context
+    for q in queries:
+        search = search.query(q)
+    for f in filters:
+        search = search.filter(f)
 
     response = search.execute()
     preprocessed = [(hit.meta.id, hit.meta.score) for hit in response]

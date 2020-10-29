@@ -82,6 +82,7 @@ class Settings(BaseSettings):
 
     # Elasticsearch Settings
     ELASTICSEARCH_URI: AnyUrl
+    ELASTICSEARCH_MOVIEINDEX: str = ""
     ELASTICSEARCH_ALIAS: str = ""
     ELASTICSEARCH_TRANSPORTCLASS: str = (
         "RequestsHttpConnection",
