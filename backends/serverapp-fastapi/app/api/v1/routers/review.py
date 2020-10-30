@@ -9,6 +9,7 @@ from app.models.db.helpful_votes import HelpfulVotes
 from app.models.db.funny_votes import FunnyVotes
 from app.models.db.spoiler_votes import SpoilerVotes
 from app.models.db.reviews import Reviews
+from app.models.db.movies import Movies
 
 from app.utils.wrapper import ApiException, Wrapper, wrap
 
@@ -101,12 +102,15 @@ async def update_author_review(review_id: str, review: ReviewRequest, request: R
     if not session_user_id:
         return ApiException(401, 2001, "You are not logged in")
 
-    review_user_id = str(
-        (await Reviews.filter(review_id=review_id, delete_date=None).values("user_id"))[
-            0
-        ]["user_id"]
+    review = str(
+        (
+            await Reviews.filter(review_id=review_id, delete_date=None).values(
+                "user_id", "movie_id"
+            )
+        )
     )
 
+    review_user_id = review[0]["user_id"]
     if not review_user_id:
         return ApiException(404, 2610, "Invalid review id.")
 
@@ -115,6 +119,8 @@ async def update_author_review(review_id: str, review: ReviewRequest, request: R
             401, 2609, "You must be the author to update/delete the review."
         )
 
+    review_movie_id = review[0]["movie_id"]
+
     try:
         # should we update create_date?
         await Reviews.filter(review_id=review_id).update(
@@ -122,6 +128,11 @@ async def update_author_review(review_id: str, review: ReviewRequest, request: R
             description=review.description,
             contains_spoiler=review.contains_spoiler,
         )
+        num_reviews = await Reviews.filter(
+            movie_id=review_movie_id, delete_date=None
+        ).count()
+        await Movies.filter(movie_id=review_movie_id).update(num_reviews=num_reviews)
+
     except OperationalError:
         return ApiException(500, 2501, "An exception occurred")
 
@@ -134,12 +145,15 @@ async def delete_author_review(review_id: str, request: Request):
     if not session_user_id:
         return ApiException(401, 2001, "You are not logged in")
 
-    review_user_id = str(
-        (await Reviews.filter(review_id=review_id, delete_date=None).values("user_id"))[
-            0
-        ]["user_id"]
+    review = str(
+        (
+            await Reviews.filter(review_id=review_id, delete_date=None).values(
+                "user_id", "movie_id"
+            )
+        )
     )
 
+    review_user_id = review[0]["user_id"]
     if not review_user_id:
         return ApiException(404, 2610, "Invalid review id.")
 
@@ -147,7 +161,7 @@ async def delete_author_review(review_id: str, request: Request):
         return ApiException(
             401, 2609, "You must be the author to update/delete the review."
         )
-
+    review_movie_id = review[0]["movie_id"]
     try:
         await Reviews.filter(review_id=review_id).update(
             delete_date=datetime.now(),
@@ -160,6 +174,10 @@ async def delete_author_review(review_id: str, request: Request):
         await SpoilerVotes.filter(review_id=review_id).update(
             delete_date=datetime.now()
         )
+        num_reviews = await Reviews.filter(
+            movie_id=review_movie_id, delete_date=None
+        ).count()
+        await Movies.filter(movie_id=review_movie_id).update(num_reviews=num_reviews)
     except OperationalError:
         return ApiException(500, 2501, "An exception occurred")
 

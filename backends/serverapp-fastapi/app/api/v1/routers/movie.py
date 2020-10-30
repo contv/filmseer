@@ -296,6 +296,12 @@ async def delete_user_review(movie_id: str, request: Request):
             await SpoilerVotes.filter(review_id=review[0].review_id).update(
                 delete_date=datetime.now()
             )
+
+            num_reviews = await Reviews.filter(
+                movie_id=movie_id, delete_date=None
+            ).count()
+            await Movies.filter(movie_id=movie_id).update(num_reviews=num_reviews)
+
     except OperationalError:
         return ApiException(500, 2501, "An exception occurred")
 
