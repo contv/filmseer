@@ -188,6 +188,8 @@ async def search_movies(
         if settings.ELASTICSEARCH_TRACEREQUESTS
         else None,
     )
+    # Get banned user's ids
+    banned_user_ids = []
 
     # Build query context for scoring results
     years_in_keywords = re.findall("(\d{4})", keywords)
@@ -205,24 +207,24 @@ async def search_movies(
             ],
         ),
         # Also match any years in keyword against release_date (at least one year must match if multiple provided)
-        Q(
-            "bool",
-            should=[
-                Q(
-                    {
-                        "range": {
-                            "release_date": {
-                                "gte": year + "||/y",
-                                "lte": year + "||/y",
-                                "format": "yyyy",
-                            }
-                        }
-                    }
-                )
-                for year in years_in_keywords
-            ],
-            minimum_should_match=1,
-        ),
+        # Q(
+        #     "bool",
+        #     should=[
+        #         Q(
+        #             {
+        #                 "range": {
+        #                     "release_date": {
+        #                         "gte": year + "||/y",
+        #                         "lte": year + "||/y",
+        #                         "format": "yyyy",
+        #                     }
+        #                 }
+        #             }
+        #         )
+        #         for year in years_in_keywords
+        #     ],
+        #     minimum_should_match=1,
+        # ),
     ]
 
     # Construct intermediate filter context
@@ -274,20 +276,36 @@ async def search_movies(
             ],
         )
     ]
+    
+    # director_match = {"director_match": {"id": "director_match", "params": { 'pos': "director", "person_id": "1ebde7ba-9ef8-411f-bdc1-2d1c083e778b"}}}
 
     search = Search(using=conn, index=settings.ELASTICSEARCH_MOVIEINDEX).extra(
         size=settings.ELASTICSEARCH_RESPONSESIZE
     )
+    
+    
 
     # Load query context and filter context
     for q in queries:
         search = search.query(q)
-    for f in filters:
-        search = search.filter(f)
+    # for f in filters:
+    #     search = search.filter(f)
+    # Apply script fields
+    # search = search.script_fields(director_match={"script": {"id":"director_match", "params":{"pos": "director", "person_id":"1ebde7ba-9ef8-411f-bdc1-2d1c083e778b"}}})
+    # search = search.script_fields(average_rating_banned={"script": {"id":"calculate_rating_field", "params":{"listban":"1ebde7ba-9ef8-411f-bdc1-2d1c083e778b"}}})
+    
+    # search = search.source(['title', 'genres', 'release_date', 'images'])
+    
+    print(f"------------------SEARCH STRING ---------------\n{search.to_dict()}")
 
     response = search.execute()
+    print(f"------------------RESPONSE ---------------\n{response.to_dict()}")    
+    
+    print(f"------------------HITS-------------------")
     for hit in response:
         print(hit.to_dict())
+    
+    
 
     preprocessed = [(hit.meta.id, hit.meta.score) for hit in response]
     postprocessed = await batched_movie_fetcher(
