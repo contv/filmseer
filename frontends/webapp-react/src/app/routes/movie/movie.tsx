@@ -39,9 +39,9 @@ type Movie = {
   averageRating: Number;
   numReviews: Number;
   description: string;
-  trailers: Array<Trailer>;
+  trailers?: Array<Trailer>;
   crew?: Array<CastMember>;
-  genres: Array<string>;
+  genres?: Array<string>;
 };
 
 const dummyRecommendedMovies = [
@@ -187,8 +187,8 @@ const MovieDetailPage = (props: { className?: string }) => {
             <h3 className="MovieTitle">
               {movieDetails.title} ({movieDetails.releaseYear})
             </h3>
-            {movieDetails.genres.map((genre) => (
-              <GenreTile id={genre} text={genre}></GenreTile>
+            {movieDetails.genres && movieDetails.genres.map((genre) => (
+              <GenreTile id={genre} text={genre === '\\N'? "Genre not listed" : genre}></GenreTile>
             ))}
             <div className="movieScore">
               {movieDetails.numReviews > 0 && (
@@ -232,7 +232,7 @@ const MovieDetailPage = (props: { className?: string }) => {
         </MovieSection>
         <MovieSection heading="Trailers">
           <div className="Trailers">
-            {movieDetails.trailers.map((trailer) => (
+            {movieDetails.trailers && movieDetails.trailers.map((trailer) => (
               <Trailer site={trailer.site} videoId={trailer.key}></Trailer>
             ))}
           </div>

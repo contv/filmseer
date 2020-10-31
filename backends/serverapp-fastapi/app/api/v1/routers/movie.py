@@ -45,7 +45,7 @@ class MovieResponse(BaseModel):
     release_year: str
     image_url: Optional[str]
     description: Optional[str]
-    trailers: List[Trailer]
+    trailers: Optional[List[Trailer]]
     genres: List[str]
     num_reviews: int
     num_votes: int
