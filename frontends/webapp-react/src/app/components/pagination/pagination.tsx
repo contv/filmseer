@@ -48,10 +48,10 @@ type PaginationRef = {
   refresh: () => void;
 };
 
-const Pagination = (
-  props: PaginationProps & { className?: string },
-  ref: React.RefObject<PaginationRef>
-) => {
+const Pagination: React.ForwardRefRenderFunction<
+  PaginationRef,
+  PaginationProps & { className?: string }
+> = (props, ref) => {
   const [current, setCurrent] = React.useState(props.current || 1);
   const [data, setData] = React.useState<object[]>([]);
   const prevPageNum = usePrevious(current);
