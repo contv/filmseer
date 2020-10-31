@@ -44,7 +44,14 @@ type PaginationProps = {
   onCurrentChange?: (newCurrent: number, oldCurrent: number) => void; // to change parent state
 };
 
-const Pagination = (props: PaginationProps & { className?: string }) => {
+type PaginationRef = {
+  refresh: () => void;
+};
+
+const Pagination = (
+  props: PaginationProps & { className?: string },
+  ref: React.RefObject<PaginationRef>
+) => {
   const [current, setCurrent] = React.useState(props.current || 1);
   const [data, setData] = React.useState<object[]>([]);
   const prevPageNum = usePrevious(current);
@@ -81,15 +88,30 @@ const Pagination = (props: PaginationProps & { className?: string }) => {
     }
   };
 
-  React.useEffect(() => {
+  const refreshData = () => {
     if (props.dataType === "slice" && props.dataCallback) {
       Promise.resolve(props.dataCallback()).then((data) => {
         setData(data);
-        props.renderCallback(data.slice(0, props.perPage || 1));
+        props.renderCallback(
+          data.slice(
+            props.displayType === "loadmore" ? 0 : current,
+            current * (props.perPage || 1)
+          )
+        );
       });
     } else if (props.dataType === "callback" && props.dataCallback) {
       Promise.resolve(props.dataCallback(current)).then(handleCallbackData);
     }
+  };
+
+  React.useImperativeHandle(ref, () => ({
+    refresh: () => {
+      refreshData();
+    },
+  }));
+
+  React.useEffect(() => {
+    refreshData();
   }, []);
 
   useUpdateEffect(() => {
@@ -238,4 +260,4 @@ const Pagination = (props: PaginationProps & { className?: string }) => {
   }
 };
 
-export default view(Pagination);
+export default view(React.forwardRef(Pagination));
