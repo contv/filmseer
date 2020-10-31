@@ -22,6 +22,7 @@ const Review = (props: ReviewProps & { className?: string }) => {
         className="ReviewerProfilePicture"
         src={props.profileImage}
         width={60}
+        alt=""
       />
       </a>
       <div className="ReviewContent">
