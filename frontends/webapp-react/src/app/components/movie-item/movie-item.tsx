@@ -9,7 +9,7 @@ import GenreTile from "../genre-tile";
 import Stars from "../stars";
 import "./movie-item.scss";
 
-type MovieItemProps = {
+export type MovieItemProps = {
   movieId: string;
   title: string;
   year: number;
