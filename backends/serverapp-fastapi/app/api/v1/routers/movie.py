@@ -1,12 +1,9 @@
 import re
 from datetime import datetime
 from typing import Dict, List, Optional
-
 from elasticsearch import (Elasticsearch, RequestsHttpConnection,
                            Urllib3HttpConnection)
 from elasticsearch_dsl import Q, Search, connections
-
-import aioredis
 from app.core.config import settings
 from app.models.db.movies import Movies
 from app.models.db.positions import Positions
