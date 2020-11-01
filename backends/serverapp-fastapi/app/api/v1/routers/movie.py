@@ -14,17 +14,12 @@ from app.models.db.ratings import Ratings
 from app.models.db.reviews import Reviews
 from app.models.db.users import Users
 from app.utils.dict_storage.redis import RedisDictStorageDriver
-from app.utils.unique_id import id, to_uuid
 from app.utils.wrapper import ApiException, Wrapper, wrap
 from fastapi import APIRouter, Query, Request
 from humps import camelize
 from pydantic import BaseModel
 from tortoise.exceptions import IntegrityError, OperationalError
 from tortoise.transactions import in_transaction
-
-
-def _new_uuid():
-    return to_uuid(id())
 
 
 router = APIRouter()
