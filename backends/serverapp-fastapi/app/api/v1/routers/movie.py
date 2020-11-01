@@ -1,5 +1,3 @@
-import asyncio
-import json
 import re
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -210,7 +208,6 @@ async def search_movies(
     # Attempt to retrieve stored movie payload from Redis
     payload, _ = await driver.get(search_id)
     if payload:
-        print("PAYLOAD FOUND")
         await driver.terminate_driver()
         return wrap(
             await process_movie_payload(
@@ -218,7 +215,6 @@ async def search_movies(
             )
         )
 
-    print("PAYLOAD NOT FOUND")
     # Otherwise perform new Elasticsearch query
     conn = connections.create_connection(
         hosts=settings.ELASTICSEARCH_URI,
@@ -298,8 +294,6 @@ async def search_movies(
         ["movie_id", "image", "title", "genres", "release_date", "positions"]
     )
     response = search.execute()
-
-    print(f"FOUND {len(response.hits)} hits")
 
     # Convert response into dict for Redis storage
     preprocessed = {
