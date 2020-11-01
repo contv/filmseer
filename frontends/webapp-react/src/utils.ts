@@ -1,3 +1,5 @@
+import React from "react";
+
 type RequestMethodType =
   | "GET"
   | "POST"
@@ -99,8 +101,7 @@ const api = (
   }
 
   return fetch(
-    ((process.env || {}).REACT_APP_API_BASEURL ||
-      "http://localhost:8000/api/v1") +
+    ((process.env || {}).REACT_APP_API_BASEURL || "/api/v1") +
       path +
       (!params
         ? ""
@@ -198,4 +199,50 @@ const apiEffect = (
   };
 };
 
-export { api, apiEffect, ApiError };
+const usePrevious: <T>(value: T) => T | null = (value) => {
+  const ref = React.useRef<typeof value | null>(null);
+  React.useEffect(() => {
+    ref.current = value;
+  });
+  return ref.current;
+};
+
+const useIsMounted = () => {
+  const isMounted = React.useRef(false);
+
+  React.useEffect(function setIsMounted() {
+    isMounted.current = true;
+
+    return function cleanupSetIsMounted() {
+      isMounted.current = false;
+    };
+  }, []);
+
+  return isMounted;
+};
+
+const useUpdateEffect = function useUpdateEffect(
+  effect: React.EffectCallback,
+  dependencies?: React.DependencyList
+) {
+  const isMounted = useIsMounted();
+  const isInitialMount = React.useRef(true);
+
+  React.useEffect(() => {
+    let effectCleanupFunc = function noop() {};
+
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+    } else {
+      effectCleanupFunc = effect() || effectCleanupFunc;
+    }
+    return () => {
+      effectCleanupFunc();
+      if (!isMounted.current) {
+        isInitialMount.current = true;
+      }
+    };
+  }, dependencies); // eslint-disable-line react-hooks/exhaustive-deps
+};
+
+export { api, apiEffect, ApiError, usePrevious, useUpdateEffect };
