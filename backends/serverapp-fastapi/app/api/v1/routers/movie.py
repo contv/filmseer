@@ -182,8 +182,8 @@ async def search_movies(
     directors: Optional[List[str]] = Query([]),
     per_page: Optional[int] = None,
     page: Optional[int] = 1,
-    sort: Optional[str] = ('relevance', 'rating', 'name', 'year')[0],
-    desc: Optional[bool] = True
+    sort: Optional[str] = ("relevance", "rating", "name", "year")[0],
+    desc: Optional[bool] = True,
 ):
     # Initialise driver
     driver = RedisDictStorageDriver(
@@ -210,11 +210,15 @@ async def search_movies(
     # Attempt to retrieve stored movie payload from Redis
     payload, _ = await driver.get(search_id)
     if payload:
-        print('PAYLOAD FOUND')
+        print("PAYLOAD FOUND")
         await driver.terminate_driver()
-        return wrap(await process_movie_payload(payload, years, directors, genres, per_page, page, sort, desc))
+        return wrap(
+            await process_movie_payload(
+                payload, years, directors, genres, per_page, page, sort, desc
+            )
+        )
 
-    print('PAYLOAD NOT FOUND')
+    print("PAYLOAD NOT FOUND")
     # Otherwise perform new Elasticsearch query
     conn = connections.create_connection(
         hosts=settings.ELASTICSEARCH_URI,
@@ -283,71 +287,96 @@ async def search_movies(
 
     # TODO Retrieve banlist and pass into script field
     # eg "listban":"1ebde7ba-9ef8-411f-bdc1-2d1c083e778b,1ebde7ba-9ef8-411f-bdc1-2d1c083e778b"
-    search = search.script_fields(average_rating={"script": {"id":"calculate_rating_field", "params":{"listban":""}}})
+    search = search.script_fields(
+        average_rating={
+            "script": {"id": "calculate_rating_field", "params": {"listban": ""}}
+        }
+    )
 
     # Execute search
-    search = search.source(['movie_id', 'image', 'title', 'genres', 'release_date', 'positions'])
+    search = search.source(
+        ["movie_id", "image", "title", "genres", "release_date", "positions"]
+    )
     response = search.execute()
-    
-    print(f'FOUND {len(response.hits)} hits')
-    
+
+    print(f"FOUND {len(response.hits)} hits")
+
     # Convert response into dict for Redis storage
-    preprocessed = {hit.meta.id: { "score": hit.meta.score, "movie": hit.to_dict()} for hit in response}
-    
+    preprocessed = {
+        hit.meta.id: {"score": hit.meta.score, "movie": hit.to_dict()}
+        for hit in response
+    }
+
     # Save response in Redis
     await driver.update(search_id, preprocessed)
     await driver.terminate_driver()
-    
-    return wrap(await process_movie_payload(preprocessed, years, directors, genres, per_page, page, sort, desc))
+
+    return wrap(
+        await process_movie_payload(
+            preprocessed, years, directors, genres, per_page, page, sort, desc
+        )
+    )
 
 
 async def process_movie_payload(
-        preprocessed: Dict, 
-        year_filter: Optional[List[str]], 
-        director_filter: Optional[List[str]], 
-        genre_filter: Optional[List[str]], 
-        per_page: Optional[int], 
-        page: Optional[int],
-        sort: Optional[str],
-        desc: Optional[bool]
-    ) -> List[SearchResponse]:
+    preprocessed: Dict,
+    year_filter: Optional[List[str]],
+    director_filter: Optional[List[str]],
+    genre_filter: Optional[List[str]],
+    per_page: Optional[int],
+    page: Optional[int],
+    sort: Optional[str],
+    desc: Optional[bool],
+) -> List[SearchResponse]:
     """
-    Given a preprocessed Elasticsearch response payload, apply filters, sorting and pagination, and 
+    Given a preprocessed Elasticsearch response payload, apply filters, sorting and pagination, and
     returns an ordered array of SearchResponse objects each representing a movie tile
     """
     # Filter
-    postprocessed = []    
+    postprocessed = []
     for movie_id in preprocessed:
         genre_filter_pass, year_filter_pass, director_filter_pass = True, True, True
-        movie = preprocessed[movie_id]['movie']
+        movie = preprocessed[movie_id]["movie"]
         if genre_filter:
-            genres = set(genre['name'] for genre in movie['genres'])
+            genres = set(genre["name"] for genre in movie["genres"])
             if not genres.intersection(genre_filter):
                 genre_filter_pass = False
         if year_filter:
-            year = movie['release_date'][0:4]
+            year = movie["release_date"][0:4]
             if not year in year_filter:
                 year_filter_pass = False
         if director_filter:
-            directors = set(position['people']['name'] for position in movie['positions'] if position['position'] == "director")
+            directors = set(
+                position["people"]["name"]
+                for position in movie["positions"]
+                if position["position"] == "director"
+            )
             if not directors.intersection(director_filter):
                 director_filter_pass = False
         if genre_filter_pass and year_filter_pass and director_filter_pass:
-            postprocessed.append(preprocessed[movie_id])     
-    
+            postprocessed.append(preprocessed[movie_id])
+
     # Sort
     if sort == "relevance":
-        postprocessed = sorted(postprocessed, key=lambda x: x['movie']['title'])
-        postprocessed = sorted(postprocessed, key=lambda x: x['score'], reverse=desc)
+        postprocessed = sorted(postprocessed, key=lambda x: x["movie"]["title"])
+        postprocessed = sorted(postprocessed, key=lambda x: x["score"], reverse=desc)
     elif sort == "rating":
-        postprocessed = sorted(postprocessed, key=lambda x: x['movie']['title'])
-        postprocessed = sorted(postprocessed, key=lambda x: x['movie']['average_rating'], reverse=desc)
+        postprocessed = sorted(postprocessed, key=lambda x: x["movie"]["title"])
+        postprocessed = sorted(
+            postprocessed, key=lambda x: x["movie"]["average_rating"], reverse=desc
+        )
     elif sort == "name":
-        postprocessed = sorted(postprocessed, key=lambda x: x['movie']['title'], reverse=not desc)
+        postprocessed = sorted(
+            postprocessed, key=lambda x: x["movie"]["title"], reverse=not desc
+        )
     elif sort == "year":
-        postprocessed = sorted(postprocessed, key=lambda x: x['movie']['average_rating'], reverse=True)
-        postprocessed = sorted(postprocessed, key=lambda x: x['movie']['release_date'], reverse=desc)
-            
+        postprocessed = sorted(
+            postprocessed, key=lambda x: x["movie"]["average_rating"], reverse=True
+        )
+        postprocessed = sorted(
+            postprocessed, key=lambda x: x["movie"]["release_date"], reverse=desc
+        )
+
     # Pagination
     if per_page:
         start = (page - 1) * per_page
@@ -356,7 +385,7 @@ async def process_movie_payload(
             start = 0
         if end < 0 or end > len(postprocessed):
             end = len(postprocessed)
-        postprocessed = postprocessed[start: end]
+        postprocessed = postprocessed[start:end]
 
     # Convert to SearchResponse objects
     for i in range(len(postprocessed)):
