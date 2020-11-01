@@ -1,28 +1,28 @@
+import asyncio
+import json
 import re
 from datetime import datetime
-from typing import List, Optional, Dict
-import asyncio
-import aioredis
-import json
+from typing import Dict, List, Optional
 
-from elasticsearch import Elasticsearch, RequestsHttpConnection, Urllib3HttpConnection
+from elasticsearch import (Elasticsearch, RequestsHttpConnection,
+                           Urllib3HttpConnection)
 from elasticsearch_dsl import Q, Search, connections
 
+import aioredis
 from app.core.config import settings
 from app.models.db.movies import Movies
 from app.models.db.positions import Positions
 from app.models.db.ratings import Ratings
 from app.models.db.reviews import Reviews
 from app.models.db.users import Users
+from app.utils.dict_storage.redis import RedisDictStorageDriver
+from app.utils.unique_id import id, to_uuid
 from app.utils.wrapper import ApiException, Wrapper, wrap
 from fastapi import APIRouter, Query, Request
 from humps import camelize
 from pydantic import BaseModel
 from tortoise.exceptions import IntegrityError, OperationalError
 from tortoise.transactions import in_transaction
-
-from app.utils.unique_id import id, to_uuid
-from app.utils.dict_storage.redis import RedisDictStorageDriver
 
 
 def _new_uuid():
