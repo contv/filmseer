@@ -18,6 +18,7 @@ import Review from "src/app/components/review";
 import { ReviewProps } from "src/app/components/review/review";
 import Stars from "src/app/components/stars";
 import Trailer from "src/app/components/trailer";
+import avatar from "src/app/components/review/default-avatar.png"
 import VerticalList from "src/app/components/vertical-list";
 import { api } from "src/utils";
 import "./movie.scss";
@@ -113,14 +114,18 @@ const MovieDetailPage = (props: { className?: string }) => {
 
   useEffect(() => {
     api({ path: `/movie/${movieId}`, method: "GET" }).then((res) => {
-      if (res.code !== 0) setHasError(true);
+      if (res.code !== 0) {
+        setHasError(true);
+      }
       else {
         setMovie(res.data as Movie);
         setHasError(false);
       }
     });
     api({ path: `/movie/${movieId}/reviews`, method: "GET" }).then((res) => {
-      if (res.code !== 0) setHasError(true);
+      if (res.code !== 0) {
+        setHasError(true);
+      }
       else {
         setReviews(res.data.items as Array<ReviewProps>);
         setHasError(false);
@@ -134,11 +139,11 @@ const MovieDetailPage = (props: { className?: string }) => {
     return (
       <div className={`MovieDetailPage ${(props.className || "").trim()}`}>
         <MovieSection>
-          <div className="MoviePoster">
+          <div className="Movie__poster">
             <img src={movieDetails.imageUrl} alt="" />
           </div>
-          <div className="MovieAbout">
-            <h3 className="MovieTitle">
+          <div className="Movie__about">
+            <h3 className="Movie__title">
               {movieDetails.title} ({movieDetails.releaseYear})
             </h3>
             {movieDetails.genres &&
@@ -163,9 +168,9 @@ const MovieDetailPage = (props: { className?: string }) => {
                 </>
               )}
             </div>
-            <p className="MovieDescription">{movieDetails.description}</p>
+            <p className="Movie__description">{movieDetails.description}</p>
           </div>
-          <div className="MovieInteract">
+          <div className="Movie__interact">
             <div>
               <VisibilityIcon />
               <Typography variant="body2" display="inline">
@@ -215,14 +220,7 @@ const MovieDetailPage = (props: { className?: string }) => {
             <div className="Cast">
               {movieDetails.crew.map((castMember) => (
                 <div className="CastMember">
-                  <img
-                    width={60}
-                    src={
-                      castMember.image ||
-                      "https://m.media-amazon.com/images/G/01/imdb/images/nopicture/medium/name-2135195744._CB466677935_.png"
-                    }
-                    alt=""
-                  ></img>
+                  <img width={60} src={castMember.image || avatar} alt=""></img>
                   {castMember.name} - <i>{castMember.position}</i>
                 </div>
               ))}
@@ -259,8 +257,7 @@ const MovieDetailPage = (props: { className?: string }) => {
                     createDate={review.createDate}
                     rating={review.rating}
                     profileImage={
-                      review.profileImage ||
-                      "https://m.media-amazon.com/images/G/01/imdb/images/nopicture/medium/name-2135195744._CB466677935_.png"
+                      review.profileImage || avatar
                     }
                     containsSpoiler={review.containsSpoiler}
                     flaggedFunny={review.flaggedFunny}
@@ -284,3 +281,4 @@ const MovieDetailPage = (props: { className?: string }) => {
 };
 
 export default view(MovieDetailPage);
+ 

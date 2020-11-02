@@ -25,13 +25,13 @@ const Review = (props: ReviewProps & { className?: string }) => {
     <div className={`Review ${(props.className || "").trim()}`}>
       <a href={`/user/${props.username}`}>
         <img
-          className="ReviewerProfilePicture"
+          className="Reviewer__avatar"
           src={props.profileImage}
           width={60}
           alt=""
         />
       </a>
-      <div className="ReviewContent">
+      <div className="Review__content">
         {props.rating && (
           <>
             <Rating
@@ -44,13 +44,13 @@ const Review = (props: ReviewProps & { className?: string }) => {
             <span> {props.rating} stars</span>
           </>
         )}
-        <p className="ReviewMeta">
+        <p className="Review__meta">
           <a href={`/user/${props.username}`}>{props.username}</a>{" "}
-          <span className="ReviewDate">
+          <span className="Review__date">
             posted at {`${new Date(props.createDate).toUTCString()}`}
           </span>
         </p>
-        <p className="ReviewContent">{props.description}</p>
+        <p className="Review__content">{props.description}</p>
       </div>
       <ReviewFlags
         reviewId={props.reviewId}
