@@ -15,7 +15,7 @@ class Movies(Model):
     release_date = fields.DatetimeField()
     description = fields.TextField(default="")
     image = fields.CharField(max_length=300, null=True)
-    trailer = fields.TextField(max_length=300, null=True)
+    trailer = fields.JSONField(max_length=300, null=True)
     num_reviews = fields.IntField(default=0)
     cumulative_rating = fields.FloatField(default=0)
     num_votes = fields.IntField(default=0)
