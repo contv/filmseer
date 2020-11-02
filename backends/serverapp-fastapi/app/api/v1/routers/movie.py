@@ -86,6 +86,10 @@ class ReviewResponse(BaseModel):
     flagged_helpful: bool
     flagged_funny: bool
     flagged_spoiler: bool
+    
+    class Config:
+        alias_generator = camelize
+        allow_population_by_field_name = True
 
 
 class ReviewRequest(BaseModel):

@@ -3,19 +3,19 @@
     padding-bottom: 8px;
 }
 
-.ReviewerProfilePicture{
+.Reviewer__avatar {
     float: left;
     padding-right:10px;
 }
 
-.ReviewMeta{
+.Review__meta {
     font-weight: 1.2;
 }
 
-.ReviewContent{
+.Review__content {
     font-size: 16px;
 }
 
-.ReviewDate {
+.Review__date {
     color: var(--gray-2);
 }

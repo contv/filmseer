@@ -21,7 +21,7 @@ export type MovieItemProps = {
 };
 
 // Convert a number into a formatted string with k or M suffix applied
-const nFormatter = (num: number, digits: number) => {
+export const nFormatter = (num: number, digits: number) => {
   var suffix = [
     { value: 1, symbol: "" },
     { value: 1e3, symbol: "K" },
