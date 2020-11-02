@@ -73,6 +73,13 @@ class SearchResponse(BaseModel):
         allow_population_by_field_name = True
 
 
+class FilterResponse(BaseModel):
+    type: str
+    name: str
+    key: str
+    selections: List[dict]
+
+
 class RatingResponse(BaseModel):
     id: str
     rating: float
