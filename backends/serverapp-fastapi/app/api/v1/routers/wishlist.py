@@ -9,6 +9,7 @@ override_prefix = None
 override_prefix_all = None
 
 
+
 @router.get("/")
 async def get_wishlist(request: Request):
     user_id = request.session.get("user_id")
@@ -19,7 +20,7 @@ async def get_wishlist(request: Request):
         )
 
     items = await Wishlists.filter(
-        user_id=user_id
+        user_id=user_id, delete_date=None
     ).prefetch_related("movie")
     return wrap({"items": items})
 
@@ -33,7 +34,7 @@ async def is_movie_wishlist(request: Request, movie_id: str):
             401, 2500, "You must be logged in to see your wishlist."
         )
     added = await Wishlists.filter(
-        movie_id=movie_id, user_id=user_id
+        movie_id=movie_id, user_id=user_id, delete_date=None
     ).first() is not None
 
     return wrap({"added": added})
@@ -48,12 +49,24 @@ async def add_to_wishlist(request: Request, movie_id: str):
             401, 2500, "You must be logged in to add to wishlist."
         )
 
-    try:
-        await Wishlists(movie_id=movie_id, user_id=user_id).save()
-    except OperationalError:
-        return ApiException(
-            401, 2501, "You cannot do that."
-        )
+    previously_wishlisted = await Wishlists.filter(
+        movie_id=movie_id, user_id=user_id
+    ).first()
+
+    if previously_wishlisted is not None:
+        try:
+            await previously_wishlisted.update(delete_date=None)
+        except OperationalError:
+            return ApiException(
+                401, 2501, "You cannot do that."
+            )
+    else:
+        try:
+            await Wishlists(movie_id=movie_id, user_id=user_id).save()
+        except OperationalError:
+            return ApiException(
+                401, 2501, "You cannot do that."
+            )
 
     return wrap({})
 
@@ -66,12 +79,19 @@ async def delete_from_wishlist(request: Request, movie_id: str):
         return ApiException(
             401, 2500, "You must be logged in to add to wishlist."
         )
-
-    try:
-        await Wishlists.filter(movie_id=movie_id, user_id=user_id).delete()
-        return wrap({})
-    except OperationalError:
+    previously_wishlisted = await Wishlists.filter(
+        movie_id=movie_id, user_id=user_id
+    ).first()
+    if previously_wishlisted is not None:
+        try:
+            await Wishlists.filter(movie_id=movie_id, user_id=user_id).update(delete_date=None)
+        except OperationalError:
+            return ApiException(
+                401, 2501, "You cannot do that."
+            )
+    else:
         return ApiException(
-            401, 2501, "You cannot do that."
-        )
+                401, 2501, "You haven't wishlisted this movie yet."
+            )
+
     return wrap({})

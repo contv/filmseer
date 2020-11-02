@@ -108,6 +108,7 @@ async def get_reviews_user(username: str, page: int = 0, per_page: int = 0):
 
 # REVIEW RELATED END
 
+# WISHLIST RELATED START
 
 @router.get("/{username}/wishlist")
 async def get_user_wishlist(username: str):
@@ -119,7 +120,9 @@ async def get_user_wishlist(username: str):
         )
 
     items = await Wishlists.filter(
-        user_id=user.user_id
+        user_id=user.user_id, delete_date=None
     ).prefetch_related("movie")
 
     return wrap({"items": items})
+
+# WISHLIST RELATED END
