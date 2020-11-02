@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
+from typing import Optional, List
 from humps import camelize
 
 from app.models.db.users import Users
@@ -10,6 +11,7 @@ from app.utils.ratings import calc_average_rating
 from app.utils.wrapper import ApiException, Wrapper, wrap
 
 from .review import ListReviewResponse, ReviewResponse
+from .wishlist import MovieWishlistResponse
 
 router = APIRouter()
 override_prefix = None
@@ -19,20 +21,6 @@ override_prefix_all = None
 class Register(BaseModel):
     username: str
     password: str
-
-
-class MovieWishlistResponse(BaseModel):
-    id: str
-    title: str
-    release_year: str
-    genres: Optional[List[str]]
-    image_url: Optional[str]
-    average_rating: float
-    score: float
-
-    class Config:
-        alias_generator = camelize
-        allow_population_by_field_name = True
 
 
 @router.post("/", tags=["user"])
@@ -108,7 +96,7 @@ async def get_reviews_user(username: str, page: int = 0, per_page: int = 0):
 # WISHLIST RELATED START
 
 @router.get(
-    "/{username}/wishlist", response_model=Wrapper[List[MovieWishlistResponse]]
+    "/{username}/wishlist"
 )
 async def get_user_wishlist(username: str):
     user = await Users.filter(username=username).first()
@@ -120,11 +108,13 @@ async def get_user_wishlist(username: str):
 
     items = [
         MovieWishlistResponse(
-            movie_id=wishlist_item.movie_id,
-            title=wishlist_item.title,
-            image_url=wishlist_item.image_url,
+            wishlist_id=str(wishlist_item.wishlist_id),
+            movie_id=str(wishlist_item.movie_id),
+            title=wishlist_item.movie.title,
+            image_url=wishlist_item.movie.image,
+            release_year=wishlist_item.movie.release_date.year,
             average_rating=calc_average_rating(
-                wishlist_item.cumulative_rating, wishlist_item.num_votes
+                wishlist_item.movie.cumulative_rating, wishlist_item.movie.num_votes
             )
         )
         for wishlist_item in await Wishlists.filter(
