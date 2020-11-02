@@ -122,7 +122,6 @@ const MovieDetailPage = (props: { className?: string }) => {
     api({ path: `/movie/${movieId}/reviews`, method: "GET" }).then((res) => {
       if (res.code !== 0) setHasError(true);
       else {
-        console.log(res.data);
         setReviews(res.data.items as Array<ReviewProps>);
         setHasError(false);
       }
@@ -259,7 +258,10 @@ const MovieDetailPage = (props: { className?: string }) => {
                     username={review.username}
                     createDate={review.createDate}
                     rating={review.rating}
-                    profileImage={review.profileImage}
+                    profileImage={
+                      review.profileImage ||
+                      "https://m.media-amazon.com/images/G/01/imdb/images/nopicture/medium/name-2135195744._CB466677935_.png"
+                    }
                     containsSpoiler={review.containsSpoiler}
                     flaggedFunny={review.flaggedFunny}
                     flaggedHelpful={review.flaggedHelpful}
