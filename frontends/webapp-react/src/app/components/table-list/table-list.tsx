@@ -29,6 +29,7 @@ type TableListProps<T extends object> = {
   rowsData: Array<{ [key in keyof T]: any } & { [key: string]: any }>;
   cellRenderer: (
     cellData: any,
+    columnName: keyof T,
     index: number,
     rowData: { [key in keyof T]: any } & { [key: string]: any }
   ) => React.ReactNode;
@@ -96,7 +97,7 @@ const TableList = <T extends object>(
                 style={{ gridArea: `${cellName as string}-${index}` }}
                 key={`${cellName as string}-${index}`}
               >
-                {props.cellRenderer(cellData, index, rowData)}
+                {props.cellRenderer(cellData, cellName, index, rowData)}
               </div>
             ) : null
         )
