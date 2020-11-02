@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Request
-from pydantic import BaseModel
+from typing import Optional, Union
 
 from app.models.db.reviews import Reviews
 from app.models.db.users import Users
 from app.utils.password import hash
 from app.utils.wrapper import ApiException, Wrapper, wrap
+from fastapi import APIRouter, Request
+from pydantic import BaseModel
 
 from .review import ListReviewResponse, ReviewResponse
 
@@ -16,6 +17,13 @@ override_prefix_all = None
 class Register(BaseModel):
     username: str
     password: str
+
+
+class UserProfileResponse(BaseModel):
+    id: str
+    username: str
+    description: Optional[str]
+    image: Optional[bytes]
 
 
 @router.post("/", tags=["user"])
@@ -92,3 +100,53 @@ async def get_reviews_user(username: str, page: int = 0, per_page: int = 0):
 @router.get("/{username}/wishlist")
 async def get_user_wishlist(username: str):
     return wrap({"items": []})
+
+
+@router.get(
+    "/", tags=["User"], response_model=Union[Wrapper[UserProfileResponse], Wrapper]
+)
+async def get_current_user(request: Request):
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return wrap(error=ApiException(500, 2001, "You are not logged in!"))
+
+    user = await Users.get_or_none(user_id=user_id, delete_date=None).prefetch_related(
+        "profile_image_id"
+    )
+    if not user:
+        return wrap(
+            error=ApiException(500, 2200, "That user's profile page was not found")
+        )
+
+    response = UserProfileResponse(
+        id=str(user.user_id),
+        username=user.username,
+        description=user.description,
+        image=user.profile_image_id.content if user.profile_image_id else None,
+    )
+
+    return wrap(response)
+
+
+@router.get(
+    "/{username}",
+    tags=["User"],
+    response_model=Union[Wrapper[UserProfileResponse], Wrapper],
+)
+async def get_user_profile(username: str):
+    user = await Users.get_or_none(
+        username=username, delete_date=None
+    )
+    if not user:
+        return wrap(
+            error=ApiException(500, 2200, "That user's profile page was not found")
+        )
+
+    response = UserProfileResponse(
+        id=str(user.user_id),
+        username=user.username,
+        description=user.description,
+        image=user.profile_image_id.content if user.profile_image_id else None,
+    )
+
+    return wrap(response)
