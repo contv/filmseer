@@ -65,7 +65,6 @@ const TableList = <T extends object>(
       : "1fr ".repeat(Object.keys(props.header).length).trim(),
     gridTemplateRows: "auto",
   };
-  console.log("grid", gridTemplates);
   return (
     <div
       className={`TableList ${(props.className || "").trim()}`}
