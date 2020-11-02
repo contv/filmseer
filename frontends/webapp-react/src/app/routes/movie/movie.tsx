@@ -3,18 +3,22 @@ import { ChatBubble } from "@material-ui/icons";
 import BookmarkIcon from "@material-ui/icons/Bookmark";
 import FlagIcon from "@material-ui/icons/Flag";
 import VisibilityIcon from "@material-ui/icons/Visibility";
-import Rating from "@material-ui/lab/Rating";
 import { view } from "@risingstack/react-easy-state";
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import GenreTile from "src/app/components/genre-tile";
-import HorizontalList from "src/app/components/horizontal-list";
+import TileList from "src/app/components/tile-list";
 import MovieItem from "src/app/components/movie-item";
-import { MovieItemProps } from "src/app/components/movie-item/movie-item";
+import {
+  MovieItemProps,
+  nFormatter,
+} from "src/app/components/movie-item/movie-item";
 import MovieSection from "src/app/components/movie-section";
 import Review from "src/app/components/review";
 import { ReviewProps } from "src/app/components/review/review";
+import Stars from "src/app/components/stars";
 import Trailer from "src/app/components/trailer";
+import avatar from "src/app/components/review/default-avatar.png"
 import VerticalList from "src/app/components/vertical-list";
 import { api } from "src/utils";
 import "./movie.scss";
@@ -35,9 +39,10 @@ type Movie = {
   title: string;
   imageUrl: string;
   releaseYear: string;
-  cumulativeRating: Number;
-  averageRating: Number;
-  numReviews: Number;
+  cumulativeRating: number;
+  averageRating: number;
+  numReviews: number;
+  numVotes: number;
   description: string;
   trailers?: Array<Trailer>;
   crew?: Array<CastMember>;
@@ -100,63 +105,6 @@ const dummyRecommendedMovies = [
   },
 ];
 
-const dummyReviews = [
-  {
-    id: "someid",
-    text: "Great Movie!",
-    rating: 4.8,
-    date: new Date(),
-    username: "alice",
-    containsSpoiler: false,
-    profileImage: "https://material-ui.com/static/images/avatar/3.jpg",
-    flags: {
-      reviewId: "someid",
-      flaggedFunny: true,
-      flaggedHelpful: true,
-      flaggedSpoiler: false,
-      numFunny: 3,
-      numHelpful: 12,
-      numSpoiler: 5,
-    },
-  },
-  {
-    id: "someid",
-    text: "Pretty terrible movie in my opinion",
-    rating: 1.2,
-    date: new Date(),
-    username: "bob",
-    containsSpoiler: false,
-    profileImage: "https://material-ui.com/static/images/avatar/2.jpg",
-    flags: {
-      reviewId: "someid",
-      flaggedFunny: false,
-      flaggedHelpful: true,
-      flaggedSpoiler: false,
-      numFunny: 0,
-      numHelpful: 4,
-      numSpoiler: 5,
-    },
-  },
-  {
-    id: "someid",
-    text: "it was okay...",
-    date: new Date(),
-    rating: 3.2,
-    username: "john",
-    containsSpoiler: false,
-    profileImage: "https://material-ui.com/static/images/avatar/1.jpg",
-    flags: {
-      reviewId: "someid",
-      flaggedFunny: true,
-      flaggedHelpful: true,
-      flaggedSpoiler: false,
-      numFunny: 5,
-      numHelpful: 7,
-      numSpoiler: 9,
-    },
-  },
-];
-
 const MovieDetailPage = (props: { className?: string }) => {
   const { movieId } = useParams<{ movieId: string }>();
   const [movieDetails, setMovie] = useState<Movie>();
@@ -166,40 +114,63 @@ const MovieDetailPage = (props: { className?: string }) => {
 
   useEffect(() => {
     api({ path: `/movie/${movieId}`, method: "GET" }).then((res) => {
-      if (res.code !== 0) setHasError(true);
+      if (res.code !== 0) {
+        setHasError(true);
+      }
       else {
         setMovie(res.data as Movie);
         setHasError(false);
       }
     });
-    setReviews(dummyReviews as Array<ReviewProps>);
+    api({ path: `/movie/${movieId}/reviews`, method: "GET" }).then((res) => {
+      if (res.code !== 0) {
+        setHasError(true);
+      }
+      else {
+        setReviews(res.data.items as Array<ReviewProps>);
+        setHasError(false);
+      }
+    });
     setRecommended(dummyRecommendedMovies as Array<MovieItemProps>);
   }, [movieId]);
 
   if (movieDetails) {
+    const formattedNumRatings: string = nFormatter(movieDetails.numVotes, 0);
     return (
       <div className={`MovieDetailPage ${(props.className || "").trim()}`}>
         <MovieSection>
-          <div className="MoviePoster">
+          <div className="Movie__poster">
             <img src={movieDetails.imageUrl} alt="" />
           </div>
-          <div className="MovieAbout">
-            <h3 className="MovieTitle">
+          <div className="Movie__about">
+            <h3 className="Movie__title">
               {movieDetails.title} ({movieDetails.releaseYear})
             </h3>
-            {movieDetails.genres && movieDetails.genres.map((genre) => (
-              <GenreTile id={genre} text={genre === '\\N'? "Genre not listed" : genre}></GenreTile>
-            ))}
+            {movieDetails.genres &&
+              movieDetails.genres.map((genre) => (
+                <GenreTile
+                  id={genre}
+                  text={genre === "\\N" ? "Genre not listed" : genre}
+                ></GenreTile>
+              ))}
             <div className="movieScore">
-              {movieDetails.numReviews > 0 && (
+              {movieDetails.numVotes > 0 && (
                 <>
-                  {movieDetails.averageRating}({movieDetails.numReviews})
+                  <Stars
+                    movieId={movieId}
+                    rating={movieDetails.averageRating}
+                    size="small"
+                    votable={false}
+                  />
+                  <Typography>
+                    {movieDetails.averageRating}({formattedNumRatings})
+                  </Typography>
                 </>
               )}
             </div>
-            <p className="MovieDescription">{movieDetails.description}</p>
+            <p className="Movie__description">{movieDetails.description}</p>
           </div>
-          <div className="MovieInteract">
+          <div className="Movie__interact">
             <div>
               <VisibilityIcon />
               <Typography variant="body2" display="inline">
@@ -220,7 +191,12 @@ const MovieDetailPage = (props: { className?: string }) => {
             </div>
             <div>
               <Typography variant="body2">Your rating</Typography>
-              <Rating />
+              <Stars
+                movieId={movieId}
+                rating={0}
+                size="medium"
+                votable={true}
+              />
             </div>
             <div>
               <ChatBubble />
@@ -230,27 +206,22 @@ const MovieDetailPage = (props: { className?: string }) => {
             </div>
           </div>
         </MovieSection>
-        <MovieSection heading="Trailers">
-          <div className="Trailers">
-            {movieDetails.trailers && movieDetails.trailers.map((trailer) => (
-              <Trailer site={trailer.site} videoId={trailer.key}></Trailer>
-            ))}
-          </div>
-        </MovieSection>
+        {movieDetails.trailers && (
+          <MovieSection heading="Trailers">
+            <div className="Trailers">
+              {movieDetails.trailers.map((trailer) => (
+                <Trailer site={trailer.site} videoId={trailer.key}></Trailer>
+              ))}
+            </div>
+          </MovieSection>
+        )}
         {movieDetails.crew && (
           <MovieSection heading="Cast and Crew">
             <div className="Cast">
               {movieDetails.crew.map((castMember) => (
                 <div className="CastMember">
-                  <img
-                    width={60}
-                    src={
-                      castMember.image ||
-                      "https://m.media-amazon.com/images/G/01/imdb/images/nopicture/medium/name-2135195744._CB466677935_.png"
-                    }
-                    alt=""
-                  ></img>
-                  {castMember.name} - <i>{castMember.position}</i>
+                  <img width={60} src={castMember.image || avatar} alt=""></img>
+                  <span className="Movie__castname">{castMember.name}</span><i>{castMember.position}</i>
                 </div>
               ))}
             </div>
@@ -258,8 +229,9 @@ const MovieDetailPage = (props: { className?: string }) => {
         )}
         {recommended && (
           <MovieSection heading="Recommended">
-            <HorizontalList
-              items={recommended.map((movie) => (
+            <TileList
+              items={recommended.map((movie) => 
+                (<div className="Movie__review">
                 <MovieItem
                   movieId={movie.movieId}
                   year={movie.year}
@@ -270,30 +242,38 @@ const MovieDetailPage = (props: { className?: string }) => {
                   numRatings={movie.numRatings}
                   numReviews={movie.numReviews}
                 />
+                </div>
               ))}
             />
           </MovieSection>
         )}
-        <MovieSection heading="Reviews">
-          {reviews && (
+        {reviews && reviews.length > 0 && (
+          <MovieSection heading="Reviews">
             <div className="Reviews">
               <VerticalList
                 items={reviews.map((review) => (
                   <Review
-                    id={review.id}
-                    text={review.text}
+                    reviewId={review.reviewId}
+                    description={review.description}
                     username={review.username}
-                    date={review.date}
+                    createDate={review.createDate}
                     rating={review.rating}
-                    profileImage={review.profileImage}
+                    profileImage={
+                      review.profileImage || avatar
+                    }
                     containsSpoiler={review.containsSpoiler}
-                    flags={review.flags}
+                    flaggedFunny={review.flaggedFunny}
+                    flaggedHelpful={review.flaggedHelpful}
+                    flaggedSpoiler={review.flaggedSpoiler}
+                    numFunny={review.numFunny}
+                    numHelpful={review.numHelpful}
+                    numSpoiler={review.numSpoiler}
                   />
                 ))}
               />
             </div>
-          )}
-        </MovieSection>
+          </MovieSection>
+        )}
       </div>
     );
   }
@@ -303,3 +283,4 @@ const MovieDetailPage = (props: { className?: string }) => {
 };
 
 export default view(MovieDetailPage);
+ 

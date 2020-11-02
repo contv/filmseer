@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Request
-from typing import List, Optional
 from pydantic import BaseModel
 
-from app.models.db.users import Users
 from app.models.db.reviews import Reviews
+from app.models.db.users import Users
 from app.utils.password import hash
 from app.utils.wrapper import ApiException, Wrapper, wrap
+
+from .review import ListReviewResponse, ReviewResponse
 
 router = APIRouter()
 override_prefix = None
@@ -15,26 +16,6 @@ override_prefix_all = None
 class Register(BaseModel):
     username: str
     password: str
-
-
-class ReviewResponse(BaseModel):
-    review_id: str
-    movie_id: str
-    movie_name: str
-    create_date: str
-    description: str
-    contains_spoiler: bool
-    rating: Optional[float]
-    num_helpful: int
-    num_funny: int
-    num_spoiler: int
-    flagged_helpful: bool
-    flagged_funny: bool
-    flagged_spoiler: bool
-
-
-class ListReviewResponse(BaseModel):
-    items: List[ReviewResponse]
 
 
 @router.post("/", tags=["user"])
