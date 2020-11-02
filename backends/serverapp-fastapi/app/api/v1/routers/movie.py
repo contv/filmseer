@@ -13,6 +13,7 @@ from app.models.db.funny_votes import FunnyVotes
 from app.models.db.spoiler_votes import SpoilerVotes
 from app.models.db.positions import Positions
 from app.models.db.users import Users
+from app.utils.ratings import calc_average_rating
 from app.utils.dict_storage.redis import RedisDictStorageDriver
 from app.utils.wrapper import ApiException, Wrapper, wrap
 from fastapi import APIRouter, Query, Request
@@ -104,10 +105,6 @@ class ListReviewResponse(BaseModel):
 class RatingResponse(BaseModel):
     id: str
     rating: float
-
-
-def calc_average_rating(cumulative_rating, num_votes) -> float:
-    return round(cumulative_rating / num_votes if num_votes > 0 else 0.0, 1)
 
 
 @router.get("/{movie_id}/ratings")

@@ -1,11 +1,13 @@
 from fastapi import APIRouter, Request
 from typing import List, Optional
 from pydantic import BaseModel
+from humps import camelize
 
 from app.models.db.users import Users
 from app.models.db.wishlists import Wishlists
 from app.models.db.reviews import Reviews
 from app.utils.password import hash
+from app.utils.ratings import calc_average_rating
 from app.utils.wrapper import ApiException, Wrapper, wrap
 
 router = APIRouter()
@@ -36,6 +38,22 @@ class ReviewResponse(BaseModel):
 
 class ListReviewResponse(BaseModel):
     items: List[ReviewResponse]
+
+
+class MovieWishlistResponse(BaseModel):
+    id: str
+    title: str
+    release_year: str
+    genres: Optional[List[str]]
+    image_url: Optional[str]
+    average_rating: float
+    score: float
+
+    class Config:
+        alias_generator = camelize
+        allow_population_by_field_name = True
+
+
 
 
 @router.post("/", tags=["user"])
@@ -110,7 +128,9 @@ async def get_reviews_user(username: str, page: int = 0, per_page: int = 0):
 
 # WISHLIST RELATED START
 
-@router.get("/{username}/wishlist")
+@router.get(
+    "/{username}/wishlist", response_model=Wrapper[List[MovieWishlistResponse]]
+)
 async def get_user_wishlist(username: str):
     user = await Users.filter(username=username).first()
 
@@ -119,9 +139,19 @@ async def get_user_wishlist(username: str):
             404, 2031, "That user doesn't exist."
         )
 
-    items = await Wishlists.filter(
-        user_id=user.user_id, delete_date=None
-    ).prefetch_related("movie")
+    items = [
+        MovieWishlistResponse(
+            movie_id=wishlist_item.movie_id,
+            title=wishlist_item.title,
+            image_url=wishlist_item.image_url,
+            average_rating=calc_average_rating(
+                wishlist_item.cumulative_rating, wishlist_item.num_votes
+            )
+        )
+        for wishlist_item in await Wishlists.filter(
+            user_id=user.user_id, delete_date=None
+        ).prefetch_related("movie")
+    ]
 
     return wrap({"items": items})
 
