@@ -1,26 +1,27 @@
 import re
 from datetime import datetime
 from typing import Dict, List, Optional
-from elasticsearch import (Elasticsearch, RequestsHttpConnection,
-                           Urllib3HttpConnection)
+
+from elasticsearch import RequestsHttpConnection, Urllib3HttpConnection
 from elasticsearch_dsl import Q, Search, connections
-from app.core.config import settings
-from app.models.db.movies import Movies
-from app.models.db.reviews import Reviews
-from app.models.db.ratings import Ratings
-from app.models.db.helpful_votes import HelpfulVotes
-from app.models.db.funny_votes import FunnyVotes
-from app.models.db.spoiler_votes import SpoilerVotes
-from app.models.db.positions import Positions
-from app.models.db.users import Users
-from app.utils.dict_storage.redis import RedisDictStorageDriver
-from app.utils.wrapper import ApiException, Wrapper, wrap
 from fastapi import APIRouter, Query, Request
 from humps import camelize
 from pydantic import BaseModel
 from tortoise.exceptions import IntegrityError, OperationalError
 from tortoise.transactions import in_transaction
 
+from app.core.config import settings
+from app.models.db.funny_votes import FunnyVotes
+from app.models.db.helpful_votes import HelpfulVotes
+from app.models.db.movies import Movies
+from app.models.db.positions import Positions
+from app.models.db.ratings import Ratings
+from app.models.db.reviews import Reviews
+from app.models.db.spoiler_votes import SpoilerVotes
+from app.utils.dict_storage.redis import RedisDictStorageDriver
+from app.utils.wrapper import ApiException, Wrapper, wrap
+
+from .review import ListReviewResponse, ReviewRequest, ReviewResponse
 
 router = APIRouter()
 override_prefix = None
@@ -70,35 +71,6 @@ class SearchResponse(BaseModel):
     class Config:
         alias_generator = camelize
         allow_population_by_field_name = True
-
-
-class ReviewResponse(BaseModel):
-    review_id: str
-    user_id: str
-    username: str
-    create_date: str
-    description: str
-    contains_spoiler: bool
-    rating: Optional[float]
-    num_helpful: int
-    num_funny: int
-    num_spoiler: int
-    flagged_helpful: bool
-    flagged_funny: bool
-    flagged_spoiler: bool
-    
-    class Config:
-        alias_generator = camelize
-        allow_population_by_field_name = True
-
-
-class ReviewRequest(BaseModel):
-    description: str
-    contains_spoiler: bool
-
-
-class ListReviewResponse(BaseModel):
-    items: List[ReviewResponse]
 
 
 class RatingResponse(BaseModel):
@@ -549,7 +521,6 @@ async def process_movie_payload(
         )
 
     return postprocessed
-
 
 
 @router.post(
