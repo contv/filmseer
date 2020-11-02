@@ -1,16 +1,17 @@
+from datetime import datetime
+from typing import List, Optional
+
 from fastapi import APIRouter, Request
-from typing import Optional, List
+from humps import camelize
 from pydantic import BaseModel
 from tortoise.exceptions import OperationalError
 from tortoise.transactions import in_transaction
-from datetime import datetime
 
-from app.models.db.helpful_votes import HelpfulVotes
 from app.models.db.funny_votes import FunnyVotes
-from app.models.db.spoiler_votes import SpoilerVotes
-from app.models.db.reviews import Reviews
+from app.models.db.helpful_votes import HelpfulVotes
 from app.models.db.movies import Movies
-
+from app.models.db.reviews import Reviews
+from app.models.db.spoiler_votes import SpoilerVotes
 from app.utils.wrapper import ApiException, Wrapper, wrap
 
 router = APIRouter()
@@ -39,6 +40,10 @@ class ReviewResponse(BaseModel):
     flagged_helpful: bool
     flagged_funny: bool
     flagged_spoiler: bool
+
+    class Config:
+        alias_generator = camelize
+        allow_population_by_field_name = True
 
 
 class ListReviewResponse(BaseModel):
