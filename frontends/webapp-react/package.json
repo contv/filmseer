@@ -4,6 +4,9 @@
   "homepage": "/",
   "private": true,
   "dependencies": {
+    "@material-ui/core": "^4.11.0",
+    "@material-ui/icons": "^4.9.1",
+    "@material-ui/lab": "^4.0.0-alpha.56",
     "@risingstack/react-easy-state": "^6.3.0",
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.5.0",
@@ -19,7 +22,7 @@
     "react-dom": "^16.13.1",
     "react-feather": "^2.0.8",
     "react-router-dom": "^5.2.0",
-    "react-scripts": "3.4.3",
+    "react-scripts": "^3.4.4",
     "react-transition-group": "^4.4.1",
     "typescript": "^3.7.5"
   },
@@ -46,6 +49,7 @@
     ]
   },
   "devDependencies": {
+    "@types/lodash": "^4.14.162",
     "@types/react-router-dom": "^5.1.6",
     "@types/react-transition-group": "^4.4.0",
     "prettier": "^2.1.2",
