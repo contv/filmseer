@@ -54,8 +54,6 @@ class MovieWishlistResponse(BaseModel):
         allow_population_by_field_name = True
 
 
-
-
 @router.post("/", tags=["user"])
 async def create_user(register: Register, request: Request) -> Wrapper[dict]:
     user = await Users.filter(username=register.username, delete_date=None).first()
