@@ -79,10 +79,14 @@ class Settings(BaseSettings):
     REDIS_URI: AnyUrl
     REDIS_POOL_MIN: int = 1
     REDIS_POOL_MAX: int = 20
+    REDIS_SEARCHES_MAX: int = 10
+    REDIS_SEARCH_TTL: int = 300
 
     # Elasticsearch Settings
     ELASTICSEARCH_URI: AnyUrl
+    ELASTICSEARCH_MOVIEINDEX: str = ""
     ELASTICSEARCH_ALIAS: str = ""
+    ELASTICSEARCH_RESPONSESIZE: int = 10
     ELASTICSEARCH_TRANSPORTCLASS: str = (
         "RequestsHttpConnection",
         "Urllib3HttpConnection",
