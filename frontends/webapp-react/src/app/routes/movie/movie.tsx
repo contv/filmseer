@@ -7,7 +7,7 @@ import { view } from "@risingstack/react-easy-state";
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import GenreTile from "src/app/components/genre-tile";
-import HorizontalList from "src/app/components/horizontal-list";
+import TileList from "src/app/components/tile-list";
 import MovieItem from "src/app/components/movie-item";
 import {
   MovieItemProps,
@@ -221,7 +221,7 @@ const MovieDetailPage = (props: { className?: string }) => {
               {movieDetails.crew.map((castMember) => (
                 <div className="CastMember">
                   <img width={60} src={castMember.image || avatar} alt=""></img>
-                  {castMember.name} - <i>{castMember.position}</i>
+                  <span className="Movie__castname">{castMember.name}</span><i>{castMember.position}</i>
                 </div>
               ))}
             </div>
@@ -229,8 +229,9 @@ const MovieDetailPage = (props: { className?: string }) => {
         )}
         {recommended && (
           <MovieSection heading="Recommended">
-            <HorizontalList
-              items={recommended.map((movie) => (
+            <TileList
+              items={recommended.map((movie) => 
+                (<div className="Movie__review">
                 <MovieItem
                   movieId={movie.movieId}
                   year={movie.year}
@@ -241,6 +242,7 @@ const MovieDetailPage = (props: { className?: string }) => {
                   numRatings={movie.numRatings}
                   numReviews={movie.numReviews}
                 />
+                </div>
               ))}
             />
           </MovieSection>

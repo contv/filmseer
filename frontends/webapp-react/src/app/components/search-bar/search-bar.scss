@@ -1,6 +1,6 @@
 .SearchBar {
   display: grid;
-  grid-template-areas: "button";
+  grid-template-areas: "input button";
 
   &__input {
     grid-area: input;
