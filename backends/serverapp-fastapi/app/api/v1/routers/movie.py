@@ -1,17 +1,18 @@
 import re
 from datetime import datetime
 from typing import Dict, List, Optional
-from elasticsearch import (Elasticsearch, RequestsHttpConnection,
-                           Urllib3HttpConnection)
+
+from elasticsearch import Elasticsearch, RequestsHttpConnection, Urllib3HttpConnection
 from elasticsearch_dsl import Q, Search, connections
+
 from app.core.config import settings
-from app.models.db.movies import Movies
-from app.models.db.reviews import Reviews
-from app.models.db.ratings import Ratings
-from app.models.db.helpful_votes import HelpfulVotes
 from app.models.db.funny_votes import FunnyVotes
-from app.models.db.spoiler_votes import SpoilerVotes
+from app.models.db.helpful_votes import HelpfulVotes
+from app.models.db.movies import Movies
 from app.models.db.positions import Positions
+from app.models.db.ratings import Ratings
+from app.models.db.reviews import Reviews
+from app.models.db.spoiler_votes import SpoilerVotes
 from app.models.db.users import Users
 from app.utils.dict_storage.redis import RedisDictStorageDriver
 from app.utils.wrapper import ApiException, Wrapper, wrap
@@ -20,7 +21,6 @@ from humps import camelize
 from pydantic import BaseModel
 from tortoise.exceptions import IntegrityError, OperationalError
 from tortoise.transactions import in_transaction
-
 
 router = APIRouter()
 override_prefix = None
@@ -71,11 +71,13 @@ class SearchResponse(BaseModel):
         alias_generator = camelize
         allow_population_by_field_name = True
 
+
 class FilterResponse(BaseModel):
     type: str
     name: str
     key: str
     selections: List[dict]
+
 
 class ReviewResponse(BaseModel):
     review_id: str
@@ -480,45 +482,54 @@ async def process_movie_payload(
     """
     Given a preprocessed Elasticsearch response payload, apply filters, sorting and pagination, and
     returns an ordered array of SearchResponse objects each representing a movie tile
-    """    
+    """
     # Populate filter options based on entire payload
-    genre_set = set(genre["name"] for movie_id in preprocessed for genre in preprocessed[movie_id]["movie"]["genres"])
-    director_set = set(position["people"]["name"] for movie_id in preprocessed for position in preprocessed[movie_id]["movie"]["positions"] if position["position"] == "director")
-    year_set = set(int(preprocessed[movie_id]["movie"]["release_date"][0:4]) for movie_id in preprocessed)
-    
-    for movie_id in preprocessed:
-        print(preprocessed[movie_id]["movie"]["release_date"])
-    
+    genre_set = set(
+        genre["name"]
+        for movie_id in preprocessed
+        for genre in preprocessed[movie_id]["movie"]["genres"]
+    )
+    director_set = set(
+        position["people"]["name"]
+        for movie_id in preprocessed
+        for position in preprocessed[movie_id]["movie"]["positions"]
+        if position["position"] == "director"
+    )
+    year_set = set(
+        int(preprocessed[movie_id]["movie"]["release_date"][0:4])
+        for movie_id in preprocessed
+    )
+
     genre_selections = FilterResponse(
-        type = "list",
-        name = "Genre",
-        key = "genre",
-        selections = [{"key": genre, "name": genre} for genre in genre_set]
+        type="list",
+        name="Genre",
+        key="genre",
+        selections=[{"key": genre, "name": genre} for genre in genre_set],
     )
-    
+
     director_selections = FilterResponse(
-        type = "list",
-        name = "Directors",
-        key = "director",
-        selections = [{"key": director, "name": director} for director in director_set]
+        type="list",
+        name="Directors",
+        key="director",
+        selections=[{"key": director, "name": director} for director in director_set],
     )
-    
+
     year_selections = FilterResponse(
-        type = "slide",
-        name = "Year",
-        key = "year",
-        selections = [{"min": min(year_set), "max": max(year_set)}]
+        type="slide",
+        name="Year",
+        key="year",
+        selections=[{"min": min(year_set), "max": max(year_set)}],
     )
-    
+
     # Filter
     postprocessed = []
     year_filter = year_filter.split("-")
-    try: 
+    try:
         min_year, max_year = int(year_filter[0]), int(year_filter[1])
-        print(f'min year = {min_year} and max_year = {max_year}')
+        print(f"min year = {min_year} and max_year = {max_year}")
     except (IndexError, ValueError):
         year_filter = ""
-        
+
     for movie_id in preprocessed:
         genre_filter_pass, year_filter_pass, director_filter_pass = True, True, True
         movie = preprocessed[movie_id]["movie"]
@@ -527,7 +538,7 @@ async def process_movie_payload(
             if not genres.intersection(genre_filter):
                 genre_filter_pass = False
         if year_filter:
-            try: 
+            try:
                 year = int(movie["release_date"][0:4])
                 if not year >= min_year or not year <= max_year:
                     year_filter_pass = False
@@ -587,18 +598,13 @@ async def process_movie_payload(
             average_rating=float(movie["movie"]["average_rating"][0]),
             score=float(movie["score"]),
         )
-        
+
     response = {
         "movies": postprocessed,
-        "filters": [
-            genre_selections,
-            director_selections,
-            year_selections
-        ]
+        "filters": [genre_selections, director_selections, year_selections],
     }
 
     return response
-
 
 
 @router.post(
