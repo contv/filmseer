@@ -526,7 +526,6 @@ async def process_movie_payload(
     year_filter = year_filter.split("-")
     try:
         min_year, max_year = int(year_filter[0]), int(year_filter[1])
-        print(f"min year = {min_year} and max_year = {max_year}")
     except (IndexError, ValueError):
         year_filter = ""
 
