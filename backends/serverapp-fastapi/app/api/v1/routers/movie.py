@@ -4,11 +4,6 @@ from typing import Dict, List, Optional
 
 from elasticsearch import RequestsHttpConnection, Urllib3HttpConnection
 from elasticsearch_dsl import Q, Search, connections
-from fastapi import APIRouter, Query, Request
-from humps import camelize
-from pydantic import BaseModel
-from tortoise.exceptions import IntegrityError, OperationalError
-from tortoise.transactions import in_transaction
 
 from app.core.config import settings
 from app.models.db.funny_votes import FunnyVotes
@@ -18,9 +13,14 @@ from app.models.db.positions import Positions
 from app.models.db.ratings import Ratings
 from app.models.db.reviews import Reviews
 from app.models.db.spoiler_votes import SpoilerVotes
-from app.utils.ratings import calc_average_rating
 from app.utils.dict_storage.redis import RedisDictStorageDriver
+from app.utils.ratings import calc_average_rating
 from app.utils.wrapper import ApiException, Wrapper, wrap
+from fastapi import APIRouter, Query, Request
+from humps import camelize
+from pydantic import BaseModel
+from tortoise.exceptions import IntegrityError, OperationalError
+from tortoise.transactions import in_transaction
 
 from .review import ListReviewResponse, ReviewRequest, ReviewResponse
 
@@ -488,7 +488,7 @@ async def process_movie_payload(
     Given a preprocessed Elasticsearch response payload, apply filters, sorting and pagination, and
     returns an ordered array of SearchResponse objects each representing a movie tile
     """
-    # Populate filter options based on entire payload
+    # Populate filter options based on total payload
     genre_set = set(
         genre["name"]
         for movie_id in preprocessed
@@ -508,26 +508,17 @@ async def process_movie_payload(
         if preprocessed[movie_id]["movie"]["release_date"]
     )
 
-    genre_selections = FilterResponse(
-        type="list",
-        name="Genre",
-        key="genre",
-        selections=[{"key": genre, "name": genre} for genre in genre_set],
-    )
-
-    director_selections = FilterResponse(
-        type="list",
-        name="Directors",
-        key="director",
-        selections=[{"key": director, "name": director} for director in director_set],
-    )
-
-    year_selections = FilterResponse(
-        type="slide",
-        name="Year",
-        key="year",
-        selections=[{"min": min(year_set), "max": max(year_set)} if year_set else None],
-    )
+    # Use dicts for fast insertion of count, extract the values and discard keys later
+    genre_selections = {
+        genre: {"key": genre, "name": genre, "count": 0} for genre in genre_set
+    }
+    director_selections = {
+        director: {"key": director, "name": director, "count": 0}
+        for director in director_set
+    }
+    year_selections = {
+        year: {"key": year, "name": year, "count": 0} for year in year_set
+    }
 
     # Filter
     postprocessed = []
@@ -541,7 +532,7 @@ async def process_movie_payload(
         genre_filter_pass, year_filter_pass, director_filter_pass = True, True, True
         movie = preprocessed[movie_id]["movie"]
         if genre_filter:
-            try: 
+            try:
                 genres = set(genre["name"] for genre in movie["genres"])
                 if not genres.intersection(genre_filter):
                     genre_filter_pass = False
@@ -559,7 +550,7 @@ async def process_movie_payload(
                 directors = set(
                     position["people"]["name"]
                     for position in movie["positions"]
-                    if position["position"] == "director"                
+                    if position["position"] == "director"
                 )
                 if not directors.intersection(director_filter):
                     director_filter_pass = False
@@ -599,6 +590,39 @@ async def process_movie_payload(
             end = len(postprocessed)
         postprocessed = postprocessed[start:end]
 
+    # Populate filter counts using filtered results only
+    for movie in postprocessed:
+        if movie["movie"]["genres"]:
+            for genre in movie["movie"]["genres"]:
+                genre_selections[genre["name"]]["count"] += 1
+        if movie["movie"]["positions"]:
+            for position in movie["movie"]["positions"]:
+                if position["position"] == "director":
+                    director_selections[position["people"]["name"]]["count"] += 1
+        if movie["movie"]["release_date"]:
+            year_selections[int(movie["movie"]["release_date"][0:4])]["count"] += 1
+
+    genre_selections = FilterResponse(
+        type="list",
+        name="Genre",
+        key="genre",
+        selections=sorted(list(genre_selections.values()), key=lambda x: x["name"]),
+    )
+
+    director_selections = FilterResponse(
+        type="list",
+        name="Directors",
+        key="director",
+        selections=sorted(list(director_selections.values()), key=lambda x: x["name"]),
+    )
+
+    year_selections = FilterResponse(
+        type="slide",
+        name="Year",
+        key="year",
+        selections=sorted(list(year_selections.values()), key=lambda x: x["name"]),
+    )
+
     # Convert to SearchResponse objects
     for i in range(len(postprocessed)):
         movie = postprocessed[i]
@@ -618,6 +642,7 @@ async def process_movie_payload(
     }
 
     return response
+
 
 @router.post(
     "/{movie_id}/rating", tags=["movies"], response_model=Wrapper[RatingResponse]
@@ -688,7 +713,9 @@ async def update_review_rating(
     """
     try:
         async with in_transaction():
-            review = await Reviews.get_or_none(user_id=user_id, movie_id=movie_id, delete_date=None)
+            review = await Reviews.get_or_none(
+                user_id=user_id, movie_id=movie_id, delete_date=None
+            )
             if review:
                 review.rating = rating_object
                 await review.save(update_fields=["rating_id"])
@@ -723,3 +750,18 @@ async def delete_rating(request: Request, movie_id: str) -> Wrapper[dict]:
         return ApiException(500, 2104, "Could not update fields")
 
     return wrap({"id": str(rating_id), "rating": rating})
+
+
+@router.get("/{movie_id}/rating")
+async def get_current_user_rating(request: Request, movie_id: str) -> Wrapper[dict]:
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return ApiException(500, 2001, "You are not logged in!")
+
+    rating = await Ratings.get_or_none(
+        user_id=user_id, movie_id=movie_id, delete_date=None
+    )
+    if not rating:
+        return ApiException(500, 2103, "Could not find or delete rating")
+
+    return wrap({"user_id": user_id, "movie_id": movie_id, "rating": rating.rating})
