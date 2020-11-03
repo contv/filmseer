@@ -1,13 +1,19 @@
-from typing import Optional, Union
+from fastapi import APIRouter, Request
+from pydantic import BaseModel
+from humps import camelize
+from typing import Optional, List, Union
 
-from app.models.db.reviews import Reviews
 from app.models.db.users import Users
+from app.models.db.wishlists import Wishlists
+from app.models.db.reviews import Reviews
 from app.utils.password import hash
+from app.utils.ratings import calc_average_rating
 from app.utils.wrapper import ApiException, Wrapper, wrap
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
 from .review import ListReviewResponse, ReviewResponse
+from .wishlist import MovieWishlistResponse
 
 router = APIRouter()
 override_prefix = None
@@ -98,11 +104,38 @@ async def get_reviews_user(username: str, page: int = 0, per_page: int = 0):
 
 # REVIEW RELATED END
 
+# WISHLIST RELATED START
 
-@router.get("/{username}/wishlist")
+@router.get(
+    "/{username}/wishlist"
+)
 async def get_user_wishlist(username: str):
-    return wrap({"items": []})
+    user = await Users.filter(username=username).first()
 
+    if not user:
+        return ApiException(
+            404, 2031, "That user doesn't exist."
+        )
+
+    items = [
+        MovieWishlistResponse(
+            wishlist_id=str(wishlist_item.wishlist_id),
+            movie_id=str(wishlist_item.movie_id),
+            title=wishlist_item.movie.title,
+            image_url=wishlist_item.movie.image,
+            release_year=wishlist_item.movie.release_date.year,
+            average_rating=calc_average_rating(
+                wishlist_item.movie.cumulative_rating, wishlist_item.movie.num_votes
+            )
+        )
+        for wishlist_item in await Wishlists.filter(
+            user_id=user.user_id, delete_date=None
+        ).prefetch_related("movie")
+    ]
+
+    return wrap({"items": items})
+
+# WISHLIST RELATED END
 
 @router.get(
     "/", tags=["User"], response_model=Union[Wrapper[UserProfileResponse], Wrapper]

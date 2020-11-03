@@ -2,6 +2,10 @@ import Rating from "@material-ui/lab/Rating";
 import { view } from "@risingstack/react-easy-state";
 import React, { useEffect, useState } from "react";
 import { apiEffect } from "src/utils";
+import TabPopup from "src/app/popups/popup-tabs";
+import Register from "src/app/popups/register";
+import Login from "src/app/popups/login";
+import state from "src/app/states";
 import "./stars.scss";
 
 type StarsProps = {
@@ -17,15 +21,31 @@ const Stars = (props: StarsProps & { className?: string }) => {
   const [hover, setHover] = useState(0);
   const [didMount, setDidMount] = useState(false);
   const [awaiting, setAwaiting] = useState(false);
+  const [popupVisible, setPopupVisible] = useState(false);
 
   function handleClick() {
-    setRating(hover);
+    if (!state.loggedIn) {
+      setPopupVisible(true);
+    } else {
+      setRating(hover);
+    }
   }
 
-  useEffect(() => setDidMount(true), []);
+  useEffect(() => {
+    setDidMount(true);
+    apiEffect(
+      { path: "/session" },
+      (_wrapper) => {
+        state.loggedIn = true;
+      },
+      (_error) => {
+        state.loggedIn = false;
+      }
+    )
+  }, []);
 
   useEffect(() => {
-    if (props.votable && didMount) {
+    if (props.votable && didMount && state.loggedIn) {
       let didCancel = false;
       const updateRatingAPI = apiEffect(
         {
@@ -70,6 +90,34 @@ const Stars = (props: StarsProps & { className?: string }) => {
         onClick={handleClick}
         onChangeActive={(event, value) => setHover(value)}
       />
+      {popupVisible ? (
+        <TabPopup
+          tabs={{
+            login: (
+              <Login
+                onClose={() => {
+                  setPopupVisible(false);
+                }}
+              />
+            ),
+            register: (
+              <Register
+                onClose={() => {
+                  setPopupVisible(false);
+                }}
+              />
+            ),
+          }}
+          tabNames={{
+            login: <span>Sign In</span>,
+            register: <span>Register</span>,
+          }}
+          onClose={() => {
+            setPopupVisible(false);
+          }}
+          currentTabStateName="userMenuPopupTab"
+        />
+      ) : null}
     </div>
   );
 };
