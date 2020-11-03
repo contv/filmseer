@@ -29,7 +29,7 @@ export type ReviewEditorProps = {
 
 const ReviewEditor = (props: ReviewEditorProps & { className?: string }) => {
   const [editable, setEditable] = React.useState(props.disable);
-  const [spoiler, setSpoiler] = React.useState(props.containsSpoiler);
+  const [spoiler, setSpoiler] = React.useState(props.containsSpoiler || false);
   const [createDate, setCreateDate] = React.useState(props.createDate);
   const [desc, setDesc] = React.useState(props.description);
   const reviewDesc = async (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -47,7 +47,7 @@ const ReviewEditor = (props: ReviewEditorProps & { className?: string }) => {
       try {
         const response = await api({
           path: "/movie/" + props.movieId + "/review",
-          method: editable ? "POST" : "PUT",
+          method: editable ? "PUT" : "POST",
           body: {
             description: desc,
             contains_spoiler: spoiler,
