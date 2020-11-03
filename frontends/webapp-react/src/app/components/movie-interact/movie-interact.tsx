@@ -57,7 +57,7 @@ const MovieInteract = (props: MovieInteractProps) => {;
       setIsWishlisted(false);
     }
 
-  }, [props.movieId, state.loggedIn]);
+  }, [props.movieId]);
 
 return (
     <>

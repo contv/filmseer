@@ -17,7 +17,6 @@ import Trailer from "src/app/components/trailer";
 import avatar from "src/app/components/review/default-avatar.png"
 import VerticalList from "src/app/components/vertical-list";
 import MovieInteract from "src/app/components/movie-interact";
-import state from "src/app/states";
 import { api } from "src/utils";
 import "./movie.scss";
 
@@ -130,7 +129,7 @@ const MovieDetailPage = (props: { className?: string }) => {
       }
     });
     setRecommended(dummyRecommendedMovies as Array<MovieItemProps>);
-  }, [movieId, state.loggedIn]);
+  }, [movieId]);
 
   if (movieDetails) {
     const formattedNumRatings: string = nFormatter(movieDetails.numVotes, 0);
