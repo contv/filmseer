@@ -221,7 +221,7 @@ const useIsMounted = () => {
   return isMounted;
 };
 
-const useUpdateEffect = function useUpdateEffect(
+const useUpdateEffect: typeof React.useEffect = function useUpdateEffect(
   effect: React.EffectCallback,
   dependencies?: React.DependencyList
 ) {
