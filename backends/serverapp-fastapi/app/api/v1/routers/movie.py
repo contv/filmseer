@@ -515,7 +515,7 @@ async def process_movie_payload(
         if position["position"] == "director"
     )
     year_set = set(
-        int(preprocessed[movie_id]["movie"]["release_date"][0:4])
+        preprocessed[movie_id]["movie"]["release_date"][0:4]
         for movie_id in preprocessed
         if preprocessed[movie_id]["movie"]["release_date"]
     )
@@ -529,7 +529,7 @@ async def process_movie_payload(
         for director in director_set
     }
     year_selections = {
-        year: {"key": str(year), "name": str(year), "count": 0} for year in year_set
+        year: {"key": year, "name": year, "count": 0} for year in year_set
     }
 
     # Filter
