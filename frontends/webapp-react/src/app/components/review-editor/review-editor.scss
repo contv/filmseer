@@ -1,0 +1,42 @@
+.ReviewEditor {
+    border-bottom: 1px solid var(--gray-2);
+    padding-bottom: 8px;
+    display: flex;
+    width: 100%;
+
+    &__function {
+        display: flex;
+        flex-direction: column;
+        width: 150px;
+        margin-left: 10px;
+    }
+
+    &__textbox {
+        height: 100px;
+        resize: vertical;
+        font-family: inherit;
+        font-size: inherit;
+        min-height: 100px;
+        width: 100%;
+    }
+    
+
+    &__rating {
+        font-size: 16px;
+        padding-bottom: 10px;
+    }
+
+    &__spoiler {
+        padding-bottom: 10px;
+    }
+
+
+    &__date {
+        color: var(--gray-2);
+    } 
+
+    &__avatar {
+        float: left;
+        padding-right:10px;
+    }
+}
