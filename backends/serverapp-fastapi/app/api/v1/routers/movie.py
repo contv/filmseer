@@ -520,11 +520,11 @@ async def process_movie_payload(
             except ValueError:
                 pass
         if director_filter:
-            directors = set(
-                position["people"]["name"]
-                for position in movie["positions"]
-                if position["position"] == "director"
-            )
+            directors = set()
+            if movie["positions"]:
+                for position in movie["positions"]:
+                    if position["position"] == "director":
+                        directors.add(position["people"]["name"])
             if not directors.intersection(director_filter):
                 director_filter_pass = False
         if genre_filter_pass and year_filter_pass and director_filter_pass:
