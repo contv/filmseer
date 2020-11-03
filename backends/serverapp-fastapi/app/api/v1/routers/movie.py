@@ -349,7 +349,7 @@ async def search_movies(
     request: Request,
     keywords: str = "",
     genres: Optional[List[str]] = Query([]),
-    years: Optional[str] = "",
+    years: Optional[List[str]] = Query([]),
     directors: Optional[List[str]] = Query([]),
     per_page: Optional[int] = None,
     page: Optional[int] = 1,
@@ -487,7 +487,7 @@ async def search_movies(
 
 async def process_movie_payload(
     preprocessed: Dict,
-    year_filter: Optional[str],
+    year_filter: Optional[List[str]],
     director_filter: Optional[List[str]],
     genre_filter: Optional[List[str]],
     per_page: Optional[int],
@@ -534,12 +534,6 @@ async def process_movie_payload(
 
     # Filter
     postprocessed = []
-    year_filter = year_filter.split("-")
-    try:
-        min_year, max_year = int(year_filter[0]), int(year_filter[1])
-    except (IndexError, ValueError):
-        year_filter = ""
-
     for movie_id in preprocessed:
         genre_filter_pass, year_filter_pass, director_filter_pass = True, True, True
         movie = preprocessed[movie_id]["movie"]
@@ -552,10 +546,10 @@ async def process_movie_payload(
                 genre_filter_pass = False
         if year_filter:
             try:
-                year = int(movie["release_date"][0:4])
-                if not year >= min_year or not year <= max_year:
+                year = movie["release_date"][0:4]
+                if year not in year_filter:
                     year_filter_pass = False
-            except ValueError:
+            except TypeError:
                 year_filter_pass = False
         if director_filter:
             try:
