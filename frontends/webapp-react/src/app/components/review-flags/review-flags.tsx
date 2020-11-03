@@ -1,14 +1,12 @@
-import "./review-flags.scss";
-
-import { ApiError, api } from "src/utils";
-
-import Popup from "src/app/popups/popup-base";
+import { view } from "@risingstack/react-easy-state";
 import React from "react";
+import Popup from "src/app/popups/popup-base";
+import state from "src/app/states";
+import { api, ApiError } from "src/utils";
 import funny from "./funny.svg";
 import helpful from "./helpful.svg";
+import "./review-flags.scss";
 import spoiler from "./spoiler.svg";
-import state from "src/app/states";
-import { view } from "@risingstack/react-easy-state";
 
 export type ReviewFlagsProps = {
   reviewId: string;
@@ -108,22 +106,32 @@ const ReviewFlags = (props: ReviewFlagsProps & { className?: string }) => {
       className={`ReviewFlags ${(
         props.className || ""
       ).trim()} ReviewFlags__outer`}
-    >     
-      <button onClick={clickHelpful} className={"ReviewFlags__button" +
-            (props.hideFlags ? " ReviewFlags__button--hide" : "") }>
+    >
+      <button
+        onClick={clickHelpful}
+        className={
+          "ReviewFlags__button" +
+          (props.hideFlags ? " ReviewFlags__button--hide" : "")
+        }
+      >
         <img
           src={helpful}
           alt="Helpful"
           className={
             "ReviewFlags__image" +
-            (flaggedHelpful ? "" : " ReviewFlags__image--grayscale") 
+            (flaggedHelpful ? "" : " ReviewFlags__image--grayscale")
           }
         />
         <span className="ReviewFlags__name">Helpful</span>
       </button>
 
-      <button onClick={clickFunny} className={"ReviewFlags__button" +
-            (props.hideFlags ? " ReviewFlags__button--hide" : "") }>
+      <button
+        onClick={clickFunny}
+        className={
+          "ReviewFlags__button" +
+          (props.hideFlags ? " ReviewFlags__button--hide" : "")
+        }
+      >
         <img
           src={funny}
           alt="Funny"
@@ -135,8 +143,13 @@ const ReviewFlags = (props: ReviewFlagsProps & { className?: string }) => {
         <span className="ReviewFlags__name">Funny</span>
       </button>
 
-      <button onClick={clickSpoiler} className={"ReviewFlags__button" +
-            (props.hideFlags ? " ReviewFlags__button--hide" : "") }>
+      <button
+        onClick={clickSpoiler}
+        className={
+          "ReviewFlags__button" +
+          (props.hideFlags ? " ReviewFlags__button--hide" : "")
+        }
+      >
         <img
           src={spoiler}
           alt="Spoiler"
@@ -148,8 +161,12 @@ const ReviewFlags = (props: ReviewFlagsProps & { className?: string }) => {
         <span className="ReviewFlags__name">Spoiler</span>
       </button>
 
-      <div className={"ReviewFlags__numvote" +
-            (props.hideFlags ? " ReviewFlags__numvote--hide" : "")}>
+      <div
+        className={
+          "ReviewFlags__numvote" +
+          (props.hideFlags ? " ReviewFlags__numvote--hide" : "")
+        }
+      >
         <div>{numHelpful} people think this review is helpful</div>
         <div>{numFunny} people think this review is funny</div>
         <div>{numSpoiler} people think this review is spoiler</div>

@@ -1,9 +1,9 @@
-import Stars from "src/app/components/stars";
 import { view } from "@risingstack/react-easy-state";
 import React from "react";
 import ReviewFlags from "src/app/components/review-flags";
+import Stars from "src/app/components/stars";
+import { api, ApiError } from "src/utils";
 import "./review-editor.scss";
-import { ApiError, api } from "src/utils";
 
 export type ReviewEditorProps = {
   reviewId: string;
@@ -30,11 +30,11 @@ const ReviewEditor = (props: ReviewEditorProps & { className?: string }) => {
   const [spoiler, setSpoiler] = React.useState(props.containsSpoiler);
   const [desc, setDesc] = React.useState(props.description);
   const reviewDesc = async (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setDesc(event.target.value)
-  }
+    setDesc(event.target.value);
+  };
   const toogleSpoiler = () => {
-    setSpoiler(!spoiler)
-  }
+    setSpoiler(!spoiler);
+  };
   const changeMode = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
@@ -48,7 +48,7 @@ const ReviewEditor = (props: ReviewEditorProps & { className?: string }) => {
           body: {
             description: desc,
             contains_spoiler: spoiler,
-          },        
+          },
         });
       } catch (error) {
         if (!(error instanceof ApiError)) {
@@ -100,13 +100,19 @@ const ReviewEditor = (props: ReviewEditorProps & { className?: string }) => {
             <>
               <span>Your rating:</span>
               <Stars
-                    movieId={props.movieId}
-                    rating={props.rating}
-                    size="small"
-                    votable={editable ? false : true}
-                  />
+                movieId={props.movieId}
+                rating={props.rating}
+                size="small"
+                votable={editable ? false : true}
+              />
               <label className="ReviewEditor__spoiler">
-                <input type="checkbox" id="spoiler" disabled={editable} checked={spoiler ? true : false} onChange={toogleSpoiler} />
+                <input
+                  type="checkbox"
+                  id="spoiler"
+                  disabled={editable}
+                  checked={spoiler ? true : false}
+                  onChange={toogleSpoiler}
+                />
                 Mark as spoiler
               </label>
               <button onClick={changeMode}>
