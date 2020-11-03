@@ -47,7 +47,7 @@ const ReviewEditor = (props: ReviewEditorProps & { className?: string }) => {
       try {
         const response = await api({
           path: "/movie/" + props.movieId + "/review",
-          method: editable ? "PUT" : "POST",
+          method: "POST",
           body: {
             description: desc,
             contains_spoiler: spoiler,
