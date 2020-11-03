@@ -456,47 +456,6 @@ async def process_movie_payload(
     Given a preprocessed Elasticsearch response payload, apply filters, sorting and pagination, and
     returns an ordered array of SearchResponse objects each representing a movie tile
     """
-    # Populate filter options based on entire payload
-    genre_set = set(
-        genre["name"]
-        for movie_id in preprocessed
-        if preprocessed[movie_id]["movie"]["genres"]
-        for genre in preprocessed[movie_id]["movie"]["genres"]
-    )
-    director_set = set(
-        position["people"]["name"]
-        for movie_id in preprocessed
-        if preprocessed[movie_id]["movie"]["positions"]
-        for position in preprocessed[movie_id]["movie"]["positions"]
-        if position["position"] == "director"
-    )
-    year_set = set(
-        int(preprocessed[movie_id]["movie"]["release_date"][0:4])
-        for movie_id in preprocessed
-        if preprocessed[movie_id]["movie"]["release_date"]
-    )
-
-    genre_selections = FilterResponse(
-        type="list",
-        name="Genre",
-        key="genre",
-        selections=[{"key": genre, "name": genre} for genre in genre_set],
-    )
-
-    director_selections = FilterResponse(
-        type="list",
-        name="Directors",
-        key="director",
-        selections=[{"key": director, "name": director} for director in director_set],
-    )
-
-    year_selections = FilterResponse(
-        type="slide",
-        name="Year",
-        key="year",
-        selections=[{"min": min(year_set), "max": max(year_set)} if year_set else None],
-    )
-
     # Filter
     postprocessed = []
     year_filter = year_filter.split("-")
