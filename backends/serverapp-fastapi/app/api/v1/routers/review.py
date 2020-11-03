@@ -27,6 +27,9 @@ class ReviewRequest(BaseModel):
     description: str
     contains_spoiler: bool
 
+class ReviewCreateDate(BaseModel):
+    create_date: datetime
+
 
 class ReviewResponse(BaseModel):
     review_id: str

@@ -166,7 +166,7 @@ const ReviewFlags = (props: ReviewFlagsProps & { className?: string }) => {
       <div
         className={
           "ReviewFlags__numvote" +
-          (props.hideFlags ? " ReviewFlags__numvote--hide" : "")
+          (props.hideStats ? " ReviewFlags__numvote--hide" : "")
         }
       >
         <div>{numHelpful} people think this review is helpful</div>
