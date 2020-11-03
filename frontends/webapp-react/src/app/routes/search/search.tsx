@@ -21,7 +21,7 @@ type SearchItem = {
 const groupItems = (group: any, size: any, length: any) =>
   group
     .reduce(
-      (prev: any, current: any, index: any, original: any) =>
+      (prev: any, _: any, index: any, original: any) =>
         index % size === 0
           ? prev.concat([original.slice(index, index + size)])
           : prev,
@@ -38,14 +38,16 @@ const SearchPage = (props: { className?: string }) => {
   const [genreFilter, setGenreFilter] = useState<string>();
   const [directorFilter, setDirectorFilter] = useState<string>();
   const [yearRange, setYearRange] = useState<string>();
+  const [descending, setDescending] = useState<Boolean>(true);
   const [filters, setFilters] = useState<Array<any>>();
+  const [sortBy, setSortBy] = useState<string>("relevance");
 
   const updateYears = (event: any) => {
     setYearRange(event.target.value);
   };
 
   const updateDirector = (event: any) => {
-    console.log(event.target.value)
+    console.log(event.target.value);
     setDirectorFilter(event.target.value);
   };
 
@@ -70,7 +72,7 @@ const SearchPage = (props: { className?: string }) => {
         genreFilter ? `&genres=${encodeURI(genreFilter)}` : ""
       }${
         directorFilter ? `&directors=${encodeURI(directorFilter)}` : ""
-      }&per_page=80&page=1&sort=relevance&desc=true`,
+      }&per_page=80&page=1&sort=${sortBy}&desc=${descending}`,
       method: "GET",
     }).then((res) => {
       if (res.code !== 0) {
@@ -79,10 +81,9 @@ const SearchPage = (props: { className?: string }) => {
         const grouped = groupItems(res.data.movies, 8, 10);
         setGroupedResults(grouped);
         setFilters(res.data.filters);
-        console.log(res.data.filters);
       }
     });
-  }, [searchString, genreFilter, directorFilter]);
+  }, [searchString, genreFilter, directorFilter, sortBy, descending]);
 
   if (groupedResults && filters) {
     return (
@@ -100,6 +101,27 @@ const SearchPage = (props: { className?: string }) => {
                 updateSearchParams={getParamUpdater(filter.name)}
               />
             ))}
+        </div>
+        <div className="Search__sort">
+          <label htmlFor="sort">Sort by</label>
+          <select
+            name="sort"
+            onChange={(event) => setSortBy(event.target.value)}
+          >
+            <option value="relevance">Relevance</option>
+            <option value="rating">Rating</option>
+            <option value="name">Name</option>
+            <option value="year">Year</option>
+          </select>
+          <select
+            name="order"
+            onChange={(event) =>
+              setDescending(event.target.value === "descending")
+            }
+          >
+            <option value="descending">Descending</option>
+            <option value="ascending">Ascending</option>
+          </select>
         </div>
         {groupedResults &&
           groupedResults.map((group) => (
