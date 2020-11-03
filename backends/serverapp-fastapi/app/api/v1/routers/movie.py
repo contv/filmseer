@@ -18,11 +18,11 @@ from app.models.db.positions import Positions
 from app.models.db.ratings import Ratings
 from app.models.db.reviews import Reviews
 from app.models.db.spoiler_votes import SpoilerVotes
-from app.utils.ratings import calc_average_rating
 from app.utils.dict_storage.redis import RedisDictStorageDriver
+from app.utils.ratings import calc_average_rating
 from app.utils.wrapper import ApiException, Wrapper, wrap
 
-from .review import ListReviewResponse, ReviewRequest, ReviewResponse
+from .review import ListReviewResponse, ReviewRequest, ReviewResponse, ReviewCreateDate
 
 router = APIRouter()
 override_prefix = None
@@ -86,7 +86,11 @@ class RatingResponse(BaseModel):
     rating: float
 
 
-@router.get("/{movie_id}/ratings")
+class AverageRatingResponse(BaseModel):
+    average: float
+
+
+@router.get("/{movie_id}/ratings", response_model=Wrapper[AverageRatingResponse])
 async def get_average_rating(movie_id: str) -> Wrapper[dict]:
     try:
         movie = (
@@ -155,51 +159,88 @@ async def get_movie(movie_id: str):
     "/{movie_id}/reviews", tags=["movies"], response_model=Wrapper[ListReviewResponse]
 )
 async def get_movie_reviews(
-    movie_id: str, request: Request, page: int = 0, per_page: int = 0
+    movie_id: str,
+    request: Request,
+    page: int = 0,
+    per_page: int = 0,
+    me: Optional[bool] = False,
 ):
     if per_page >= 42:
         return ApiException(400, 2700, "Please limit the numer of items per page")
     if (per_page < 0) or (page < 0):
         return ApiException(400, 2701, "Invalid page/per_page parameter")
     user_id = request.session.get("user_id")
-    # No need to raise exception if user_id = None because guest user should see the review
+    # No need to raise exception if user_id = None as guest user should see the review
     # TO DO: Filter reviews from Ban List
-    reviews = [
-        ReviewResponse(
-            review_id=str(r.review_id),
-            user_id=str(r.user_id),
-            username=r.user.username,
-            create_date=str(r.create_date),
-            description=r.description,
-            contains_spoiler=r.contains_spoiler,
-            rating=r.rating.rating,
-            num_helpful=r.num_helpful,
-            num_funny=r.num_funny,
-            num_spoiler=r.num_spoiler,
-            flagged_helpful=await r.helpful_votes.filter(
-                user_id=user_id, delete_date=None
-            ).count(),
-            flagged_funny=await r.funny_votes.filter(
-                user_id=user_id, delete_date=None
-            ).count(),
-            flagged_spoiler=await r.spoiler_votes.filter(
-                user_id=user_id, delete_date=None
-            ).count(),
-        )
-        for r in await Reviews.filter(movie_id=movie_id, delete_date=None)
-        .order_by("-create_date")
-        .offset((page - 1) * per_page)
-        .limit(per_page)
-        .prefetch_related(
-            "rating", "helpful_votes", "funny_votes", "spoiler_votes", "user"
-        )
-    ]
-
+    if me:
+        reviews = [
+            ReviewResponse(
+                review_id=str(r.review_id),
+                user_id=str(r.user_id),
+                username=r.user.username,
+                create_date=str(r.create_date),
+                description=r.description,
+                contains_spoiler=r.contains_spoiler,
+                rating=r.rating.rating,
+                num_helpful=r.num_helpful,
+                num_funny=r.num_funny,
+                num_spoiler=r.num_spoiler,
+                flagged_helpful=await r.helpful_votes.filter(
+                    user_id=user_id, delete_date=None
+                ).count(),
+                flagged_funny=await r.funny_votes.filter(
+                    user_id=user_id, delete_date=None
+                ).count(),
+                flagged_spoiler=await r.spoiler_votes.filter(
+                    user_id=user_id, delete_date=None
+                ).count(),
+            )
+            for r in await Reviews.filter(
+                movie_id=movie_id, delete_date=None, user_id=user_id
+            )
+            .order_by("-create_date")
+            .offset((page - 1) * per_page)
+            .limit(per_page)
+            .prefetch_related(
+                "rating", "helpful_votes", "funny_votes", "spoiler_votes", "user"
+            )
+        ]
+    else:
+        reviews = [
+            ReviewResponse(
+                review_id=str(r.review_id),
+                user_id=str(r.user_id),
+                username=r.user.username,
+                create_date=str(r.create_date),
+                description=r.description,
+                contains_spoiler=r.contains_spoiler,
+                rating=r.rating.rating,
+                num_helpful=r.num_helpful,
+                num_funny=r.num_funny,
+                num_spoiler=r.num_spoiler,
+                flagged_helpful=await r.helpful_votes.filter(
+                    user_id=user_id, delete_date=None
+                ).count(),
+                flagged_funny=await r.funny_votes.filter(
+                    user_id=user_id, delete_date=None
+                ).count(),
+                flagged_spoiler=await r.spoiler_votes.filter(
+                    user_id=user_id, delete_date=None
+                ).count(),
+            )
+            for r in await Reviews.filter(movie_id=movie_id, delete_date=None).exclude(user_id=user_id)
+            .order_by("-create_date")
+            .offset((page - 1) * per_page)
+            .limit(per_page)
+            .prefetch_related(
+                "rating", "helpful_votes", "funny_votes", "spoiler_votes", "user"
+            )
+        ]
     return wrap({"items": reviews})
 
 
-@router.post("/{movie_id}/review", tags=["movies"])
-@router.put("/{movie_id}/review", tags=["movies"])
+@router.post("/{movie_id}/review", tags=["movies"], response_model=Wrapper[ReviewCreateDate])
+@router.put("/{movie_id}/review", tags=["movies"], response_model=Wrapper[ReviewCreateDate])
 async def create_update_user_review(
     movie_id: str, review: ReviewRequest, request: Request
 ):
@@ -235,11 +276,12 @@ async def create_update_user_review(
                     movie_id=movie_id,
                 )
             )
-
+            create_date=datetime.now()
             if await Reviews.filter(user_id=user_id, movie_id=movie_id):
                 await Reviews.filter(user_id=user_id, movie_id=movie_id).update(
                     rating_id=rating[0].rating_id,
                     delete_date=None,
+                    create_date=create_date,
                     description=review.description,
                     contains_spoiler=review.contains_spoiler,
                 )
@@ -247,6 +289,7 @@ async def create_update_user_review(
                 await Reviews(
                     user_id=user_id,
                     movie_id=movie_id,
+                    create_date=create_date,
                     rating_id=rating[0].rating_id,
                     description=review.description,
                     contains_spoiler=review.contains_spoiler,
@@ -259,7 +302,7 @@ async def create_update_user_review(
     except OperationalError:
         return ApiException(500, 2501, "An exception occurred")
 
-    return wrap({})
+    return wrap({"create_date": create_date})
 
 
 @router.delete("/{movie_id}/review", tags=["movies"])
@@ -412,7 +455,7 @@ async def search_movies(
         search = search.query(q)
 
     # TODO Retrieve banlist and pass into script field
-    # eg "listban":"1ebde7ba-9ef8-411f-bdc1-2d1c083e778b,1ebde7ba-9ef8-411f-bdc1-2d1c083e778b"
+    # eg "listban":"{uuid1},{uuid2}"
     search = search.script_fields(
         average_rating={
             "script": {"id": "calculate_rating_field", "params": {"listban": ""}}
@@ -453,10 +496,11 @@ async def process_movie_payload(
     desc: Optional[bool],
 ) -> Dict:
     """
-    Given a preprocessed Elasticsearch response payload, apply filters, sorting and pagination, and
-    returns an ordered array of SearchResponse objects each representing a movie tile
+    Given a preprocessed Elasticsearch response payload, apply filters, sorting and
+    pagination, and returns an ordered array of SearchResponse objects each representing
+    a movie tile
     """
-    # Populate filter options based on entire payload
+    # Populate filter options based on total payload
     genre_set = set(
         genre["name"]
         for movie_id in preprocessed
@@ -476,26 +520,17 @@ async def process_movie_payload(
         if preprocessed[movie_id]["movie"]["release_date"]
     )
 
-    genre_selections = FilterResponse(
-        type="list",
-        name="Genre",
-        key="genre",
-        selections=[{"key": genre, "name": genre} for genre in genre_set],
-    )
-
-    director_selections = FilterResponse(
-        type="list",
-        name="Directors",
-        key="director",
-        selections=[{"key": director, "name": director} for director in director_set],
-    )
-
-    year_selections = FilterResponse(
-        type="slide",
-        name="Year",
-        key="year",
-        selections=[{"min": min(year_set), "max": max(year_set)} if year_set else None],
-    )
+    # Use dicts for fast insertion of count, extract the values and discard keys later
+    genre_selections = {
+        genre: {"key": genre, "name": genre, "count": 0} for genre in genre_set
+    }
+    director_selections = {
+        director: {"key": director, "name": director, "count": 0}
+        for director in director_set
+    }
+    year_selections = {
+        year: {"key": str(year), "name": str(year), "count": 0} for year in year_set
+    }
 
     # Filter
     postprocessed = []
@@ -509,7 +544,7 @@ async def process_movie_payload(
         genre_filter_pass, year_filter_pass, director_filter_pass = True, True, True
         movie = preprocessed[movie_id]["movie"]
         if genre_filter:
-            try: 
+            try:
                 genres = set(genre["name"] for genre in movie["genres"])
                 if not genres.intersection(genre_filter):
                     genre_filter_pass = False
@@ -527,7 +562,7 @@ async def process_movie_payload(
                 directors = set(
                     position["people"]["name"]
                     for position in movie["positions"]
-                    if position["position"] == "director"                
+                    if position["position"] == "director"
                 )
                 if not directors.intersection(director_filter):
                     director_filter_pass = False
@@ -567,6 +602,39 @@ async def process_movie_payload(
             end = len(postprocessed)
         postprocessed = postprocessed[start:end]
 
+    # Populate filter counts using filtered results only
+    for movie in postprocessed:
+        if movie["movie"]["genres"]:
+            for genre in movie["movie"]["genres"]:
+                genre_selections[genre["name"]]["count"] += 1
+        if movie["movie"]["positions"]:
+            for position in movie["movie"]["positions"]:
+                if position["position"] == "director":
+                    director_selections[position["people"]["name"]]["count"] += 1
+        if movie["movie"]["release_date"]:
+            year_selections[movie["movie"]["release_date"][0:4]]["count"] += 1
+
+    genre_selections = FilterResponse(
+        type="list",
+        name="Genre",
+        key="genre",
+        selections=sorted(list(genre_selections.values()), key=lambda x: x["name"]),
+    )
+
+    director_selections = FilterResponse(
+        type="list",
+        name="Directors",
+        key="director",
+        selections=sorted(list(director_selections.values()), key=lambda x: x["name"]),
+    )
+
+    year_selections = FilterResponse(
+        type="slide",
+        name="Year",
+        key="year",
+        selections=sorted(list(year_selections.values()), key=lambda x: x["name"]),
+    )
+
     # Convert to SearchResponse objects
     for i in range(len(postprocessed)):
         movie = postprocessed[i]
@@ -586,6 +654,7 @@ async def process_movie_payload(
     }
 
     return response
+
 
 @router.post(
     "/{movie_id}/rating", tags=["movies"], response_model=Wrapper[RatingResponse]
@@ -630,7 +699,7 @@ async def update_cumulative_rating(
 ):
     """
     Updates a given movie's cumulative rating and num votes fields.
-    If no old rating is provided, rating is assumed to be a new rating or a deleted rating.
+    If no old rating is provided, rating is assumed to a new or a deleted.
     In case of a deleted rating, ensure that new_rating is a negative floating value.
     """
     try:
@@ -643,7 +712,7 @@ async def update_cumulative_rating(
                     movie.num_votes += 1 if new_rating >= 0 else -1
                     movie.cumulative_rating += new_rating
                 await movie.save(update_fields=["cumulative_rating", "num_votes"])
-    except:
+    except OperationalError:
         raise OperationalError
 
 
@@ -656,11 +725,13 @@ async def update_review_rating(
     """
     try:
         async with in_transaction():
-            review = await Reviews.get_or_none(user_id=user_id, movie_id=movie_id, delete_date=None)
+            review = await Reviews.get_or_none(
+                user_id=user_id, movie_id=movie_id, delete_date=None
+            )
             if review:
                 review.rating = rating_object
                 await review.save(update_fields=["rating_id"])
-    except:
+    except OperationalError:
         raise OperationalError
 
 
@@ -691,3 +762,18 @@ async def delete_rating(request: Request, movie_id: str) -> Wrapper[dict]:
         return ApiException(500, 2104, "Could not update fields")
 
     return wrap({"id": str(rating_id), "rating": rating})
+
+
+@router.get("/{movie_id}/rating")
+async def get_current_user_rating(request: Request, movie_id: str) -> Wrapper[dict]:
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return ApiException(500, 2001, "You are not logged in!")
+
+    rating = await Ratings.get_or_none(
+        user_id=user_id, movie_id=movie_id, delete_date=None
+    )
+    if not rating:
+        return ApiException(500, 2103, "Could not find or delete rating")
+
+    return wrap({"user_id": user_id, "movie_id": movie_id, "rating": rating.rating})

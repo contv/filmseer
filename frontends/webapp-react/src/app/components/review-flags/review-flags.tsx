@@ -18,6 +18,8 @@ export type ReviewFlagsProps = {
   numHelpful?: number;
   numFunny?: number;
   numSpoiler?: number;
+  hideFlags?: boolean;
+  hideStats?: boolean;
 };
 
 const ReviewFlags = (props: ReviewFlagsProps & { className?: string }) => {
@@ -107,7 +109,13 @@ const ReviewFlags = (props: ReviewFlagsProps & { className?: string }) => {
         props.className || ""
       ).trim()} ReviewFlags__outer`}
     >
-      <button onClick={clickHelpful} className="ReviewFlags__button">
+      <button
+        onClick={clickHelpful}
+        className={
+          "ReviewFlags__button" +
+          (props.hideFlags ? " ReviewFlags__button--hide" : "")
+        }
+      >
         <img
           src={helpful}
           alt="Helpful"
@@ -119,7 +127,13 @@ const ReviewFlags = (props: ReviewFlagsProps & { className?: string }) => {
         <span className="ReviewFlags__name">Helpful</span>
       </button>
 
-      <button onClick={clickFunny} className="ReviewFlags__button">
+      <button
+        onClick={clickFunny}
+        className={
+          "ReviewFlags__button" +
+          (props.hideFlags ? " ReviewFlags__button--hide" : "")
+        }
+      >
         <img
           src={funny}
           alt="Funny"
@@ -131,7 +145,13 @@ const ReviewFlags = (props: ReviewFlagsProps & { className?: string }) => {
         <span className="ReviewFlags__name">Funny</span>
       </button>
 
-      <button onClick={clickSpoiler} className="ReviewFlags__button">
+      <button
+        onClick={clickSpoiler}
+        className={
+          "ReviewFlags__button" +
+          (props.hideFlags ? " ReviewFlags__button--hide" : "")
+        }
+      >
         <img
           src={spoiler}
           alt="Spoiler"
@@ -143,7 +163,12 @@ const ReviewFlags = (props: ReviewFlagsProps & { className?: string }) => {
         <span className="ReviewFlags__name">Spoiler</span>
       </button>
 
-      <div className="ReviewFlags__numvote">
+      <div
+        className={
+          "ReviewFlags__numvote" +
+          (props.hideStats ? " ReviewFlags__numvote--hide" : "")
+        }
+      >
         <div>{numHelpful} people think this review is helpful</div>
         <div>{numFunny} people think this review is funny</div>
         <div>{numSpoiler} people think this review is spoiler</div>

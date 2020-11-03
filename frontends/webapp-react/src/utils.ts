@@ -189,7 +189,7 @@ const apiEffect = (
     }
 
     Promise.resolve(precondition()).then((result) => {
-      if (!!result) {
+      if (!!result && !didCancel) {
         fetchApi();
       }
     });
@@ -221,7 +221,7 @@ const useIsMounted = () => {
   return isMounted;
 };
 
-const useUpdateEffect = function useUpdateEffect(
+const useUpdateEffect: typeof React.useEffect = function useUpdateEffect(
   effect: React.EffectCallback,
   dependencies?: React.DependencyList
 ) {

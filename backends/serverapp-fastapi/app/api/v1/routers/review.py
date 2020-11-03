@@ -27,9 +27,14 @@ class ReviewRequest(BaseModel):
     description: str
     contains_spoiler: bool
 
+class ReviewCreateDate(BaseModel):
+    create_date: datetime
+
 
 class ReviewResponse(BaseModel):
     review_id: str
+    user_id: str
+    username: str
     create_date: str
     description: str
     contains_spoiler: bool
@@ -72,6 +77,8 @@ async def search_user_review(
     reviews = [
         ReviewResponse(
             review_id=str(r.review_id),
+            user_id=str(r.user_id),
+            username=r.user.username,
             create_date=str(r.create_date),
             description=r.description,
             contains_spoiler=r.contains_spoiler,
@@ -95,7 +102,7 @@ async def search_user_review(
         .order_by("-create_date")
         .offset((page - 1) * per_page)
         .limit(per_page)
-        .prefetch_related("rating", "helpful_votes", "funny_votes", "spoiler_votes")
+        .prefetch_related("rating", "helpful_votes", "funny_votes", "spoiler_votes", "user")
     ]
 
     return wrap({"items": reviews})

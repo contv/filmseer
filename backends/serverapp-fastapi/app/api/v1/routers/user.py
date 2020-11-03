@@ -1,16 +1,14 @@
+from typing import Optional, Union
+
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
-from humps import camelize
-from typing import Optional, List, Union
 
+from app.models.db.reviews import Reviews
 from app.models.db.users import Users
 from app.models.db.wishlists import Wishlists
-from app.models.db.reviews import Reviews
 from app.utils.password import hash
 from app.utils.ratings import calc_average_rating
 from app.utils.wrapper import ApiException, Wrapper, wrap
-from fastapi import APIRouter, Request
-from pydantic import BaseModel
 
 from .review import ListReviewResponse, ReviewResponse
 from .wishlist import MovieWishlistResponse
@@ -69,6 +67,8 @@ async def get_reviews_user(username: str, page: int = 0, per_page: int = 0):
     reviews = [
         ReviewResponse(
             review_id=str(r.review_id),
+            user_id=str(r.user_id),
+            username=r.user.username,
             movie_id=str(r.movie_id),
             movie_name=str(r.movie.title),
             create_date=str(r.create_date),
@@ -93,7 +93,7 @@ async def get_reviews_user(username: str, page: int = 0, per_page: int = 0):
         .offset((page - 1) * per_page)
         .limit(per_page)
         .prefetch_related(
-            "rating", "helpful_votes", "funny_votes", "spoiler_votes", "movie"
+            "rating", "helpful_votes", "funny_votes", "spoiler_votes", "movie", "user"
         )
     ]
 
@@ -104,16 +104,13 @@ async def get_reviews_user(username: str, page: int = 0, per_page: int = 0):
 
 # WISHLIST RELATED START
 
-@router.get(
-    "/{username}/wishlist"
-)
+
+@router.get("/{username}/wishlist")
 async def get_user_wishlist(username: str):
-    user = await Users.filter(username=username).first()
+    user = await Users.filter(username=username, delete_date=None).first()
 
     if not user:
-        return ApiException(
-            404, 2031, "That user doesn't exist."
-        )
+        return ApiException(404, 2031, "That user doesn't exist.")
 
     items = [
         MovieWishlistResponse(
@@ -124,7 +121,7 @@ async def get_user_wishlist(username: str):
             release_year=wishlist_item.movie.release_date.year,
             average_rating=calc_average_rating(
                 wishlist_item.movie.cumulative_rating, wishlist_item.movie.num_votes
-            )
+            ),
         )
         for wishlist_item in await Wishlists.filter(
             user_id=user.user_id, delete_date=None
@@ -133,7 +130,9 @@ async def get_user_wishlist(username: str):
 
     return wrap({"items": items})
 
+
 # WISHLIST RELATED END
+
 
 @router.get(
     "/", tags=["User"], response_model=Union[Wrapper[UserProfileResponse], Wrapper]
@@ -167,9 +166,7 @@ async def get_current_user(request: Request):
     response_model=Union[Wrapper[UserProfileResponse], Wrapper],
 )
 async def get_user_profile(username: str):
-    user = await Users.get_or_none(
-        username=username, delete_date=None
-    )
+    user = await Users.get_or_none(username=username, delete_date=None)
     if not user:
         return wrap(
             error=ApiException(500, 2200, "That user's profile page was not found")

@@ -1,13 +1,19 @@
+import "./review.scss";
+
 import { Rating } from "@material-ui/lab";
-import { view } from "@risingstack/react-easy-state";
 import React from "react";
 import ReviewFlags from "src/app/components/review-flags";
-import "./review.scss";
+import { view } from "@risingstack/react-easy-state";
+import { Link } from "react-router-dom";
 
 export type ReviewProps = {
   reviewId: string;
   description: string;
   username: string;
+  movieTitle?: string;
+  movieYear?: string;
+  movieId?: string;
+  showMovie?: boolean;
   profileImage?: string;
   createDate: Date;
   rating: number;
@@ -21,16 +27,18 @@ export type ReviewProps = {
 };
 
 const Review = (props: ReviewProps & { className?: string }) => {
+  const showSpoiler = props.containsSpoiler || (props.numHelpful || 0) > 10;
+  const authorSpoiler = props.containsSpoiler;
   return (
     <div className={`Review ${(props.className || "").trim()}`}>
-      <a href={`/user/${props.username}`}>
+      <Link to={`/user/${props.username}`}>
         <img
-          className="Reviewer__avatar"
+          className="Review__user-avatar"
           src={props.profileImage}
           width={60}
           alt=""
         />
-      </a>
+      </Link>
       <div className="Review__content">
         {props.rating && (
           <>
@@ -45,18 +53,39 @@ const Review = (props: ReviewProps & { className?: string }) => {
           </>
         )}
         <p className="Review__meta">
-          <a href={`/user/${props.username}`}>{props.username}</a>{" "}
+          <Link to={`/user/${props.username}`}>{props.username}</Link>{" "}
+          {props.showMovie && (
+            <span className="Review__meta-reviews">reviews</span>
+          )}
+          {props.showMovie && (
+            <Link to={`/movie/${props.movieId}`}>{props.movieTitle} ({props.movieYear})</Link>
+          )}
           <span className="Review__date">
             posted at {`${new Date(props.createDate).toUTCString()}`}
           </span>
         </p>
-        <p className="Review__content">{props.description}</p>
+
+        <p className="Review__content">
+          {showSpoiler ? (
+            <details>
+              <summary>
+                {authorSpoiler
+                  ? "This review has spoiler"
+                  : props.numSpoiler +
+                    " people think this review contains spoiler"}
+              </summary>
+              {props.description}
+            </details>
+          ) : (
+            <div>{props.description}</div>
+          )}
+        </p>
       </div>
       <ReviewFlags
         reviewId={props.reviewId}
         flaggedHelpful={props.flaggedHelpful}
         flaggedFunny={props.flaggedFunny}
-        flaggedSpoiler={props.flaggedHelpful}
+        flaggedSpoiler={props.flaggedSpoiler}
         numHelpful={props.numHelpful}
         numFunny={props.numFunny}
         numSpoiler={props.numSpoiler}

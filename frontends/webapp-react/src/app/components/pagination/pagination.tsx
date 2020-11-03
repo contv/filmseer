@@ -24,7 +24,6 @@
  * />
  */
 
-import { view } from "@risingstack/react-easy-state";
 import range from "lodash/range";
 import React from "react";
 import { ChevronLeft, ChevronRight } from "react-feather";
@@ -39,7 +38,7 @@ type PaginationProps = {
   perPage?: number; // only for "slice"
   dataCallback?: (page?: number) => object[] | Promise<object[]>; // page will be omitted for "slice"
   renderCallback: (data: object[]) => void; // only the data in the page
-  total: number; // 0 for "loadmore"
+  total?: number; // 0 or undefined for "slice" or "loadmore"
   current?: number; // undefined means 1
   onCurrentChange?: (newCurrent: number, oldCurrent: number) => void; // to change parent state
 };
@@ -56,6 +55,7 @@ const Pagination: React.ForwardRefRenderFunction<
   const [data, setData] = React.useState<object[]>([]);
   const prevPageNum = usePrevious(current);
   const pageInput = React.useRef<HTMLInputElement>(null);
+  const total = props.total || Math.ceil(data.length / (props.perPage || 1));
 
   const handleCallbackData = (newData: object[]) => {
     if (props.displayType !== "loadmore") {
@@ -104,11 +104,15 @@ const Pagination: React.ForwardRefRenderFunction<
     }
   };
 
-  React.useImperativeHandle(ref, () => ({
-    refresh: () => {
-      refreshData();
-    },
-  }));
+  React.useImperativeHandle(
+    ref,
+    () => ({
+      refresh: () => {
+        refreshData();
+      },
+    }),
+    [refreshData]
+  );
 
   React.useEffect(() => {
     refreshData();
@@ -178,7 +182,7 @@ const Pagination: React.ForwardRefRenderFunction<
             <ChevronLeft className="Pagination__image" />
           </button>
         )}
-        {props.total > 1 ? (
+        {total > 1 ? (
           <input
             type="text"
             className="Pagination__input"
@@ -190,14 +194,12 @@ const Pagination: React.ForwardRefRenderFunction<
         )}
         <div className="Pagination__total">
           {" "}
-          of {props.total} {props.total > 1 ? "pages" : "page"}
+          of {total} {total > 1 ? "pages" : "page"}
         </div>
-        {current + 1 < props.total ? (
+        {current + 1 < total ? (
           <button
             className="Pagination__button Pagination__next"
-            onClick={handlePaginatingFactory(
-              Math.min(props.total, current + 1)
-            )}
+            onClick={handlePaginatingFactory(Math.min(total, current + 1))}
           >
             <ChevronRight className="Pagination__image" />
           </button>
@@ -206,10 +208,10 @@ const Pagination: React.ForwardRefRenderFunction<
             <ChevronRight className="Pagination__image" />
           </button>
         )}
-        {current < props.total ? (
+        {current < total ? (
           <button
             className="Pagination__button Pagination__last"
-            onClick={handlePaginatingFactory(props.total)}
+            onClick={handlePaginatingFactory(total)}
           >
             <img
               src={lastIcon}
@@ -231,7 +233,7 @@ const Pagination: React.ForwardRefRenderFunction<
   } else if (props.displayType === "dotted") {
     return (
       <div className={`Pagination ${(props.className || "").trim()}`}>
-        {range(1, props.total + 1).map((i) => {
+        {range(1, total + 1).map((i) => {
           return (
             <button
               className={
@@ -260,4 +262,5 @@ const Pagination: React.ForwardRefRenderFunction<
   }
 };
 
-export default view(React.forwardRef(Pagination));
+// FIXME: No view() wrapping until RisingStack/react-easy-state#187 got addressed
+export default React.forwardRef(Pagination);

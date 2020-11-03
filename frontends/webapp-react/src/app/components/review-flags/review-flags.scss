@@ -7,6 +7,10 @@
     vertical-align: middle;
     padding: 5px;
     margin-left: 10px;
+    &--hide {
+      display: none;
+    }
+
   }
 
   &__image {
@@ -28,5 +32,8 @@
     flex-direction: column;
     margin-left: 20px;
     font-size: 9pt;
+    &--hide {
+      display: none;
+    }
   }
 }
