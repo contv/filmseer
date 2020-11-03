@@ -86,7 +86,11 @@ class RatingResponse(BaseModel):
     rating: float
 
 
-@router.get("/{movie_id}/ratings")
+class AverageRatingResponse(BaseModel):
+    average: float
+
+
+@router.get("/{movie_id}/ratings", response_model=Wrapper[AverageRatingResponse])
 async def get_average_rating(movie_id: str) -> Wrapper[dict]:
     try:
         movie = (
@@ -166,7 +170,7 @@ async def get_movie_reviews(
     if (per_page < 0) or (page < 0):
         return ApiException(400, 2701, "Invalid page/per_page parameter")
     user_id = request.session.get("user_id")
-    # No need to raise exception if user_id = None because guest user should see the review
+    # No need to raise exception if user_id = None as guest user should see the review
     # TO DO: Filter reviews from Ban List
     if me:
         reviews = [
@@ -450,7 +454,7 @@ async def search_movies(
         search = search.query(q)
 
     # TODO Retrieve banlist and pass into script field
-    # eg "listban":"1ebde7ba-9ef8-411f-bdc1-2d1c083e778b,1ebde7ba-9ef8-411f-bdc1-2d1c083e778b"
+    # eg "listban":"{uuid1},{uuid2}"
     search = search.script_fields(
         average_rating={
             "script": {"id": "calculate_rating_field", "params": {"listban": ""}}
@@ -491,8 +495,9 @@ async def process_movie_payload(
     desc: Optional[bool],
 ) -> Dict:
     """
-    Given a preprocessed Elasticsearch response payload, apply filters, sorting and pagination, and
-    returns an ordered array of SearchResponse objects each representing a movie tile
+    Given a preprocessed Elasticsearch response payload, apply filters, sorting and
+    pagination, and returns an ordered array of SearchResponse objects each representing
+    a movie tile
     """
     # Populate filter options based on total payload
     genre_set = set(
@@ -693,7 +698,7 @@ async def update_cumulative_rating(
 ):
     """
     Updates a given movie's cumulative rating and num votes fields.
-    If no old rating is provided, rating is assumed to be a new rating or a deleted rating.
+    If no old rating is provided, rating is assumed to a new or a deleted.
     In case of a deleted rating, ensure that new_rating is a negative floating value.
     """
     try:
@@ -706,7 +711,7 @@ async def update_cumulative_rating(
                     movie.num_votes += 1 if new_rating >= 0 else -1
                     movie.cumulative_rating += new_rating
                 await movie.save(update_fields=["cumulative_rating", "num_votes"])
-    except:
+    except OperationalError:
         raise OperationalError
 
 
@@ -725,7 +730,7 @@ async def update_review_rating(
             if review:
                 review.rating = rating_object
                 await review.save(update_fields=["rating_id"])
-    except:
+    except OperationalError:
         raise OperationalError
 
 
