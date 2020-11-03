@@ -41,7 +41,7 @@ const App = () => {
             <UserMenu className="Header__user-menu" />
           </header>
           <article className="App__main Main">
-              {searchTerm && (<Redirect to={{ pathname: `/search/${searchTerm}`, search: `?desc=${"hi"}` }}/>)}
+              {searchTerm && (<Redirect to={{ pathname: `/search/${searchTerm}`}}/>)}
             <Switch>
               <Route path="/search/:searchString?">
                 <SearchPage className="Main__search" />
