@@ -456,6 +456,38 @@ async def process_movie_payload(
     Given a preprocessed Elasticsearch response payload, apply filters, sorting and pagination, and
     returns an ordered array of SearchResponse objects each representing a movie tile
     """
+    # Populate filter options based on total payload
+    genre_set = set(
+        genre["name"]
+        for movie_id in preprocessed
+        if preprocessed[movie_id]["movie"]["genres"]
+        for genre in preprocessed[movie_id]["movie"]["genres"]
+    )
+    director_set = set(
+        position["people"]["name"]
+        for movie_id in preprocessed
+        if preprocessed[movie_id]["movie"]["positions"]
+        for position in preprocessed[movie_id]["movie"]["positions"]
+        if position["position"] == "director"
+    )
+    year_set = set(
+        int(preprocessed[movie_id]["movie"]["release_date"][0:4])
+        for movie_id in preprocessed
+        if preprocessed[movie_id]["movie"]["release_date"]
+    )
+
+    # Use dicts for fast insertion of count, extract the values and discard keys later
+    genre_selections = {
+        genre: {"key": genre, "name": genre, "count": 0} for genre in genre_set
+    }
+    director_selections = {
+        director: {"key": director, "name": director, "count": 0}
+        for director in director_set
+    }
+    year_selections = {
+        year: {"key": year, "name": year, "count": 0} for year in year_set
+    }
+
     # Filter
     postprocessed = []
     year_filter = year_filter.split("-")
@@ -526,45 +558,37 @@ async def process_movie_payload(
             end = len(postprocessed)
         postprocessed = postprocessed[start:end]
 
-    # Populate filter options based on filtered payload
-    genre_set = set(
-        genre["name"]
-        for movie in postprocessed
-        if movie["movie"]["genres"]
-        for genre in movie["movie"]["genres"]
-    )
-    director_set = set(
-        position["people"]["name"]
-        for movie in postprocessed
-        if movie["movie"]["positions"]
-        for position in movie["movie"]["positions"]
-        if position["position"] == "director"
-    )
-    year_set = set(
-        int(movie["movie"]["release_date"][0:4])
-        for movie in postprocessed
-        if movie["movie"]["release_date"]
-    )
+    # Populate filter counts using filtered results only
+    for movie in postprocessed:
+        if movie["movie"]["genres"]:
+            for genre in movie["movie"]["genres"]:
+                genre_selections[genre["name"]]["count"] += 1
+        if movie["movie"]["positions"]:
+            for position in movie["movie"]["positions"]:
+                if position["position"] == "director":
+                    director_selections[position["people"]["name"]]["count"] += 1
+        if movie["movie"]["release_date"]:
+            year_selections[int(movie["movie"]["release_date"][0:4])]["count"] += 1
 
     genre_selections = FilterResponse(
         type="list",
         name="Genre",
         key="genre",
-        selections=[{"key": genre, "name": genre} for genre in genre_set],
+        selections=sorted(list(genre_selections.values()), key=lambda x: x["name"]),
     )
 
     director_selections = FilterResponse(
         type="list",
         name="Directors",
         key="director",
-        selections=[{"key": director, "name": director} for director in director_set],
+        selections=sorted(list(director_selections.values()), key=lambda x: x["name"]),
     )
 
     year_selections = FilterResponse(
         type="slide",
         name="Year",
         key="year",
-        selections=[{"min": min(year_set), "max": max(year_set)} if year_set else None],
+        selections=sorted(list(year_selections.values()), key=lambda x: x["name"]),
     )
 
     # Convert to SearchResponse objects
