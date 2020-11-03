@@ -16,10 +16,16 @@ const UserMenu = (props: {className?: string}) => {
     apiEffect(
       { path: "/session" },
       (_wrapper) => {
-        state.loggedIn = true;
+        if (!state.loggedIn) {
+          state.loggedIn = true;
+          window.location.reload();
+        }
       },
       (_error) => {
-        state.loggedIn = false;
+        if (state.loggedIn) {
+          state.loggedIn = false;
+          window.location.reload();
+        }
       }
     ),
     []
@@ -28,6 +34,7 @@ const UserMenu = (props: {className?: string}) => {
   const doLogout = async () => {
     await api({ path: "/session", method: "DELETE" });
     state.loggedIn = false;
+    window.location.reload();
   };
 
   if (state.loggedIn) {
