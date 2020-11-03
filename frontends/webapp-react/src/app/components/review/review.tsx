@@ -4,11 +4,16 @@ import { Rating } from "@material-ui/lab";
 import React from "react";
 import ReviewFlags from "src/app/components/review-flags";
 import { view } from "@risingstack/react-easy-state";
+import { Link } from "react-router-dom";
 
 export type ReviewProps = {
   reviewId: string;
   description: string;
   username: string;
+  movieTitle?: string;
+  movieYear?: string;
+  movieId?: string;
+  showMovie?: boolean;
   profileImage?: string;
   createDate: Date;
   rating: number;
@@ -26,14 +31,14 @@ const Review = (props: ReviewProps & { className?: string }) => {
   const authorSpoiler = props.containsSpoiler;
   return (
     <div className={`Review ${(props.className || "").trim()}`}>
-      <a href={`/user/${props.username}`}>
+      <Link to={`/user/${props.username}`}>
         <img
-          className="Reviewer__avatar"
+          className="Review__user-avatar"
           src={props.profileImage}
           width={60}
           alt=""
         />
-      </a>
+      </Link>
       <div className="Review__content">
         {props.rating && (
           <>
@@ -48,7 +53,13 @@ const Review = (props: ReviewProps & { className?: string }) => {
           </>
         )}
         <p className="Review__meta">
-          <a href={`/user/${props.username}`}>{props.username}</a>{" "}
+          <Link to={`/user/${props.username}`}>{props.username}</Link>{" "}
+          {props.showMovie && (
+            <span className="Review__meta-reviews">reviews</span>
+          )}
+          {props.showMovie && (
+            <Link to={`/movie/${props.movieId}`}>{props.movieTitle} ({props.movieYear})</Link>
+          )}
           <span className="Review__date">
             posted at {`${new Date(props.createDate).toUTCString()}`}
           </span>

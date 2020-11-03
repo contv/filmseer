@@ -1,22 +1,26 @@
 .Review {
-    border-bottom: 1px solid var(--gray-2);
-    padding-bottom: 8px;
-}
+  border-bottom: 1px solid var(--gray-2);
+  padding-bottom: 8px;
 
-.Reviewer__avatar {
+  &__user-avatar {
     float: left;
-    padding-right:10px;
-}
+    padding-right: 10px;
+  }
 
-.Review__meta {
+  &__meta {
     font-weight: 1.2;
-}
+  }
 
-.Review__content {
+  &__meta-reviews {
+    color: var(--gray-2);
+  }
+
+  &__content {
     font-size: 16px;
     padding-bottom: 5px;
-}
+  }
 
-.Review__date {
+  &__date {
     color: var(--gray-2);
+  }
 }
