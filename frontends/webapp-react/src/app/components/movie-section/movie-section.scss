@@ -2,14 +2,14 @@
   width: 100%;
   height: auto;
   float: left;
-}
 
-.MovieSection__Heading {
-  background-color:#C4C4C4;
-  padding: 20px;
-  margin: 20px;
-}
+  &__Heading {
+    background-color: #c4c4c4;
+    padding: 20px;
+    margin: 20px;
+  }
 
-.MovieSection__Child {
-  padding: 0px 20px;
+  &__Child {
+    padding: 0 20px;
+  }
 }
