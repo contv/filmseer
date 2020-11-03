@@ -4,11 +4,6 @@ from typing import Dict, List, Optional
 
 from elasticsearch import RequestsHttpConnection, Urllib3HttpConnection
 from elasticsearch_dsl import Q, Search, connections
-from fastapi import APIRouter, Query, Request
-from humps import camelize
-from pydantic import BaseModel
-from tortoise.exceptions import IntegrityError, OperationalError
-from tortoise.transactions import in_transaction
 
 from app.core.config import settings
 from app.models.db.funny_votes import FunnyVotes
@@ -18,9 +13,14 @@ from app.models.db.positions import Positions
 from app.models.db.ratings import Ratings
 from app.models.db.reviews import Reviews
 from app.models.db.spoiler_votes import SpoilerVotes
-from app.utils.ratings import calc_average_rating
 from app.utils.dict_storage.redis import RedisDictStorageDriver
+from app.utils.ratings import calc_average_rating
 from app.utils.wrapper import ApiException, Wrapper, wrap
+from fastapi import APIRouter, Query, Request
+from humps import camelize
+from pydantic import BaseModel
+from tortoise.exceptions import IntegrityError, OperationalError
+from tortoise.transactions import in_transaction
 
 from .review import ListReviewResponse, ReviewRequest, ReviewResponse
 
@@ -468,7 +468,7 @@ async def process_movie_payload(
         genre_filter_pass, year_filter_pass, director_filter_pass = True, True, True
         movie = preprocessed[movie_id]["movie"]
         if genre_filter:
-            try: 
+            try:
                 genres = set(genre["name"] for genre in movie["genres"])
                 if not genres.intersection(genre_filter):
                     genre_filter_pass = False
@@ -486,7 +486,7 @@ async def process_movie_payload(
                 directors = set(
                     position["people"]["name"]
                     for position in movie["positions"]
-                    if position["position"] == "director"                
+                    if position["position"] == "director"
                 )
                 if not directors.intersection(director_filter):
                     director_filter_pass = False
@@ -525,7 +525,7 @@ async def process_movie_payload(
         if end < 0 or end > len(postprocessed):
             end = len(postprocessed)
         postprocessed = postprocessed[start:end]
-        
+
     # Populate filter options based on filtered payload
     genre_set = set(
         genre["name"]
@@ -586,6 +586,7 @@ async def process_movie_payload(
     }
 
     return response
+
 
 @router.post(
     "/{movie_id}/rating", tags=["movies"], response_model=Wrapper[RatingResponse]
@@ -656,7 +657,9 @@ async def update_review_rating(
     """
     try:
         async with in_transaction():
-            review = await Reviews.get_or_none(user_id=user_id, movie_id=movie_id, delete_date=None)
+            review = await Reviews.get_or_none(
+                user_id=user_id, movie_id=movie_id, delete_date=None
+            )
             if review:
                 review.rating = rating_object
                 await review.save(update_fields=["rating_id"])
@@ -691,3 +694,18 @@ async def delete_rating(request: Request, movie_id: str) -> Wrapper[dict]:
         return ApiException(500, 2104, "Could not update fields")
 
     return wrap({"id": str(rating_id), "rating": rating})
+
+
+@router.get("/{movie_id}/rating")
+async def get_current_user_rating(request: Request, movie_id: str) -> Wrapper[dict]:
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return ApiException(500, 2001, "You are not logged in!")
+
+    rating = await Ratings.get_or_none(
+        user_id=user_id, movie_id=movie_id, delete_date=None
+    )
+    if not rating:
+        return ApiException(500, 2103, "Could not find or delete rating")
+
+    return wrap({"user_id": user_id, "movie_id": movie_id, "rating": rating.rating})
