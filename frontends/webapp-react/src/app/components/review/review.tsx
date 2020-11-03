@@ -1,8 +1,9 @@
+import "./review.scss";
+
 import { Rating } from "@material-ui/lab";
-import { view } from "@risingstack/react-easy-state";
 import React from "react";
 import ReviewFlags from "src/app/components/review-flags";
-import "./review.scss";
+import { view } from "@risingstack/react-easy-state";
 
 export type ReviewProps = {
   reviewId: string;
@@ -21,6 +22,8 @@ export type ReviewProps = {
 };
 
 const Review = (props: ReviewProps & { className?: string }) => {
+  const showSpoiler = props.containsSpoiler || (props.numHelpful || 0) > 10;
+  const authorSpoiler = props.containsSpoiler;
   return (
     <div className={`Review ${(props.className || "").trim()}`}>
       <a href={`/user/${props.username}`}>
@@ -50,13 +53,28 @@ const Review = (props: ReviewProps & { className?: string }) => {
             posted at {`${new Date(props.createDate).toUTCString()}`}
           </span>
         </p>
-        <p className="Review__content">{props.description}</p>
+
+        <p className="Review__content">
+          {showSpoiler ? (
+            <details>
+              <summary>
+                {authorSpoiler
+                  ? "This review has spoiler"
+                  : props.numSpoiler +
+                    " people think this review contains spoiler"}
+              </summary>
+              {props.description}
+            </details>
+          ) : (
+            <div>{props.description}</div>
+          )}
+        </p>
       </div>
       <ReviewFlags
         reviewId={props.reviewId}
         flaggedHelpful={props.flaggedHelpful}
         flaggedFunny={props.flaggedFunny}
-        flaggedSpoiler={props.flaggedHelpful}
+        flaggedSpoiler={props.flaggedSpoiler}
         numHelpful={props.numHelpful}
         numFunny={props.numFunny}
         numSpoiler={props.numSpoiler}

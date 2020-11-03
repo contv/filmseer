@@ -69,6 +69,8 @@ async def get_reviews_user(username: str, page: int = 0, per_page: int = 0):
     reviews = [
         ReviewResponse(
             review_id=str(r.review_id),
+            user_id=str(r.user_id),
+            username=r.user.username,
             movie_id=str(r.movie_id),
             movie_name=str(r.movie.title),
             create_date=str(r.create_date),
@@ -93,7 +95,7 @@ async def get_reviews_user(username: str, page: int = 0, per_page: int = 0):
         .offset((page - 1) * per_page)
         .limit(per_page)
         .prefetch_related(
-            "rating", "helpful_votes", "funny_votes", "spoiler_votes", "movie"
+            "rating", "helpful_votes", "funny_votes", "spoiler_votes", "movie", "user"
         )
     ]
 

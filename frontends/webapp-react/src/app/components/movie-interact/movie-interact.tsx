@@ -1,15 +1,17 @@
-import Typography from "@material-ui/core/Typography";
-import { ChatBubble } from "@material-ui/icons";
-import BookmarkIcon from "@material-ui/icons/Bookmark";
-import FlagIcon from "@material-ui/icons/Flag";
-import VisibilityIcon from "@material-ui/icons/Visibility";
-import { view } from "@risingstack/react-easy-state";
-import React, { useEffect, useState } from "react";
-import Stars from "src/app/components/stars";
-import Popup from "src/app/popups/popup-base";
-import state from "src/app/states";
-import { api } from "src/utils";
 import "./movie-interact.scss";
+
+import React, { useEffect, useState } from "react";
+
+import BookmarkIcon from "@material-ui/icons/Bookmark";
+import { ChatBubble } from "@material-ui/icons";
+import FlagIcon from "@material-ui/icons/Flag";
+import Popup from "src/app/popups/popup-base";
+import Stars from "src/app/components/stars";
+import Typography from "@material-ui/core/Typography";
+import VisibilityIcon from "@material-ui/icons/Visibility";
+import { api } from "src/utils";
+import state from "src/app/states";
+import { view } from "@risingstack/react-easy-state";
 
 type MovieInteractProps = {
   movieId: string;
@@ -91,10 +93,12 @@ return (
         />
       </div>
       <div onClick={showPopupIfNotLoggedIn}>
+        <a href="#ReviewSection" style={{textDecoration: "none"}}>
         <ChatBubble/>
         <Typography variant="body2" display="inline">
           Post a review
         </Typography>
+        </a>
       </div>
       {popupVisible ? (
         <Popup
