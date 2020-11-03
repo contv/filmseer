@@ -4,6 +4,11 @@ from typing import Dict, List, Optional
 
 from elasticsearch import RequestsHttpConnection, Urllib3HttpConnection
 from elasticsearch_dsl import Q, Search, connections
+from fastapi import APIRouter, Query, Request
+from humps import camelize
+from pydantic import BaseModel
+from tortoise.exceptions import IntegrityError, OperationalError
+from tortoise.transactions import in_transaction
 
 from app.core.config import settings
 from app.models.db.funny_votes import FunnyVotes
@@ -16,11 +21,6 @@ from app.models.db.spoiler_votes import SpoilerVotes
 from app.utils.dict_storage.redis import RedisDictStorageDriver
 from app.utils.ratings import calc_average_rating
 from app.utils.wrapper import ApiException, Wrapper, wrap
-from fastapi import APIRouter, Query, Request
-from humps import camelize
-from pydantic import BaseModel
-from tortoise.exceptions import IntegrityError, OperationalError
-from tortoise.transactions import in_transaction
 
 from .review import ListReviewResponse, ReviewRequest, ReviewResponse
 
@@ -155,7 +155,11 @@ async def get_movie(movie_id: str):
     "/{movie_id}/reviews", tags=["movies"], response_model=Wrapper[ListReviewResponse]
 )
 async def get_movie_reviews(
-    movie_id: str, request: Request, page: int = 0, per_page: int = 0, me: Optional[bool] = False
+    movie_id: str,
+    request: Request,
+    page: int = 0,
+    per_page: int = 0,
+    me: Optional[bool] = False,
 ):
     if per_page >= 42:
         return ApiException(400, 2700, "Please limit the numer of items per page")
@@ -187,7 +191,9 @@ async def get_movie_reviews(
                     user_id=user_id, delete_date=None
                 ).count(),
             )
-            for r in await Reviews.filter(movie_id=movie_id, delete_date=None, user_id=user_id)
+            for r in await Reviews.filter(
+                movie_id=movie_id, delete_date=None, user_id=user_id
+            )
             .order_by("-create_date")
             .offset((page - 1) * per_page)
             .limit(per_page)
@@ -517,7 +523,7 @@ async def process_movie_payload(
         for director in director_set
     }
     year_selections = {
-        year: {"key": year, "name": year, "count": 0} for year in year_set
+        year: {"key": str(year), "name": str(year), "count": 0} for year in year_set
     }
 
     # Filter
@@ -600,7 +606,7 @@ async def process_movie_payload(
                 if position["position"] == "director":
                     director_selections[position["people"]["name"]]["count"] += 1
         if movie["movie"]["release_date"]:
-            year_selections[int(movie["movie"]["release_date"][0:4])]["count"] += 1
+            year_selections[movie["movie"]["release_date"][0:4]]["count"] += 1
 
     genre_selections = FilterResponse(
         type="list",
