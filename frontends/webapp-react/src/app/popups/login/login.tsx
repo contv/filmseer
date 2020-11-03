@@ -50,6 +50,9 @@ const Login = (props: LoginProps & { className?: string }) => {
       });
       state.loggedIn = true;
       props.onClose();
+      window.setTimeout(() => {
+        window.location.reload();
+      }, 300);
     } catch (error) {
       if (!(error instanceof ApiError)) {
         throw error;
@@ -87,7 +90,7 @@ const Login = (props: LoginProps & { className?: string }) => {
             placeholder="Your password"
           />
         </div>
-        {(hasError || message.message) ? (
+        {hasError || message.message ? (
           <ul className="Login__form-messages">
             <li
               className={`Login__form-message ${
