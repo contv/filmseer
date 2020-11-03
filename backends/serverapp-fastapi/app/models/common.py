@@ -1,6 +1,6 @@
 from typing import Generic, List
 
-from pydantic import GenericModel
+from pydantic.generics import GenericModel
 
 from app.utils.wrapper import DataT
 
