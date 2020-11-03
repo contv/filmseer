@@ -15,20 +15,19 @@ override_prefix_all = None
 
 
 class MovieWishlistResponse(BaseModel):
-    id: str
+    wishlist_id: str
+    movie_id: str
     title: str
     release_year: str
-    genres: Optional[List[str]]
     image_url: Optional[str]
     average_rating: float
-    score: float
 
     class Config:
         alias_generator = camelize
         allow_population_by_field_name = True
 
 
-@router.get("/", response_model=Wrapper[List[MovieWishlistResponse]])
+@router.get("/")
 async def get_wishlist(request: Request):
     user_id = request.session.get("user_id")
 
@@ -39,18 +38,20 @@ async def get_wishlist(request: Request):
 
     items = [
         MovieWishlistResponse(
-            movie_id=wishlist_item.movie_id,
-            title=wishlist_item.title,
-            image_url=wishlist_item.image_url,
+            wishlist_id=str(wishlist_item.wishlist_id),
+            movie_id=str(wishlist_item.movie_id),
+            title=wishlist_item.movie.title,
+            image_url=wishlist_item.movie.image,
+            release_year=wishlist_item.movie.release_date.year,
             average_rating=calc_average_rating(
-                wishlist_item.cumulative_rating, wishlist_item.num_votes
+                wishlist_item.movie.cumulative_rating, wishlist_item.movie.num_votes
             )
         )
         for wishlist_item in await Wishlists.filter(
             user_id=user_id, delete_date=None
         ).prefetch_related("movie")
     ]
-    
+
     return wrap({"items": items})
 
 

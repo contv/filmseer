@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request
-from typing import List, Optional
 from pydantic import BaseModel
 from humps import camelize
+from typing import Optional, List, Union
 
 from app.models.db.users import Users
 from app.models.db.wishlists import Wishlists
@@ -9,6 +9,11 @@ from app.models.db.reviews import Reviews
 from app.utils.password import hash
 from app.utils.ratings import calc_average_rating
 from app.utils.wrapper import ApiException, Wrapper, wrap
+from fastapi import APIRouter, Request
+from pydantic import BaseModel
+
+from .review import ListReviewResponse, ReviewResponse
+from .wishlist import MovieWishlistResponse
 
 router = APIRouter()
 override_prefix = None
@@ -20,38 +25,11 @@ class Register(BaseModel):
     password: str
 
 
-class ReviewResponse(BaseModel):
-    review_id: str
-    movie_id: str
-    movie_name: str
-    create_date: str
-    description: str
-    contains_spoiler: bool
-    rating: Optional[float]
-    num_helpful: int
-    num_funny: int
-    num_spoiler: int
-    flagged_helpful: bool
-    flagged_funny: bool
-    flagged_spoiler: bool
-
-
-class ListReviewResponse(BaseModel):
-    items: List[ReviewResponse]
-
-
-class MovieWishlistResponse(BaseModel):
+class UserProfileResponse(BaseModel):
     id: str
-    title: str
-    release_year: str
-    genres: Optional[List[str]]
-    image_url: Optional[str]
-    average_rating: float
-    score: float
-
-    class Config:
-        alias_generator = camelize
-        allow_population_by_field_name = True
+    username: str
+    description: Optional[str]
+    image: Optional[bytes]
 
 
 @router.post("/", tags=["user"])
@@ -127,7 +105,7 @@ async def get_reviews_user(username: str, page: int = 0, per_page: int = 0):
 # WISHLIST RELATED START
 
 @router.get(
-    "/{username}/wishlist", response_model=Wrapper[List[MovieWishlistResponse]]
+    "/{username}/wishlist"
 )
 async def get_user_wishlist(username: str):
     user = await Users.filter(username=username).first()
@@ -139,11 +117,13 @@ async def get_user_wishlist(username: str):
 
     items = [
         MovieWishlistResponse(
-            movie_id=wishlist_item.movie_id,
-            title=wishlist_item.title,
-            image_url=wishlist_item.image_url,
+            wishlist_id=str(wishlist_item.wishlist_id),
+            movie_id=str(wishlist_item.movie_id),
+            title=wishlist_item.movie.title,
+            image_url=wishlist_item.movie.image,
+            release_year=wishlist_item.movie.release_date.year,
             average_rating=calc_average_rating(
-                wishlist_item.cumulative_rating, wishlist_item.num_votes
+                wishlist_item.movie.cumulative_rating, wishlist_item.movie.num_votes
             )
         )
         for wishlist_item in await Wishlists.filter(
@@ -154,3 +134,52 @@ async def get_user_wishlist(username: str):
     return wrap({"items": items})
 
 # WISHLIST RELATED END
+
+@router.get(
+    "/", tags=["User"], response_model=Union[Wrapper[UserProfileResponse], Wrapper]
+)
+async def get_current_user(request: Request):
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return wrap(error=ApiException(500, 2001, "You are not logged in!"))
+
+    user = await Users.get_or_none(user_id=user_id, delete_date=None).prefetch_related(
+        "profile_image_id"
+    )
+    if not user:
+        return wrap(
+            error=ApiException(500, 2200, "That user's profile page was not found")
+        )
+
+    response = UserProfileResponse(
+        id=str(user.user_id),
+        username=user.username,
+        description=user.description,
+        image=user.profile_image_id.content if user.profile_image_id else None,
+    )
+
+    return wrap(response)
+
+
+@router.get(
+    "/{username}",
+    tags=["User"],
+    response_model=Union[Wrapper[UserProfileResponse], Wrapper],
+)
+async def get_user_profile(username: str):
+    user = await Users.get_or_none(
+        username=username, delete_date=None
+    )
+    if not user:
+        return wrap(
+            error=ApiException(500, 2200, "That user's profile page was not found")
+        )
+
+    response = UserProfileResponse(
+        id=str(user.user_id),
+        username=user.username,
+        description=user.description,
+        image=user.profile_image_id.content if user.profile_image_id else None,
+    )
+
+    return wrap(response)

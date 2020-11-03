@@ -1,27 +1,28 @@
 import re
 from datetime import datetime
 from typing import Dict, List, Optional
-from elasticsearch import (Elasticsearch, RequestsHttpConnection,
-                           Urllib3HttpConnection)
+
+from elasticsearch import RequestsHttpConnection, Urllib3HttpConnection
 from elasticsearch_dsl import Q, Search, connections
-from app.core.config import settings
-from app.models.db.movies import Movies
-from app.models.db.reviews import Reviews
-from app.models.db.ratings import Ratings
-from app.models.db.helpful_votes import HelpfulVotes
-from app.models.db.funny_votes import FunnyVotes
-from app.models.db.spoiler_votes import SpoilerVotes
-from app.models.db.positions import Positions
-from app.models.db.users import Users
-from app.utils.ratings import calc_average_rating
-from app.utils.dict_storage.redis import RedisDictStorageDriver
-from app.utils.wrapper import ApiException, Wrapper, wrap
 from fastapi import APIRouter, Query, Request
 from humps import camelize
 from pydantic import BaseModel
 from tortoise.exceptions import IntegrityError, OperationalError
 from tortoise.transactions import in_transaction
 
+from app.core.config import settings
+from app.models.db.funny_votes import FunnyVotes
+from app.models.db.helpful_votes import HelpfulVotes
+from app.models.db.movies import Movies
+from app.models.db.positions import Positions
+from app.models.db.ratings import Ratings
+from app.models.db.reviews import Reviews
+from app.models.db.spoiler_votes import SpoilerVotes
+from app.utils.ratings import calc_average_rating
+from app.utils.dict_storage.redis import RedisDictStorageDriver
+from app.utils.wrapper import ApiException, Wrapper, wrap
+
+from .review import ListReviewResponse, ReviewRequest, ReviewResponse
 
 router = APIRouter()
 override_prefix = None
@@ -73,33 +74,11 @@ class SearchResponse(BaseModel):
         allow_population_by_field_name = True
 
 
-class ReviewResponse(BaseModel):
-    review_id: str
-    user_id: str
-    username: str
-    create_date: str
-    description: str
-    contains_spoiler: bool
-    rating: Optional[float]
-    num_helpful: int
-    num_funny: int
-    num_spoiler: int
-    flagged_helpful: bool
-    flagged_funny: bool
-    flagged_spoiler: bool
-    
-    class Config:
-        alias_generator = camelize
-        allow_population_by_field_name = True
-
-
-class ReviewRequest(BaseModel):
-    description: str
-    contains_spoiler: bool
-
-
-class ListReviewResponse(BaseModel):
-    items: List[ReviewResponse]
+class FilterResponse(BaseModel):
+    type: str
+    name: str
+    key: str
+    selections: List[dict]
 
 
 class RatingResponse(BaseModel):
@@ -322,12 +301,12 @@ async def delete_user_review(movie_id: str, request: Request):
 # REVIEW RELATED END
 
 
-@router.get("/", tags=["movies"], response_model=Wrapper[List[SearchResponse]])
+@router.get("/", tags=["movies"], response_model=Wrapper[Dict])
 async def search_movies(
     request: Request,
     keywords: str = "",
     genres: Optional[List[str]] = Query([]),
-    years: Optional[List[str]] = Query([]),
+    years: Optional[str] = "",
     directors: Optional[List[str]] = Query([]),
     per_page: Optional[int] = None,
     page: Optional[int] = 1,
@@ -465,20 +444,64 @@ async def search_movies(
 
 async def process_movie_payload(
     preprocessed: Dict,
-    year_filter: Optional[List[str]],
+    year_filter: Optional[str],
     director_filter: Optional[List[str]],
     genre_filter: Optional[List[str]],
     per_page: Optional[int],
     page: Optional[int],
     sort: Optional[str],
     desc: Optional[bool],
-) -> List[SearchResponse]:
+) -> Dict:
     """
     Given a preprocessed Elasticsearch response payload, apply filters, sorting and pagination, and
     returns an ordered array of SearchResponse objects each representing a movie tile
     """
+    # Populate filter options based on entire payload
+    genre_set = set(
+        genre["name"]
+        for movie_id in preprocessed
+        for genre in preprocessed[movie_id]["movie"]["genres"]
+    )
+    director_set = set(
+        position["people"]["name"]
+        for movie_id in preprocessed
+        for position in preprocessed[movie_id]["movie"]["positions"]
+        if position["position"] == "director"
+    )
+    year_set = set(
+        int(preprocessed[movie_id]["movie"]["release_date"][0:4])
+        for movie_id in preprocessed
+    )
+
+    genre_selections = FilterResponse(
+        type="list",
+        name="Genre",
+        key="genre",
+        selections=[{"key": genre, "name": genre} for genre in genre_set],
+    )
+
+    director_selections = FilterResponse(
+        type="list",
+        name="Directors",
+        key="director",
+        selections=[{"key": director, "name": director} for director in director_set],
+    )
+
+    year_selections = FilterResponse(
+        type="slide",
+        name="Year",
+        key="year",
+        selections=[{"min": min(year_set), "max": max(year_set)}],
+    )
+
     # Filter
     postprocessed = []
+    year_filter = year_filter.split("-")
+    try:
+        min_year, max_year = int(year_filter[0]), int(year_filter[1])
+    except (IndexError, ValueError):
+        year_filter = ""
+
     for movie_id in preprocessed:
         genre_filter_pass, year_filter_pass, director_filter_pass = True, True, True
         movie = preprocessed[movie_id]["movie"]
@@ -487,9 +510,12 @@ async def process_movie_payload(
             if not genres.intersection(genre_filter):
                 genre_filter_pass = False
         if year_filter:
-            year = movie["release_date"][0:4]
-            if not year in year_filter:
-                year_filter_pass = False
+            try:
+                year = int(movie["release_date"][0:4])
+                if not year >= min_year or not year <= max_year:
+                    year_filter_pass = False
+            except ValueError:
+                pass
         if director_filter:
             directors = set(
                 position["people"]["name"]
@@ -545,9 +571,12 @@ async def process_movie_payload(
             score=float(movie["score"]),
         )
 
-    return postprocessed
+    response = {
+        "movies": postprocessed,
+        "filters": [genre_selections, director_selections, year_selections],
+    }
 
-
+    return response
 
 @router.post(
     "/{movie_id}/rating", tags=["movies"], response_model=Wrapper[RatingResponse]
@@ -565,25 +594,65 @@ async def rate_movie(request: Request, movie_id: str, rating: float):
                 user_id=user_id, movie_id=movie_id
             )
             if existing_rating:
-                existing_rating.delete_date = None
-                existing_rating.rating = rating
+                old_rating = existing_rating.rating
+                if existing_rating.delete_date:
+                    existing_rating.delete_date = None
+                    existing_rating.rating = rating
+                    await update_cumulative_rating(movie_id, rating)
+                else:
+                    existing_rating.rating = rating
+                    await update_cumulative_rating(movie_id, rating, old_rating)
                 await existing_rating.save(update_fields=["rating", "delete_date"])
             else:
                 await Ratings.create(user_id=user_id, movie_id=movie_id, rating=rating)
-
+                await update_cumulative_rating(movie_id, rating)
             current_rating = await Ratings.get(user_id=user_id, movie_id=movie_id)
-            existing_review = await Reviews.get_or_none(
-                user_id=user_id, movie_id=movie_id
-            )
-            if existing_review:
-                existing_review.rating = current_rating
-                await existing_review.save(update_fields=["rating_id"])
+            await update_review_rating(user_id, movie_id, current_rating)
     except OperationalError:
         return ApiException(500, 2102, "Could not rate movie")
     except IntegrityError:
         return ApiException(500, 2104, "Could not update fields")
 
     return wrap({"id": str(current_rating.rating_id), "rating": current_rating.rating})
+
+
+async def update_cumulative_rating(
+    movie_id: str, new_rating: float, old_rating: float = None
+):
+    """
+    Updates a given movie's cumulative rating and num votes fields.
+    If no old rating is provided, rating is assumed to be a new rating or a deleted rating.
+    In case of a deleted rating, ensure that new_rating is a negative floating value.
+    """
+    try:
+        async with in_transaction():
+            movie = await Movies.get_or_none(movie_id=movie_id, delete_date=None)
+            if movie:
+                if old_rating:
+                    movie.cumulative_rating += new_rating - old_rating
+                else:
+                    movie.num_votes += 1 if new_rating >= 0 else -1
+                    movie.cumulative_rating += new_rating
+                await movie.save(update_fields=["cumulative_rating", "num_votes"])
+    except:
+        raise OperationalError
+
+
+async def update_review_rating(
+    user_id: str, movie_id: str, rating_object: Ratings = None
+):
+    """
+    Sets an existing review's 'rating' field to point to the provided rating_object
+    or null the field if no rating object is provided
+    """
+    try:
+        async with in_transaction():
+            review = await Reviews.get_or_none(user_id=user_id, movie_id=movie_id, delete_date=None)
+            if review:
+                review.rating = rating_object
+                await review.save(update_fields=["rating_id"])
+    except:
+        raise OperationalError
 
 
 @router.delete(
@@ -600,17 +669,13 @@ async def delete_rating(request: Request, movie_id: str) -> Wrapper[dict]:
             existing_rating = await Ratings.get_or_none(
                 user_id=user_id, movie_id=movie_id
             )
-            if existing_rating:
+            if existing_rating and not existing_rating.delete_date:
                 rating_id = existing_rating.rating_id
                 rating = existing_rating.rating
                 existing_rating.delete_date = datetime.now()
                 await existing_rating.save(update_fields=["delete_date"])
-                related_review = await Reviews.get_or_none(
-                    user_id=user_id, movie_id=movie_id
-                )
-                if related_review:
-                    related_review.rating = None
-                    await related_review.save(update_fields=["rating_id"])
+                await update_cumulative_rating(movie_id, -rating)
+                await update_review_rating(user_id, movie_id)
     except OperationalError:
         return ApiException(500, 2103, "Could not find or delete rating")
     except IntegrityError:
