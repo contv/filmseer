@@ -38,6 +38,9 @@ def setup_nodrop():
 
 async def add_constraints(conn):
     await conn.execute_query(
+        "CREATE EXTENSION IF NOT EXISTS pgcrypto"
+    )
+    await conn.execute_query(
         """
         ALTER TABLE public.movie_genres
         ALTER COLUMN moviegenre_id
