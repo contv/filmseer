@@ -1,10 +1,15 @@
 .MovieSection {
   width: 100%;
   height: auto;
-  padding: 40px;
   float: left;
 }
 
 .MovieSection__Heading {
   background-color:#C4C4C4;
+  padding: 20px;
+  margin: 20px;
+}
+
+.MovieSection__Child {
+  padding: 0px 20px;
 }
