@@ -189,7 +189,7 @@ const apiEffect = (
     }
 
     Promise.resolve(precondition()).then((result) => {
-      if (!!result) {
+      if (!!result && !didCancel) {
         fetchApi();
       }
     });
