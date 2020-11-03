@@ -246,6 +246,7 @@ const MovieDetailPage = (props: { className?: string }) => {
           </MovieSection>
         )}
         <MovieSection heading="Reviews">
+          <div id="ReviewSection"></div>
           {authorReview && authorReview.length > 0 && (
             <ReviewEditor
               reviewId={authorReview[0].reviewId}

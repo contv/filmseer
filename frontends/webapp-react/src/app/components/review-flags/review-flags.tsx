@@ -1,12 +1,14 @@
-import { view } from "@risingstack/react-easy-state";
-import React from "react";
+import "./review-flags.scss";
+
+import { ApiError, api } from "src/utils";
+
 import Popup from "src/app/popups/popup-base";
-import state from "src/app/states";
-import { api, ApiError } from "src/utils";
+import React from "react";
 import funny from "./funny.svg";
 import helpful from "./helpful.svg";
-import "./review-flags.scss";
 import spoiler from "./spoiler.svg";
+import state from "src/app/states";
+import { view } from "@risingstack/react-easy-state";
 
 export type ReviewFlagsProps = {
   reviewId: string;

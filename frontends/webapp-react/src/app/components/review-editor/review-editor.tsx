@@ -1,9 +1,11 @@
-import { view } from "@risingstack/react-easy-state";
+import "./review-editor.scss";
+
+import { ApiError, api } from "src/utils";
+
 import React from "react";
 import ReviewFlags from "src/app/components/review-flags";
 import Stars from "src/app/components/stars";
-import { api, ApiError } from "src/utils";
-import "./review-editor.scss";
+import { view } from "@risingstack/react-easy-state";
 
 export type ReviewEditorProps = {
   reviewId: string;
