@@ -56,7 +56,7 @@ const Review = (props: ReviewProps & { className?: string }) => {
         reviewId={props.reviewId}
         flaggedHelpful={props.flaggedHelpful}
         flaggedFunny={props.flaggedFunny}
-        flaggedSpoiler={props.flaggedHelpful}
+        flaggedSpoiler={props.flaggedSpoiler}
         numHelpful={props.numHelpful}
         numFunny={props.numFunny}
         numSpoiler={props.numSpoiler}

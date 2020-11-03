@@ -1,20 +1,26 @@
 import { Rating } from "@material-ui/lab";
 import { view } from "@risingstack/react-easy-state";
 import React from "react";
+import ReviewFlags from "src/app/components/review-flags";
 import "./review-editor.scss";
 
 export type ReviewEditorProps = {
-  reviewId?: string;
+  reviewId: string;
   description?: string;
   username?: string;
   profileImage?: string;
   createDate?: Date;
   rating?: number;
-  flagSpoiler?: Boolean;
+  containsSpoiler?: Boolean;
+  flaggedHelpful?: boolean;
+  flaggedFunny?: boolean;
+  flaggedSpoiler?: boolean;
   numHelpful?: number;
   numFunny?: number;
   numSpoiler?: number;
   disable?: boolean;
+  hideFlags?: boolean;
+  hideStats?: boolean;
 };
 
 const ReviewEditor = (props: ReviewEditorProps & { className?: string }) => {
@@ -25,43 +31,63 @@ const ReviewEditor = (props: ReviewEditorProps & { className?: string }) => {
     event.nativeEvent.stopImmediatePropagation();
     setEditable(!editable);
   };
-  return (
-    <div className={`ReviewEditor ${(props.className || "").trim()}`}>
-      <a href={`/user/${props.username}`}>
-        <img
-          className="RevieweEditor__avatar"
-          src={props.profileImage}
-          width={60}
-          alt=""
-          title={props.username}
-        />
-      </a>
-        <textarea
-          className="ReviewEditor__textbox"
-          disabled={editable}
-        ></textarea>
-      <div className="ReviewEditor__function">
-        {
-          <>
-            <span>Your rating:</span>
-            <Rating
-              name="star-rating"
-              className="ReviewEditor__rating"
-              value={props.rating}
-              precision={0.1}
-              size="small"
-              readOnly={editable}
-            />
-            <label className="ReviewEditor__spoiler">
-              <input type="checkbox" id="spoiler" disabled={editable} />
-              Mark as spoiler
-            </label>
-            <button onClick={changeMode}>{editable ? "Edit" : "Submit"}</button>
-          </>
-        }
+  if (props.username) {
+    return (
+      <div className={`ReviewEditor ${(props.className || "").trim()}`}>
+        <a href={`/user/${props.username}`}>
+          <img
+            className="RevieweEditor__avatar"
+            src={props.profileImage}
+            width={60}
+            alt=""
+            title={props.username}
+          />
+        </a>
+        <div className="ReviewEditor__middle">
+          {props.createDate && <span>You posted at {`${new Date(props.createDate || "").toUTCString()}`}</span>}
+          <textarea
+            className="ReviewEditor__textbox"
+            disabled={editable}
+            defaultValue={props.description}
+          ></textarea>
+          <ReviewFlags
+            reviewId={props.reviewId}
+            flaggedHelpful={props.flaggedHelpful}
+            flaggedFunny={props.flaggedFunny}
+            flaggedSpoiler={props.flaggedSpoiler}
+            numHelpful={props.numHelpful}
+            numFunny={props.numFunny}
+            numSpoiler={props.numSpoiler}
+            hideFlags={props.hideFlags}
+          />
+        </div>
+        <div className="ReviewEditor__function">
+          {
+            <>
+              <span>Your rating:</span>
+              <Rating
+                name="star-rating"
+                className="ReviewEditor__rating"
+                value={props.rating}
+                precision={0.1}
+                size="small"
+                readOnly={editable}
+              />
+              <label className="ReviewEditor__spoiler">
+                <input type="checkbox" id="spoiler" disabled={editable} />
+                Mark as spoiler
+              </label>
+              <button onClick={changeMode}>
+                {editable ? "Edit" : "Submit"}
+              </button>
+            </>
+          }
+        </div>
       </div>
-    </div>
-  );
+    );
+  } else {
+    return <div></div>;
+  }
 };
 
 export default view(ReviewEditor);

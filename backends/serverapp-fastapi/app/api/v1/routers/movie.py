@@ -158,7 +158,7 @@ async def get_movie(movie_id: str):
     "/{movie_id}/reviews", tags=["movies"], response_model=Wrapper[ListReviewResponse]
 )
 async def get_movie_reviews(
-    movie_id: str, request: Request, page: int = 0, per_page: int = 0
+    movie_id: str, request: Request, page: int = 0, per_page: int = 0, me: Optional[bool] = False
 ):
     if per_page >= 42:
         return ApiException(400, 2700, "Please limit the numer of items per page")
@@ -167,37 +167,68 @@ async def get_movie_reviews(
     user_id = request.session.get("user_id")
     # No need to raise exception if user_id = None because guest user should see the review
     # TO DO: Filter reviews from Ban List
-    reviews = [
-        ReviewResponse(
-            review_id=str(r.review_id),
-            user_id=str(r.user_id),
-            username=r.user.username,
-            create_date=str(r.create_date),
-            description=r.description,
-            contains_spoiler=r.contains_spoiler,
-            rating=r.rating.rating,
-            num_helpful=r.num_helpful,
-            num_funny=r.num_funny,
-            num_spoiler=r.num_spoiler,
-            flagged_helpful=await r.helpful_votes.filter(
-                user_id=user_id, delete_date=None
-            ).count(),
-            flagged_funny=await r.funny_votes.filter(
-                user_id=user_id, delete_date=None
-            ).count(),
-            flagged_spoiler=await r.spoiler_votes.filter(
-                user_id=user_id, delete_date=None
-            ).count(),
-        )
-        for r in await Reviews.filter(movie_id=movie_id, delete_date=None)
-        .order_by("-create_date")
-        .offset((page - 1) * per_page)
-        .limit(per_page)
-        .prefetch_related(
-            "rating", "helpful_votes", "funny_votes", "spoiler_votes", "user"
-        )
-    ]
-
+    if me:
+        reviews = [
+            ReviewResponse(
+                review_id=str(r.review_id),
+                user_id=str(r.user_id),
+                username=r.user.username,
+                create_date=str(r.create_date),
+                description=r.description,
+                contains_spoiler=r.contains_spoiler,
+                rating=r.rating.rating,
+                num_helpful=r.num_helpful,
+                num_funny=r.num_funny,
+                num_spoiler=r.num_spoiler,
+                flagged_helpful=await r.helpful_votes.filter(
+                    user_id=user_id, delete_date=None
+                ).count(),
+                flagged_funny=await r.funny_votes.filter(
+                    user_id=user_id, delete_date=None
+                ).count(),
+                flagged_spoiler=await r.spoiler_votes.filter(
+                    user_id=user_id, delete_date=None
+                ).count(),
+            )
+            for r in await Reviews.filter(movie_id=movie_id, delete_date=None, user_id=user_id)
+            .order_by("-create_date")
+            .offset((page - 1) * per_page)
+            .limit(per_page)
+            .prefetch_related(
+                "rating", "helpful_votes", "funny_votes", "spoiler_votes", "user"
+            )
+        ]
+    else:
+        reviews = [
+            ReviewResponse(
+                review_id=str(r.review_id),
+                user_id=str(r.user_id),
+                username=r.user.username,
+                create_date=str(r.create_date),
+                description=r.description,
+                contains_spoiler=r.contains_spoiler,
+                rating=r.rating.rating,
+                num_helpful=r.num_helpful,
+                num_funny=r.num_funny,
+                num_spoiler=r.num_spoiler,
+                flagged_helpful=await r.helpful_votes.filter(
+                    user_id=user_id, delete_date=None
+                ).count(),
+                flagged_funny=await r.funny_votes.filter(
+                    user_id=user_id, delete_date=None
+                ).count(),
+                flagged_spoiler=await r.spoiler_votes.filter(
+                    user_id=user_id, delete_date=None
+                ).count(),
+            )
+            for r in await Reviews.filter(movie_id=movie_id, delete_date=None)
+            .order_by("-create_date")
+            .offset((page - 1) * per_page)
+            .limit(per_page)
+            .prefetch_related(
+                "rating", "helpful_votes", "funny_votes", "spoiler_votes", "user"
+            )
+        ]
     return wrap({"items": reviews})
 
 
@@ -243,6 +274,7 @@ async def create_update_user_review(
                 await Reviews.filter(user_id=user_id, movie_id=movie_id).update(
                     rating_id=rating[0].rating_id,
                     delete_date=None,
+                    create_date=datetime.now(),
                     description=review.description,
                     contains_spoiler=review.contains_spoiler,
                 )
