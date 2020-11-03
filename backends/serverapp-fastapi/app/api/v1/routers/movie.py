@@ -22,7 +22,7 @@ from app.utils.ratings import calc_average_rating
 from app.utils.dict_storage.redis import RedisDictStorageDriver
 from app.utils.wrapper import ApiException, Wrapper, wrap
 
-from .review import ListReviewResponse, ReviewRequest, ReviewResponse
+from .review import ListReviewResponse, ReviewRequest, ReviewResponse, ReviewCreateDate
 
 router = APIRouter()
 override_prefix = None
@@ -218,7 +218,7 @@ async def get_movie_reviews(
                     user_id=user_id, delete_date=None
                 ).count(),
             )
-            for r in await Reviews.filter(movie_id=movie_id, delete_date=None)
+            for r in await Reviews.filter(movie_id=movie_id, delete_date=None).exclude(user_id=user_id)
             .order_by("-create_date")
             .offset((page - 1) * per_page)
             .limit(per_page)
@@ -229,8 +229,8 @@ async def get_movie_reviews(
     return wrap({"items": reviews})
 
 
-@router.post("/{movie_id}/review", tags=["movies"])
-@router.put("/{movie_id}/review", tags=["movies"])
+@router.post("/{movie_id}/review", tags=["movies"], response_model=Wrapper[ReviewCreateDate])
+@router.put("/{movie_id}/review", tags=["movies"], response_model=Wrapper[ReviewCreateDate])
 async def create_update_user_review(
     movie_id: str, review: ReviewRequest, request: Request
 ):
@@ -266,12 +266,12 @@ async def create_update_user_review(
                     movie_id=movie_id,
                 )
             )
-
+            create_date=datetime.now()
             if await Reviews.filter(user_id=user_id, movie_id=movie_id):
                 await Reviews.filter(user_id=user_id, movie_id=movie_id).update(
                     rating_id=rating[0].rating_id,
                     delete_date=None,
-                    create_date=datetime.now(),
+                    create_date=create_date,
                     description=review.description,
                     contains_spoiler=review.contains_spoiler,
                 )
@@ -279,6 +279,7 @@ async def create_update_user_review(
                 await Reviews(
                     user_id=user_id,
                     movie_id=movie_id,
+                    create_date=create_date,
                     rating_id=rating[0].rating_id,
                     description=review.description,
                     contains_spoiler=review.contains_spoiler,
@@ -291,7 +292,7 @@ async def create_update_user_review(
     except OperationalError:
         return ApiException(500, 2501, "An exception occurred")
 
-    return wrap({})
+    return wrap({"create_date": create_date})
 
 
 @router.delete("/{movie_id}/review", tags=["movies"])

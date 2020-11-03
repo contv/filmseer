@@ -30,6 +30,7 @@ export type ReviewEditorProps = {
 const ReviewEditor = (props: ReviewEditorProps & { className?: string }) => {
   const [editable, setEditable] = React.useState(props.disable);
   const [spoiler, setSpoiler] = React.useState(props.containsSpoiler);
+  const [createDate, setCreateDate] = React.useState(props.createDate);
   const [desc, setDesc] = React.useState(props.description);
   const reviewDesc = async (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setDesc(event.target.value);
@@ -52,6 +53,7 @@ const ReviewEditor = (props: ReviewEditorProps & { className?: string }) => {
             contains_spoiler: spoiler,
           },
         });
+        setCreateDate(JSON.parse(JSON.stringify(response.data))["create_date"])
       } catch (error) {
         if (!(error instanceof ApiError)) {
           throw error;
@@ -73,10 +75,10 @@ const ReviewEditor = (props: ReviewEditorProps & { className?: string }) => {
           />
         </a>
         <div className="ReviewEditor__middle">
-          {props.createDate && (
+          {createDate && (
             <span>
               You posted at{" "}
-              {`${new Date(props.createDate || "").toUTCString()}`}
+              {`${new Date(createDate || "").toUTCString()}`}
             </span>
           )}
           <textarea

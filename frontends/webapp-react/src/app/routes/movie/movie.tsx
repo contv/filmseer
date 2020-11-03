@@ -1,26 +1,28 @@
-import Typography from "@material-ui/core/Typography";
-import { view } from "@risingstack/react-easy-state";
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import GenreTile from "src/app/components/genre-tile";
-import MovieItem from "src/app/components/movie-item";
+import "./movie.scss";
+
 import {
   MovieItemProps,
   nFormatter,
 } from "src/app/components/movie-item/movie-item";
+import React, { useEffect, useState } from "react";
+
+import GenreTile from "src/app/components/genre-tile";
+import MovieInteract from "src/app/components/movie-interact";
+import MovieItem from "src/app/components/movie-item";
 import MovieSection from "src/app/components/movie-section";
 import Review from "src/app/components/review";
 import ReviewEditor from "src/app/components/review-editor";
-import avatar from "src/app/components/review/default-avatar.png";
 import { ReviewProps } from "src/app/components/review/review";
 import Stars from "src/app/components/stars";
 import TileList from "src/app/components/tile-list";
 import Trailer from "src/app/components/trailer";
+import Typography from "@material-ui/core/Typography";
 import VerticalList from "src/app/components/vertical-list";
-import state from "src/app/states";
-import MovieInteract from "src/app/components/movie-interact";
 import { api } from "src/utils";
-import "./movie.scss";
+import avatar from "src/app/components/review/default-avatar.png";
+import state from "src/app/states";
+import { useParams } from "react-router-dom";
+import { view } from "@risingstack/react-easy-state";
 
 type CastMember = {
   id: string;
@@ -265,9 +267,10 @@ const MovieDetailPage = (props: { className?: string }) => {
               numSpoiler={authorReview[0].numSpoiler}
               disable={true}
               hideFlags={true}
+              hideStats={false}
             ></ReviewEditor>
           )}
-          {authorReview && authorReview.length == 0 && author && (
+          {authorReview && authorReview.length === 0 && author && (
             <ReviewEditor
               reviewId=""
               movieId={movieId}
