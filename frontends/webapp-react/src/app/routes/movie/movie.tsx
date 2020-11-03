@@ -208,11 +208,12 @@ const MovieDetailPage = (props: { className?: string }) => {
         </MovieSection>
         {movieDetails.trailers && (
           <MovieSection heading="Trailers">
-            <div className="Trailers">
-              {movieDetails.trailers.map((trailer) => (
+            <TileList
+              items={movieDetails.trailers.map((trailer) => (<div className="Movie__trailer">
                 <Trailer site={trailer.site} videoId={trailer.key}></Trailer>
+                </div>
               ))}
-            </div>
+            />
           </MovieSection>
         )}
         {movieDetails.crew && (
