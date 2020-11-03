@@ -18,13 +18,13 @@ type SearchItem = {
   numReviews: number;
 };
 
-const groupArray = (group: any, size: any, length: any) =>
+const groupItems = (group: any, size: any, length: any) =>
   group
     .reduce(
-      (accumulator: any, current: any, index: any, original: any) =>
+      (prev: any, current: any, index: any, original: any) =>
         index % size === 0
-          ? accumulator.concat([original.slice(index, index + size)])
-          : accumulator,
+          ? prev.concat([original.slice(index, index + size)])
+          : prev,
       []
     )
     .filter((_: any, index: any) => index < length);
@@ -76,7 +76,7 @@ const SearchPage = (props: { className?: string }) => {
       if (res.code !== 0) {
         setHasError(true);
       } else {
-        const grouped = groupArray(res.data.movies, 8, 10);
+        const grouped = groupItems(res.data.movies, 8, 10);
         setGroupedResults(grouped);
         setFilters(res.data.filters);
         console.log(res.data.filters);
