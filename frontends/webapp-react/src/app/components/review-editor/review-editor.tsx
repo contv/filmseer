@@ -1,11 +1,13 @@
-import { Rating } from "@material-ui/lab";
+import Stars from "src/app/components/stars";
 import { view } from "@risingstack/react-easy-state";
 import React from "react";
 import ReviewFlags from "src/app/components/review-flags";
 import "./review-editor.scss";
+import { ApiError, api } from "src/utils";
 
 export type ReviewEditorProps = {
   reviewId: string;
+  movieId: string;
   description?: string;
   username?: string;
   profileImage?: string;
@@ -25,12 +27,37 @@ export type ReviewEditorProps = {
 
 const ReviewEditor = (props: ReviewEditorProps & { className?: string }) => {
   const [editable, setEditable] = React.useState(props.disable);
+  const [spoiler, setSpoiler] = React.useState(props.containsSpoiler);
+  const [desc, setDesc] = React.useState(props.description);
+  const reviewDesc = async (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setDesc(event.target.value)
+  }
+  const toogleSpoiler = () => {
+    setSpoiler(!spoiler)
+  }
   const changeMode = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
     event.nativeEvent.stopImmediatePropagation();
     setEditable(!editable);
+    if (!editable) {
+      try {
+        const response = await api({
+          path: "/movie/" + props.movieId + "/review",
+          method: editable ? "POST" : "PUT",
+          body: {
+            description: desc,
+            contains_spoiler: spoiler,
+          },        
+        });
+      } catch (error) {
+        if (!(error instanceof ApiError)) {
+          throw error;
+        }
+      }
+    }
   };
+
   if (props.username) {
     return (
       <div className={`ReviewEditor ${(props.className || "").trim()}`}>
@@ -44,11 +71,18 @@ const ReviewEditor = (props: ReviewEditorProps & { className?: string }) => {
           />
         </a>
         <div className="ReviewEditor__middle">
-          {props.createDate && <span>You posted at {`${new Date(props.createDate || "").toUTCString()}`}</span>}
+          {props.createDate && (
+            <span>
+              You posted at{" "}
+              {`${new Date(props.createDate || "").toUTCString()}`}
+            </span>
+          )}
           <textarea
             className="ReviewEditor__textbox"
             disabled={editable}
             defaultValue={props.description}
+            value={desc}
+            onChange={reviewDesc}
           ></textarea>
           <ReviewFlags
             reviewId={props.reviewId}
@@ -65,16 +99,14 @@ const ReviewEditor = (props: ReviewEditorProps & { className?: string }) => {
           {
             <>
               <span>Your rating:</span>
-              <Rating
-                name="star-rating"
-                className="ReviewEditor__rating"
-                value={props.rating}
-                precision={0.1}
-                size="small"
-                readOnly={editable}
-              />
+              <Stars
+                    movieId={props.movieId}
+                    rating={props.rating}
+                    size="small"
+                    votable={editable ? false : true}
+                  />
               <label className="ReviewEditor__spoiler">
-                <input type="checkbox" id="spoiler" disabled={editable} />
+                <input type="checkbox" id="spoiler" disabled={editable} checked={spoiler ? true : false} onChange={toogleSpoiler} />
                 Mark as spoiler
               </label>
               <button onClick={changeMode}>

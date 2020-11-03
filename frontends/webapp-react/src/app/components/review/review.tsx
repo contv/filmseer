@@ -21,6 +21,7 @@ export type ReviewProps = {
 };
 
 const Review = (props: ReviewProps & { className?: string }) => {
+  const showSpoiler = props.containsSpoiler || ((props.numHelpful || 0) > 10)
   return (
     <div className={`Review ${(props.className || "").trim()}`}>
       <a href={`/user/${props.username}`}>
@@ -50,7 +51,10 @@ const Review = (props: ReviewProps & { className?: string }) => {
             posted at {`${new Date(props.createDate).toUTCString()}`}
           </span>
         </p>
-        <p className="Review__content">{props.description}</p>
+
+        <p className="Review__content">
+        {showSpoiler ? <details><summary>Spoiler</summary>{props.description}</details> : <div>{props.description}</div>}
+        </p>
       </div>
       <ReviewFlags
         reviewId={props.reviewId}

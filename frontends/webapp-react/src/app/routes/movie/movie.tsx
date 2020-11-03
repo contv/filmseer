@@ -283,6 +283,7 @@ const MovieDetailPage = (props: { className?: string }) => {
           {authorReview && authorReview.length > 0 && (
             <ReviewEditor
               reviewId={authorReview[0].reviewId}
+              movieId={movieId}
               description={authorReview[0].description}
               username={authorReview[0].username}
               createDate={authorReview[0].createDate}
@@ -302,6 +303,7 @@ const MovieDetailPage = (props: { className?: string }) => {
           {authorReview && authorReview.length == 0 && author && (
             <ReviewEditor
               reviewId=""
+              movieId={movieId}
               username={author.username || ""}
               profileImage={author.image || avatar}
               hideFlags={true}
