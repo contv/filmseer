@@ -78,7 +78,7 @@ class FilterResponse(BaseModel):
     type: str
     name: str
     key: str
-    selections: List[dict]
+    selections: List
 
 
 class RatingResponse(BaseModel):
@@ -460,17 +460,20 @@ async def process_movie_payload(
     genre_set = set(
         genre["name"]
         for movie_id in preprocessed
+        if preprocessed[movie_id]["movie"]["genres"]
         for genre in preprocessed[movie_id]["movie"]["genres"]
     )
     director_set = set(
         position["people"]["name"]
         for movie_id in preprocessed
+        if preprocessed[movie_id]["movie"]["positions"]
         for position in preprocessed[movie_id]["movie"]["positions"]
         if position["position"] == "director"
     )
     year_set = set(
         int(preprocessed[movie_id]["movie"]["release_date"][0:4])
         for movie_id in preprocessed
+        if preprocessed[movie_id]["movie"]["release_date"]
     )
 
     genre_selections = FilterResponse(
@@ -491,7 +494,7 @@ async def process_movie_payload(
         type="slide",
         name="Year",
         key="year",
-        selections=[{"min": min(year_set), "max": max(year_set)}],
+        selections=[{"min": min(year_set), "max": max(year_set)} if year_set else None],
     )
 
     # Filter
