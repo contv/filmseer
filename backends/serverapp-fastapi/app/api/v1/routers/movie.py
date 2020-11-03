@@ -509,8 +509,11 @@ async def process_movie_payload(
         genre_filter_pass, year_filter_pass, director_filter_pass = True, True, True
         movie = preprocessed[movie_id]["movie"]
         if genre_filter:
-            genres = set(genre["name"] for genre in movie["genres"])
-            if not genres.intersection(genre_filter):
+            try: 
+                genres = set(genre["name"] for genre in movie["genres"])
+                if not genres.intersection(genre_filter):
+                    genre_filter_pass = False
+            except TypeError:
                 genre_filter_pass = False
         if year_filter:
             try:
@@ -518,14 +521,17 @@ async def process_movie_payload(
                 if not year >= min_year or not year <= max_year:
                     year_filter_pass = False
             except ValueError:
-                pass
+                year_filter_pass = False
         if director_filter:
-            directors = set()
-            if movie["positions"]:
-                for position in movie["positions"]:
-                    if position["position"] == "director":
-                        directors.add(position["people"]["name"])
-            if not directors.intersection(director_filter):
+            try:
+                directors = set(
+                    position["people"]["name"]
+                    for position in movie["positions"]
+                    if position["position"] == "director"                
+                )
+                if not directors.intersection(director_filter):
+                    director_filter_pass = False
+            except TypeError:
                 director_filter_pass = False
         if genre_filter_pass and year_filter_pass and director_filter_pass:
             postprocessed.append(preprocessed[movie_id])

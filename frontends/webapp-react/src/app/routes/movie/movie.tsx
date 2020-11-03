@@ -1,8 +1,4 @@
 import Typography from "@material-ui/core/Typography";
-import { ChatBubble } from "@material-ui/icons";
-import BookmarkIcon from "@material-ui/icons/Bookmark";
-import FlagIcon from "@material-ui/icons/Flag";
-import VisibilityIcon from "@material-ui/icons/Visibility";
 import { view } from "@risingstack/react-easy-state";
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
@@ -20,6 +16,7 @@ import Stars from "src/app/components/stars";
 import Trailer from "src/app/components/trailer";
 import avatar from "src/app/components/review/default-avatar.png"
 import VerticalList from "src/app/components/vertical-list";
+import MovieInteract from "src/app/components/movie-interact";
 import { api } from "src/utils";
 import "./movie.scss";
 
@@ -171,48 +168,17 @@ const MovieDetailPage = (props: { className?: string }) => {
             <p className="Movie__description">{movieDetails.description}</p>
           </div>
           <div className="Movie__interact">
-            <div>
-              <VisibilityIcon />
-              <Typography variant="body2" display="inline">
-                Watched
-              </Typography>
-            </div>
-            <div>
-              <BookmarkIcon></BookmarkIcon>
-              <Typography variant="body2" display="inline">
-                Add to wishlist
-              </Typography>
-            </div>
-            <div>
-              <FlagIcon />
-              <Typography variant="body2" display="inline">
-                Flag inaccurate
-              </Typography>
-            </div>
-            <div>
-              <Typography variant="body2">Your rating</Typography>
-              <Stars
-                movieId={movieId}
-                rating={0}
-                size="medium"
-                votable={true}
-              />
-            </div>
-            <div>
-              <ChatBubble />
-              <Typography variant="body2" display="inline">
-                Post a review
-              </Typography>
-            </div>
+            <MovieInteract movieId={movieId}/>
           </div>
         </MovieSection>
         {movieDetails.trailers && (
           <MovieSection heading="Trailers">
-            <div className="Trailers">
-              {movieDetails.trailers.map((trailer) => (
+            <TileList
+              items={movieDetails.trailers.map((trailer) => (<div className="Movie__trailer">
                 <Trailer site={trailer.site} videoId={trailer.key}></Trailer>
+                </div>
               ))}
-            </div>
+            />
           </MovieSection>
         )}
         {movieDetails.crew && (
