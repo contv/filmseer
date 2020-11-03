@@ -1,28 +1,27 @@
-import "./movie.scss";
-
+import Typography from "@material-ui/core/Typography";
+import { view } from "@risingstack/react-easy-state";
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import GenreTile from "src/app/components/genre-tile";
+import MovieInteract from "src/app/components/movie-interact";
+import MovieItem from "src/app/components/movie-item";
 import {
   MovieItemProps,
   nFormatter,
 } from "src/app/components/movie-item/movie-item";
-import React, { useEffect, useState } from "react";
-
-import GenreTile from "src/app/components/genre-tile";
-import MovieInteract from "src/app/components/movie-interact";
-import MovieItem from "src/app/components/movie-item";
 import MovieSection from "src/app/components/movie-section";
 import Review from "src/app/components/review";
 import ReviewEditor from "src/app/components/review-editor";
+import avatar from "src/app/components/review/default-avatar.png";
 import { ReviewProps } from "src/app/components/review/review";
 import Stars from "src/app/components/stars";
 import TileList from "src/app/components/tile-list";
 import Trailer from "src/app/components/trailer";
-import Typography from "@material-ui/core/Typography";
 import VerticalList from "src/app/components/vertical-list";
-import { api } from "src/utils";
-import avatar from "src/app/components/review/default-avatar.png";
+import { User } from "src/app/routes/user/user";
 import state from "src/app/states";
-import { useParams } from "react-router-dom";
-import { view } from "@risingstack/react-easy-state";
+import { api } from "src/utils";
+import "./movie.scss";
 
 type CastMember = {
   id: string;
@@ -48,13 +47,6 @@ type Movie = {
   trailers?: Array<Trailer>;
   crew?: Array<CastMember>;
   genres?: Array<string>;
-};
-
-type User = {
-  id: string;
-  username: string;
-  description: string;
-  image: string;
 };
 
 const dummyRecommendedMovies = [
@@ -116,7 +108,7 @@ const dummyRecommendedMovies = [
 const MovieDetailPage = (props: { className?: string }) => {
   const { movieId } = useParams<{ movieId: string }>();
   const [movieDetails, setMovie] = useState<Movie>();
-  const [author, setAurthor] = useState<User>();
+  const [author, setAuthor] = useState<User>();
   const [reviews, setReviews] = useState<Array<ReviewProps>>();
   const [authorReview, setAuthorReview] = useState<Array<ReviewProps>>();
   const [recommended, setRecommended] = useState<Array<MovieItemProps>>();
@@ -128,7 +120,7 @@ const MovieDetailPage = (props: { className?: string }) => {
         if (res.code !== 0) {
           setHasError(true);
         } else {
-          setAurthor(res.data as User);
+          setAuthor(res.data as User);
           setHasError(false);
         }
       });
@@ -201,14 +193,15 @@ const MovieDetailPage = (props: { className?: string }) => {
             <p className="Movie__description">{movieDetails.description}</p>
           </div>
           <div className="Movie__interact">
-            <MovieInteract movieId={movieId}/>
+            <MovieInteract movieId={movieId} />
           </div>
         </MovieSection>
         {movieDetails.trailers && (
           <MovieSection heading="Trailers">
             <TileList
-              items={movieDetails.trailers.map((trailer) => (<div className="Movie__trailer">
-                <Trailer site={trailer.site} videoId={trailer.key}></Trailer>
+              items={movieDetails.trailers.map((trailer) => (
+                <div className="Movie__trailer">
+                  <Trailer site={trailer.site} videoId={trailer.key}></Trailer>
                 </div>
               ))}
             />

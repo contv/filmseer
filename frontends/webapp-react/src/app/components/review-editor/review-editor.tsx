@@ -45,7 +45,7 @@ const ReviewEditor = (props: ReviewEditorProps & { className?: string }) => {
     setEditable(!editable);
     if (!editable) {
       try {
-        const response = await api({
+        await api({
           path: "/movie/" + props.movieId + "/review",
           method: editable ? "POST" : "PUT",
           body: {
