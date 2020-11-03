@@ -1,16 +1,29 @@
 import { StylesProvider } from "@material-ui/core/styles";
 import { view } from "@risingstack/react-easy-state";
-import React from "react";
-import { BrowserRouter as Router, Link, Route, Switch } from "react-router-dom";
+import React, { useState } from "react";
+import {
+  BrowserRouter as Router,
+  Link,
+  Redirect,
+  Route,
+  Switch,
+} from "react-router-dom";
 import "./app.scss";
 import SearchBar from "./components/search-bar";
 import UserMenu from "./components/user-menu";
 import logo from "./logo.svg";
 import HomePage from "./routes/home";
 import MovieDetailPage from "./routes/movie";
+import SearchPage from "./routes/search";
 import UserPage from "./routes/user";
 
 const App = () => {
+  const [searchTerm, setSearchTerm] = useState<string>();
+
+  const performSearch = (text: string) => {
+    setSearchTerm(encodeURI(text));
+  };
+
   return (
     <StylesProvider injectFirst>
       <div className="App">
@@ -21,14 +34,18 @@ const App = () => {
             </Link>
             <SearchBar
               type="header"
-              onSearch={(text) => console.log("Searching", text)}
+              onSearch={(text) => performSearch(text)}
               className="Header__search-bar"
               height={48}
             ></SearchBar>
             <UserMenu className="Header__user-menu" />
           </header>
           <article className="App__main Main">
+              {searchTerm && (<Redirect to={{ pathname: `/search/${searchTerm}`, search: `?desc=${"hi"}` }}/>)}
             <Switch>
+              <Route path="/search/:searchString?">
+                <SearchPage className="Main__search" />
+              </Route>
               <Route path="/user/:username?">
                 <UserPage className="Main__user" />
               </Route>
