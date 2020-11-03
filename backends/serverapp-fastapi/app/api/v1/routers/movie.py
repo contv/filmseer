@@ -77,7 +77,7 @@ class FilterResponse(BaseModel):
     type: str
     name: str
     key: str
-    selections: List[dict]
+    selections: List
 
 
 class RatingResponse(BaseModel):
@@ -459,44 +459,6 @@ async def process_movie_payload(
     Given a preprocessed Elasticsearch response payload, apply filters, sorting and pagination, and
     returns an ordered array of SearchResponse objects each representing a movie tile
     """
-    # Populate filter options based on entire payload
-    genre_set = set(
-        genre["name"]
-        for movie_id in preprocessed
-        for genre in preprocessed[movie_id]["movie"]["genres"]
-    )
-    director_set = set(
-        position["people"]["name"]
-        for movie_id in preprocessed
-        for position in preprocessed[movie_id]["movie"]["positions"]
-        if position["position"] == "director"
-    )
-    year_set = set(
-        int(preprocessed[movie_id]["movie"]["release_date"][0:4])
-        for movie_id in preprocessed
-    )
-
-    genre_selections = FilterResponse(
-        type="list",
-        name="Genre",
-        key="genre",
-        selections=[{"key": genre, "name": genre} for genre in genre_set],
-    )
-
-    director_selections = FilterResponse(
-        type="list",
-        name="Directors",
-        key="director",
-        selections=[{"key": director, "name": director} for director in director_set],
-    )
-
-    year_selections = FilterResponse(
-        type="slide",
-        name="Year",
-        key="year",
-        selections=[{"min": min(year_set), "max": max(year_set)}],
-    )
-
     # Filter
     postprocessed = []
     year_filter = year_filter.split("-")
@@ -509,8 +471,11 @@ async def process_movie_payload(
         genre_filter_pass, year_filter_pass, director_filter_pass = True, True, True
         movie = preprocessed[movie_id]["movie"]
         if genre_filter:
-            genres = set(genre["name"] for genre in movie["genres"])
-            if not genres.intersection(genre_filter):
+            try:
+                genres = set(genre["name"] for genre in movie["genres"])
+                if not genres.intersection(genre_filter):
+                    genre_filter_pass = False
+            except TypeError:
                 genre_filter_pass = False
         if year_filter:
             try:
@@ -520,12 +485,15 @@ async def process_movie_payload(
             except ValueError:
                 pass
         if director_filter:
-            directors = set(
-                position["people"]["name"]
-                for position in movie["positions"]
-                if position["position"] == "director"
-            )
-            if not directors.intersection(director_filter):
+            try:
+                directors = set(
+                    position["people"]["name"]
+                    for position in movie["positions"]
+                    if position["position"] == "director"
+                )
+                if not directors.intersection(director_filter):
+                    director_filter_pass = False
+            except TypeError:
                 director_filter_pass = False
         if genre_filter_pass and year_filter_pass and director_filter_pass:
             postprocessed.append(preprocessed[movie_id])
@@ -560,6 +528,47 @@ async def process_movie_payload(
         if end < 0 or end > len(postprocessed):
             end = len(postprocessed)
         postprocessed = postprocessed[start:end]
+        
+    # Populate filter options based on filtered payload
+    genre_set = set(
+        genre["name"]
+        for movie in postprocessed
+        if movie["movie"]["genres"]
+        for genre in movie["movie"]["genres"]
+    )
+    director_set = set(
+        position["people"]["name"]
+        for movie in postprocessed
+        if movie["movie"]["positions"]
+        for position in movie["movie"]["positions"]
+        if position["position"] == "director"
+    )
+    year_set = set(
+        int(movie["movie"]["release_date"][0:4])
+        for movie in postprocessed
+        if movie["movie"]["release_date"]
+    )
+
+    genre_selections = FilterResponse(
+        type="list",
+        name="Genre",
+        key="genre",
+        selections=[{"key": genre, "name": genre} for genre in genre_set],
+    )
+
+    director_selections = FilterResponse(
+        type="list",
+        name="Directors",
+        key="director",
+        selections=[{"key": director, "name": director} for director in director_set],
+    )
+
+    year_selections = FilterResponse(
+        type="slide",
+        name="Year",
+        key="year",
+        selections=[{"min": min(year_set), "max": max(year_set)} if year_set else None],
+    )
 
     # Convert to SearchResponse objects
     for i in range(len(postprocessed)):
