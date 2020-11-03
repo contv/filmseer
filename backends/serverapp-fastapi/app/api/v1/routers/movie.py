@@ -18,6 +18,7 @@ from app.models.db.positions import Positions
 from app.models.db.ratings import Ratings
 from app.models.db.reviews import Reviews
 from app.models.db.spoiler_votes import SpoilerVotes
+from app.utils.ratings import calc_average_rating
 from app.utils.dict_storage.redis import RedisDictStorageDriver
 from app.utils.wrapper import ApiException, Wrapper, wrap
 
@@ -83,10 +84,6 @@ class FilterResponse(BaseModel):
 class RatingResponse(BaseModel):
     id: str
     rating: float
-
-
-def calc_average_rating(cumulative_rating, num_votes) -> float:
-    return round(cumulative_rating / num_votes if num_votes > 0 else 0.0, 1)
 
 
 @router.get("/{movie_id}/ratings")
@@ -459,6 +456,47 @@ async def process_movie_payload(
     Given a preprocessed Elasticsearch response payload, apply filters, sorting and pagination, and
     returns an ordered array of SearchResponse objects each representing a movie tile
     """
+    # Populate filter options based on entire payload
+    genre_set = set(
+        genre["name"]
+        for movie_id in preprocessed
+        if preprocessed[movie_id]["movie"]["genres"]
+        for genre in preprocessed[movie_id]["movie"]["genres"]
+    )
+    director_set = set(
+        position["people"]["name"]
+        for movie_id in preprocessed
+        if preprocessed[movie_id]["movie"]["positions"]
+        for position in preprocessed[movie_id]["movie"]["positions"]
+        if position["position"] == "director"
+    )
+    year_set = set(
+        int(preprocessed[movie_id]["movie"]["release_date"][0:4])
+        for movie_id in preprocessed
+        if preprocessed[movie_id]["movie"]["release_date"]
+    )
+
+    genre_selections = FilterResponse(
+        type="list",
+        name="Genre",
+        key="genre",
+        selections=[{"key": genre, "name": genre} for genre in genre_set],
+    )
+
+    director_selections = FilterResponse(
+        type="list",
+        name="Directors",
+        key="director",
+        selections=[{"key": director, "name": director} for director in director_set],
+    )
+
+    year_selections = FilterResponse(
+        type="slide",
+        name="Year",
+        key="year",
+        selections=[{"min": min(year_set), "max": max(year_set)} if year_set else None],
+    )
+
     # Filter
     postprocessed = []
     year_filter = year_filter.split("-")
@@ -471,7 +509,7 @@ async def process_movie_payload(
         genre_filter_pass, year_filter_pass, director_filter_pass = True, True, True
         movie = preprocessed[movie_id]["movie"]
         if genre_filter:
-            try:
+            try: 
                 genres = set(genre["name"] for genre in movie["genres"])
                 if not genres.intersection(genre_filter):
                     genre_filter_pass = False
@@ -483,13 +521,13 @@ async def process_movie_payload(
                 if not year >= min_year or not year <= max_year:
                     year_filter_pass = False
             except ValueError:
-                pass
+                year_filter_pass = False
         if director_filter:
             try:
                 directors = set(
                     position["people"]["name"]
                     for position in movie["positions"]
-                    if position["position"] == "director"
+                    if position["position"] == "director"                
                 )
                 if not directors.intersection(director_filter):
                     director_filter_pass = False
@@ -606,25 +644,65 @@ async def rate_movie(request: Request, movie_id: str, rating: float):
                 user_id=user_id, movie_id=movie_id
             )
             if existing_rating:
-                existing_rating.delete_date = None
-                existing_rating.rating = rating
+                old_rating = existing_rating.rating
+                if existing_rating.delete_date:
+                    existing_rating.delete_date = None
+                    existing_rating.rating = rating
+                    await update_cumulative_rating(movie_id, rating)
+                else:
+                    existing_rating.rating = rating
+                    await update_cumulative_rating(movie_id, rating, old_rating)
                 await existing_rating.save(update_fields=["rating", "delete_date"])
             else:
                 await Ratings.create(user_id=user_id, movie_id=movie_id, rating=rating)
-
+                await update_cumulative_rating(movie_id, rating)
             current_rating = await Ratings.get(user_id=user_id, movie_id=movie_id)
-            existing_review = await Reviews.get_or_none(
-                user_id=user_id, movie_id=movie_id
-            )
-            if existing_review:
-                existing_review.rating = current_rating
-                await existing_review.save(update_fields=["rating_id"])
+            await update_review_rating(user_id, movie_id, current_rating)
     except OperationalError:
         return ApiException(500, 2102, "Could not rate movie")
     except IntegrityError:
         return ApiException(500, 2104, "Could not update fields")
 
     return wrap({"id": str(current_rating.rating_id), "rating": current_rating.rating})
+
+
+async def update_cumulative_rating(
+    movie_id: str, new_rating: float, old_rating: float = None
+):
+    """
+    Updates a given movie's cumulative rating and num votes fields.
+    If no old rating is provided, rating is assumed to be a new rating or a deleted rating.
+    In case of a deleted rating, ensure that new_rating is a negative floating value.
+    """
+    try:
+        async with in_transaction():
+            movie = await Movies.get_or_none(movie_id=movie_id, delete_date=None)
+            if movie:
+                if old_rating:
+                    movie.cumulative_rating += new_rating - old_rating
+                else:
+                    movie.num_votes += 1 if new_rating >= 0 else -1
+                    movie.cumulative_rating += new_rating
+                await movie.save(update_fields=["cumulative_rating", "num_votes"])
+    except:
+        raise OperationalError
+
+
+async def update_review_rating(
+    user_id: str, movie_id: str, rating_object: Ratings = None
+):
+    """
+    Sets an existing review's 'rating' field to point to the provided rating_object
+    or null the field if no rating object is provided
+    """
+    try:
+        async with in_transaction():
+            review = await Reviews.get_or_none(user_id=user_id, movie_id=movie_id, delete_date=None)
+            if review:
+                review.rating = rating_object
+                await review.save(update_fields=["rating_id"])
+    except:
+        raise OperationalError
 
 
 @router.delete(
@@ -641,17 +719,13 @@ async def delete_rating(request: Request, movie_id: str) -> Wrapper[dict]:
             existing_rating = await Ratings.get_or_none(
                 user_id=user_id, movie_id=movie_id
             )
-            if existing_rating:
+            if existing_rating and not existing_rating.delete_date:
                 rating_id = existing_rating.rating_id
                 rating = existing_rating.rating
                 existing_rating.delete_date = datetime.now()
                 await existing_rating.save(update_fields=["delete_date"])
-                related_review = await Reviews.get_or_none(
-                    user_id=user_id, movie_id=movie_id
-                )
-                if related_review:
-                    related_review.rating = None
-                    await related_review.save(update_fields=["rating_id"])
+                await update_cumulative_rating(movie_id, -rating)
+                await update_review_rating(user_id, movie_id)
     except OperationalError:
         return ApiException(500, 2103, "Could not find or delete rating")
     except IntegrityError:
