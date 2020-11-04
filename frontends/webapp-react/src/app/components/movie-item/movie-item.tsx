@@ -5,7 +5,7 @@ import CardMedia from "@material-ui/core/CardMedia";
 import Typography from "@material-ui/core/Typography";
 import { view } from "@risingstack/react-easy-state";
 import React from "react";
-import { useHistory } from "react-router-dom"
+import { useHistory } from "react-router-dom";
 import GenreTile from "../genre-tile";
 import Stars from "../stars";
 import "./movie-item.scss";
@@ -16,6 +16,7 @@ export type MovieItemProps = {
   year: number;
   genres: { id: string; text: string }[];
   imageUrl?: string;
+  averageRating?: number;
   cumulativeRating: number;
   numRatings: number;
   numReviews: number;
@@ -44,14 +45,19 @@ export const nFormatter = (num: number, digits: number) => {
 
 const MovieItem = (props: MovieItemProps & { className?: string }) => {
   let history = useHistory();
+  let avgRating: number = 0;
 
-  const avgRating: number = parseFloat(
-    (props.cumulativeRating / props.numRatings).toFixed(1)
-  );
+  if (props.averageRating) {
+    avgRating = props.averageRating;
+  } else if (props.cumulativeRating && props.numRatings) {
+    avgRating = parseFloat(
+      (props.cumulativeRating / props.numRatings).toFixed(1)
+    );
+  }
   const formattedNumRatings: string = nFormatter(props.numRatings, 0);
 
   const handleClick = () => {
-    history.push("/movie/" + props.movieId)
+    history.push("/movie/" + props.movieId);
   };
 
   let genres = [];
@@ -61,29 +67,29 @@ const MovieItem = (props: MovieItemProps & { className?: string }) => {
 
   return (
     <div className={`MovieItem ${(props.className || "").trim()}`}>
-        <Card className="MovieItem__card" onClick={handleClick}>
-          <CardMedia
-            className="MovieItem__media"
-            image={props.imageUrl}
-            title={props.title + " (" + props.year + ")"}
+      <Card className="MovieItem__card" onClick={handleClick}>
+        <CardMedia
+          className="MovieItem__media"
+          image={props.imageUrl}
+          title={props.title + " (" + props.year + ")"}
+        />
+        <CardHeader
+          className="MovieItem__header"
+          title={props.title + " (" + props.year + ")"}
+          subheader={genres}
+        ></CardHeader>
+        <CardContent className="MovieItem__content">
+          <Stars
+            movieId={props.movieId}
+            rating={avgRating}
+            size="small"
+            votable={false}
           />
-          <CardHeader
-            className="MovieItem__header"
-            title={props.title + " (" + props.year + ")"}
-            subheader={genres}
-          ></CardHeader>
-          <CardContent className="MovieItem__content">
-            <Stars
-              movieId={props.movieId}
-              rating={avgRating}
-              size="small"
-              votable={false}
-            />
-            <Typography>
-              {avgRating}({formattedNumRatings})
-            </Typography>
-          </CardContent>
-        </Card>
+          <Typography>
+            {avgRating}({formattedNumRatings})
+          </Typography>
+        </CardContent>
+      </Card>
     </div>
   );
 };

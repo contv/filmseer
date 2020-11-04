@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 import Filter from "src/app/components/filter";
 import MovieItem from "src/app/components/movie-item/movie-item";
 import TileList from "src/app/components/tile-list";
+import movieLogo from "src/app/components/movie-item/movie-logo.png"
 import { api } from "src/utils";
 import "./search.scss";
 
@@ -11,7 +12,7 @@ type SearchItem = {
   id: string;
   title: string;
   releaseYear: number;
-  genres: { id: string; text: string }[];
+  genres: string[];
   imageUrl?: string;
   cumulativeRating: number;
   numRatings: number;
@@ -37,13 +38,13 @@ const SearchPage = (props: { className?: string }) => {
   const [hasError, setHasError] = useState<Boolean>(false);
   const [genreFilter, setGenreFilter] = useState<string>();
   const [directorFilter, setDirectorFilter] = useState<string>();
-  const [yearRange, setYearRange] = useState<string>();
+  const [yearFilter, setYearFilter] = useState<string>();
   const [descending, setDescending] = useState<Boolean>(true);
   const [filters, setFilters] = useState<Array<any>>();
   const [sortBy, setSortBy] = useState<string>("relevance");
 
   const updateYears = (event: any) => {
-    setYearRange(event.target.value);
+    setYearFilter(event.target.value);
   };
 
   const updateDirector = (event: any) => {
@@ -72,18 +73,21 @@ const SearchPage = (props: { className?: string }) => {
         genreFilter ? `&genres=${encodeURI(genreFilter)}` : ""
       }${
         directorFilter ? `&directors=${encodeURI(directorFilter)}` : ""
+      }${
+        yearFilter ? `&years=${yearFilter}` : ""
       }&per_page=80&page=1&sort=${sortBy}&desc=${descending}`,
       method: "GET",
     }).then((res) => {
       if (res.code !== 0) {
         setHasError(true);
       } else {
+        console.log(res.data)
         const grouped = groupItems(res.data.movies, 8, 10);
         setGroupedResults(grouped);
         setFilters(res.data.filters);
       }
     });
-  }, [searchString, genreFilter, directorFilter, sortBy, descending]);
+  }, [searchString, genreFilter, directorFilter, sortBy, descending, yearFilter]);
 
   if (groupedResults && filters) {
     return (
@@ -133,13 +137,13 @@ const SearchPage = (props: { className?: string }) => {
                     year={movie.releaseYear}
                     title={movie.title}
                     genres={movie.genres.map((g) => ({
-                      id: g.id,
-                      text: g.text,
+                      id: `${g}-${movie.id}`,
+                      text: g,
                     }))}
-                    imageUrl={movie.imageUrl}
-                    cumulativeRating={9.2}
-                    numRatings={2}
-                    numReviews={2}
+                    imageUrl={movie.imageUrl || movieLogo}
+                    cumulativeRating={movie.cumulativeRating}
+                    numRatings={movie.numRatings}
+                    numReviews={movie.numReviews}
                   />
                 </div>
               ))}

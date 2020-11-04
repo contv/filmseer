@@ -12,8 +12,6 @@ type FilterProps = {
 const Filter = (props: FilterProps & { className?: string } & {updateSearchParams: any}) => {
   return (
     <div className={`GenreTile ${(props.className || "").trim()}`}>
-      {props.type === "list" ? (
-        <>
           <label htmlFor={props.filterKey} >
             {props.name}
           </label>
@@ -25,8 +23,6 @@ const Filter = (props: FilterProps & { className?: string } & {updateSearchParam
               </option>
             ))}
           </select>
-        </>
-      ) : null}
     </div>
   );
 };
