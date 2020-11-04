@@ -24,6 +24,7 @@ export type ReviewProps = {
   numHelpful?: number;
   numFunny?: number;
   numSpoiler?: number;
+  hideFlags?: boolean;
 };
 
 const Review = (props: ReviewProps & { className?: string }) => {
@@ -58,14 +59,16 @@ const Review = (props: ReviewProps & { className?: string }) => {
             <span className="Review__meta-reviews">reviews</span>
           )}
           {props.showMovie && (
-            <Link to={`/movie/${props.movieId}`}>{props.movieTitle} ({props.movieYear})</Link>
+            <Link to={`/movie/${props.movieId}`}>
+              {props.movieTitle} ({props.movieYear})
+            </Link>
           )}
           <span className="Review__date">
             posted at {`${new Date(props.createDate).toUTCString()}`}
           </span>
         </p>
 
-        <p className="Review__content">
+        <div className="Review__content">
           {showSpoiler ? (
             <details>
               <summary>
@@ -79,17 +82,19 @@ const Review = (props: ReviewProps & { className?: string }) => {
           ) : (
             <div>{props.description}</div>
           )}
-        </p>
+        </div>
       </div>
-      <ReviewFlags
-        reviewId={props.reviewId}
-        flaggedHelpful={props.flaggedHelpful}
-        flaggedFunny={props.flaggedFunny}
-        flaggedSpoiler={props.flaggedSpoiler}
-        numHelpful={props.numHelpful}
-        numFunny={props.numFunny}
-        numSpoiler={props.numSpoiler}
-      />
+      {!props.hideFlags && (
+        <ReviewFlags
+          reviewId={props.reviewId}
+          flaggedHelpful={props.flaggedHelpful}
+          flaggedFunny={props.flaggedFunny}
+          flaggedSpoiler={props.flaggedSpoiler}
+          numHelpful={props.numHelpful}
+          numFunny={props.numFunny}
+          numSpoiler={props.numSpoiler}
+        />
+      )}
     </div>
   );
 };
