@@ -1,10 +1,10 @@
 import "./review.scss";
 
+import { Link } from "react-router-dom";
 import { Rating } from "@material-ui/lab";
 import React from "react";
 import ReviewFlags from "src/app/components/review-flags";
 import { view } from "@risingstack/react-easy-state";
-import { Link } from "react-router-dom";
 
 export type ReviewProps = {
   reviewId: string;
@@ -27,7 +27,7 @@ export type ReviewProps = {
 };
 
 const Review = (props: ReviewProps & { className?: string }) => {
-  const showSpoiler = props.containsSpoiler || (props.numHelpful || 0) > 10;
+  const showSpoiler = props.containsSpoiler || (props.numSpoiler || 0) > 9;
   const authorSpoiler = props.containsSpoiler;
   return (
     <div className={`Review ${(props.className || "").trim()}`}>
