@@ -9,10 +9,12 @@ import state from "src/app/states";
 import "./stars.scss";
 
 type StarsProps = {
+  id: string;
   movieId: string;
   size: "small" | "medium" | "large";
   votable: boolean;
-  rating?: number;
+  rating: number;
+  setRating: Function;
 };
 
 const Stars = (props: StarsProps & { className?: string }) => {
@@ -40,6 +42,7 @@ const Stars = (props: StarsProps & { className?: string }) => {
           params: { rating: rating },
         },
         (response) => {
+          props.setRating(response.data.rating);
           setRating(response.data.rating);
           setPrevRating(response.data.rating);
           setAwaiting(false);
@@ -68,8 +71,8 @@ const Stars = (props: StarsProps & { className?: string }) => {
   return (
     <div className={`Stars ${(props.className || "").trim()}`}>
       <Rating
-        name="star-rating"
-        value={rating}
+        name={props.id}
+        value={props.rating}
         precision={props.votable ? 0.5 : 0.1} // Allow static variant to display smaller increments
         size={props.size}
         readOnly={!props.votable}

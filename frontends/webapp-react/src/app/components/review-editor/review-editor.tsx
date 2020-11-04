@@ -14,7 +14,8 @@ export type ReviewEditorProps = {
   username?: string;
   profileImage?: string;
   createDate?: Date;
-  rating?: number;
+  rating: number;
+  setRating: Function;
   containsSpoiler?: Boolean;
   flaggedHelpful?: boolean;
   flaggedFunny?: boolean;
@@ -104,8 +105,10 @@ const ReviewEditor = (props: ReviewEditorProps & { className?: string }) => {
             <>
               <span>Your rating:</span>
               <Stars
+                id="review-editor-stars"
                 movieId={props.movieId}
                 rating={props.rating}
+                setRating={props.setRating}
                 size="small"
                 votable={editable ? false : true}
               />

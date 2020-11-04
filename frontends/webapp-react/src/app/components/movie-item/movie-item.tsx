@@ -76,8 +76,10 @@ const MovieItem = (props: MovieItemProps & { className?: string }) => {
         ></CardHeader>
         <CardContent className="MovieItem__content">
           <Stars
+            id={`stars-${props.movieId}`}
             movieId={props.movieId}
             rating={avgRating}
+            setRating={()=>{}}
             size="small"
             votable={false}
           />
