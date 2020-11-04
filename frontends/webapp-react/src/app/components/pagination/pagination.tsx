@@ -94,10 +94,13 @@ const Pagination: React.ForwardRefRenderFunction<
         setData(data);
         props.renderCallback(
           data.slice(
-            props.displayType === "loadmore" ? 0 : current,
+            props.displayType === "loadmore" ? 0 : current - 1,
             current * (props.perPage || 1)
           )
         );
+        if (pageInput.current !== null) {
+          pageInput.current.value = current.toString();
+        }
       });
     } else if (props.dataType === "callback" && props.dataCallback) {
       Promise.resolve(props.dataCallback(current)).then(handleCallbackData);
@@ -188,6 +191,7 @@ const Pagination: React.ForwardRefRenderFunction<
             className="Pagination__input"
             onKeyPress={handleKeyPress}
             ref={pageInput}
+            defaultValue={current}
           />
         ) : (
           <div className="Pagination__only-one">1</div>
