@@ -14,7 +14,7 @@ type SearchItem = {
   releaseYear: number;
   genres: string[];
   imageUrl?: string;
-  cumulativeRating: number;
+  averageRating: number;
   numRatings: number;
   numReviews: number;
 };
@@ -141,9 +141,9 @@ const SearchPage = (props: { className?: string }) => {
                       text: g,
                     }))}
                     imageUrl={movie.imageUrl || movieLogo}
-                    cumulativeRating={movie.cumulativeRating}
-                    numRatings={movie.numRatings}
-                    numReviews={movie.numReviews}
+                    cumulativeRating={78}
+                    numRatings={20}
+                    numReviews={3}
                   />
                 </div>
               ))}
