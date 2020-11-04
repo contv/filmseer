@@ -67,7 +67,7 @@ const Review = (props: ReviewProps & { className?: string }) => {
           </span>
         </p>
 
-        <p className="Review__content">
+        <div className="Review__content">
           {showSpoiler ? (
             <details>
               <summary>
@@ -81,7 +81,7 @@ const Review = (props: ReviewProps & { className?: string }) => {
           ) : (
             <div>{props.description}</div>
           )}
-        </p>
+        </div>
       </div>
       {!props.hideFlags && (
         <ReviewFlags
