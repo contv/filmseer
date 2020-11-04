@@ -125,6 +125,17 @@ const MovieDetailPage = (props: { className?: string }) => {
           setHasError(false);
         }
       });
+      api({
+        path: `/movie/${movieId}/rating`,
+        method: "GET",
+      }).then((res) => {
+        if (res.code !== 0) {
+          setHasError(true);
+        } else {
+          setUserRating(res.data.rating);
+          setHasError(false);
+        }
+      })
     }
     api({ path: `/movie/${movieId}`, method: "GET" }).then((res) => {
       if (res.code !== 0) {
@@ -154,17 +165,6 @@ const MovieDetailPage = (props: { className?: string }) => {
         setHasError(false);
       }
     });
-    api({
-      path: `/movie/${movieId}/rating`,
-      method: "GET",
-    }).then((res) => {
-      if (res.code !== 0) {
-        setHasError(true);
-      } else {
-        setUserRating(res.data.rating);
-        setHasError(false);
-      }
-    })
     setRecommended(dummyRecommendedMovies as Array<MovieItemProps>);
   }, [movieId]);
 
