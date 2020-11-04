@@ -13,6 +13,7 @@ import MovieSection from "src/app/components/movie-section";
 import Review from "src/app/components/review";
 import ReviewEditor from "src/app/components/review-editor";
 import avatar from "src/app/components/review/default-avatar.png";
+import movieLogo from "src/app/components/movie-item/movie-logo.png";
 import { ReviewProps } from "src/app/components/review/review";
 import Stars from "src/app/components/stars";
 import TileList from "src/app/components/tile-list";
@@ -162,7 +163,7 @@ const MovieDetailPage = (props: { className?: string }) => {
       <div className={`MovieDetailPage ${(props.className || "").trim()}`}>
         <MovieSection>
           <div className="Movie__poster">
-            <img src={movieDetails.imageUrl} alt="" />
+            <img src={movieDetails.imageUrl || movieLogo} alt="" className="Movie__poster-image"/>
           </div>
           <div className="Movie__about">
             <h3 className="Movie__title">
