@@ -8,7 +8,7 @@ def _new_uuid():
     return to_uuid(id())
 
 
-class BanLists(Model):
+class Banlists(Model):
     # Data fields
     banlist_id = fields.UUIDField(pk=True, default=_new_uuid)
     user = fields.ForeignKeyField("models.Users", related_name="banning_user_id")
@@ -21,4 +21,4 @@ class BanLists(Model):
         unique_together = (("user", "banned_user"))
 
 
-__all__ = ["BanLists"]
+__all__ = ["Banlists"]
