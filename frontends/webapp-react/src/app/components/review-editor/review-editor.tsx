@@ -31,7 +31,7 @@ const ReviewEditor = (props: ReviewEditorProps & { className?: string }) => {
   const [editable, setEditable] = React.useState(props.disable);
   const [spoiler, setSpoiler] = React.useState(props.containsSpoiler || false);
   const [createDate, setCreateDate] = React.useState(props.createDate);
-  const [desc, setDesc] = React.useState(props.description);
+  const [desc, setDesc] = React.useState(props.description || "");
   const reviewDesc = async (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setDesc(event.target.value);
   };
