@@ -92,7 +92,8 @@ class AverageRatingResponse(BaseModel):
 
 
 @router.get("/{movie_id}/ratings", response_model=Wrapper[AverageRatingResponse])
-async def get_average_rating(movie_id: str) -> Wrapper[dict]:
+async def get_average_rating(movie_id: str, request: Request) -> Wrapper[dict]:
+    user_id = request.session.get("user_id")
     try:
         movie = (
             await Movies.filter(movie_id=movie_id, delete_date=None)
@@ -107,12 +108,13 @@ async def get_average_rating(movie_id: str) -> Wrapper[dict]:
 
     # TODO remove ratings from blocked users
     return wrap(
-        {"average": calc_average_rating(movie.cumulative_rating, movie.num_votes)}
+        {"average": await calc_average_rating(movie.cumulative_rating, movie.num_votes, user_id, movie_id)}
     )
 
 
 @router.get("/{movie_id}", tags=["movies"], response_model=Wrapper[MovieResponse])
-async def get_movie(movie_id: str):
+async def get_movie(movie_id: str, request: Request):
+    user_id = request.session.get("user_id")
     try:
         movie = await Movies.filter(movie_id=movie_id, delete_date=None).first()
     except OperationalError:
@@ -133,8 +135,7 @@ async def get_movie(movie_id: str):
     ]
 
     # TODO remove ratings from blocked users
-    average_rating = calc_average_rating(movie.cumulative_rating, movie.num_votes)
-
+    average_rating = await calc_average_rating(movie.cumulative_rating, movie.num_votes, user_id, movie_id)
     movie_detail = MovieResponse(
         id=str(movie.movie_id),
         title=movie.title,
