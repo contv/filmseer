@@ -461,14 +461,20 @@ async def search_movies(
     for q in queries:
         search = search.query(q)
 
-    # TODO Retrieve banlist and pass into script field
-    # eg "listban":"{uuid1},{uuid2}"
+    list_ban = ""
+    user_id = request.session.get("user_id")
+    if user_id is not None:
+        user_ban_list = await Banlists.filter(user_id=user_id, delete_date=None).values(
+            "banned_user_id"
+        )
+        user_ban_list = [str(item["banned_user_id"]) for item in user_ban_list]
+        list_ban = ",".join(user_ban_list)
+
     search = search.script_fields(
         average_rating={
             "script": {"id": "calculate_rating_field", "params": {"listban": ""}}
         }
     )
-
     # Execute search
     search = search.source(
         ["movie_id", "image", "title", "genres", "release_date", "positions"]
