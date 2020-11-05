@@ -23,9 +23,9 @@ class UserBanlistResponse(BaseModel):
         alias_generator = camelize
         allow_population_by_field_name = True
 
+
 class UserInBanlistResponse(BaseModel):
     inbanlist: bool
-
 
 
 @router.get(
@@ -42,12 +42,11 @@ async def get_banlist(request: Request):
             banlist_id=str(banlist_item.banlist_id),
             banned_user_id=str(banlist_item.banned_user_id),
         )
-        for banlist_item in await Banlists.filter(
-            user_id=user_id, delete_date=None
-        )
+        for banlist_item in await Banlists.filter(user_id=user_id, delete_date=None)
     ]
 
     return wrap({"items": items})
+
 
 @router.get("/{banned_user_id}", response_model=Wrapper[UserInBanlistResponse])
 async def is_user_banlist(request: Request, banned_user_id: str):
@@ -63,6 +62,7 @@ async def is_user_banlist(request: Request, banned_user_id: str):
     )
 
     return wrap({"inbanlist": inbanlist})
+
 
 @router.put("/{banned_user_id}")
 async def add_to_banlist(request: Request, banned_user_id: str):
@@ -88,6 +88,7 @@ async def add_to_banlist(request: Request, banned_user_id: str):
             return ApiException(401, 2501, "You cannot do that.")
 
     return wrap({})
+
 
 @router.delete("/{banned_user_id}")
 async def delete_from_banlist(request: Request, banned_user_id: str):

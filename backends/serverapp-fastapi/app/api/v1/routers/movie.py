@@ -210,16 +210,13 @@ async def get_movie_reviews(
     # Return the review for all other users (for this movie)
     else:
         exclude_list = []
-        exclude_list.append(user_id)
-
         if user_id is not None:
-            ban_list = await Banlists.filter(user_id=user_id, delete_date=None).values("banned_user_id")
-            for item in ban_list: 
+            exclude_list.append(user_id)
+            ban_list = await Banlists.filter(user_id=user_id, delete_date=None).values(
+                "banned_user_id"
+            )
+            for item in ban_list:
                 exclude_list.append(str(item["banned_user_id"]))
-
-        print(exclude_list)
-        print(type(exclude_list))
-
 
         reviews = [
             ReviewResponse(
@@ -243,7 +240,8 @@ async def get_movie_reviews(
                     user_id=user_id, delete_date=None
                 ).count(),
             )
-            for r in await Reviews.filter(movie_id=movie_id, delete_date=None).exclude(user_id__in=exclude_list)
+            for r in await Reviews.filter(movie_id=movie_id, delete_date=None)
+            .exclude(user_id__in=exclude_list)
             .order_by("-create_date")
             .offset((page - 1) * per_page)
             .limit(per_page)
@@ -254,8 +252,12 @@ async def get_movie_reviews(
     return wrap({"items": reviews})
 
 
-@router.post("/{movie_id}/review", tags=["movies"], response_model=Wrapper[ReviewCreateDate])
-@router.put("/{movie_id}/review", tags=["movies"], response_model=Wrapper[ReviewCreateDate])
+@router.post(
+    "/{movie_id}/review", tags=["movies"], response_model=Wrapper[ReviewCreateDate]
+)
+@router.put(
+    "/{movie_id}/review", tags=["movies"], response_model=Wrapper[ReviewCreateDate]
+)
 async def create_update_user_review(
     movie_id: str, review: ReviewRequest, request: Request
 ):
@@ -281,7 +283,7 @@ async def create_update_user_review(
                     movie_id=movie_id,
                 )
             )
-            create_date=datetime.now()
+            create_date = datetime.now()
             if await Reviews.filter(user_id=user_id, movie_id=movie_id):
                 await Reviews.filter(user_id=user_id, movie_id=movie_id).update(
                     rating_id=rating[0].rating_id,

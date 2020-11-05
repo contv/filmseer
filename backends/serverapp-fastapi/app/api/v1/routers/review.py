@@ -27,6 +27,7 @@ class ReviewRequest(BaseModel):
     description: str
     contains_spoiler: bool
 
+
 class ReviewCreateDate(BaseModel):
     create_date: datetime
 
@@ -102,7 +103,9 @@ async def search_user_review(
         .order_by("-create_date")
         .offset((page - 1) * per_page)
         .limit(per_page)
-        .prefetch_related("rating", "helpful_votes", "funny_votes", "spoiler_votes", "user")
+        .prefetch_related(
+            "rating", "helpful_votes", "funny_votes", "spoiler_votes", "user"
+        )
     ]
 
     return wrap({"items": reviews})

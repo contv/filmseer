@@ -140,7 +140,9 @@ async def get_user_wishlist(username: str):
 # BANLIST RELATED START
 
 
-@router.get("/{username}/banlist", response_model=Wrapper[ListResponse[UserBanlistResponse]])
+@router.get(
+    "/{username}/banlist", response_model=Wrapper[ListResponse[UserBanlistResponse]]
+)
 async def get_user_banlist(username: str):
     user = await Users.filter(username=username, delete_date=None).first()
 
@@ -150,7 +152,7 @@ async def get_user_banlist(username: str):
     items = [
         UserBanlistResponse(
             banlist_id=str(banlist_item.banlist_id),
-            banned_user_id=str(banlist_item.banned_user_id)
+            banned_user_id=str(banlist_item.banned_user_id),
         )
         for banlist_item in await Banlists.filter(
             user_id=user.user_id, delete_date=None
