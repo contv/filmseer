@@ -49,7 +49,7 @@ const ReviewEditor = (props: ReviewEditorProps & { className?: string }) => {
           path: "/movie/" + props.movieId + "/review",
           method: "POST",
           body: {
-            description: desc,
+            description: desc || "",
             contains_spoiler: spoiler,
           },
         });
