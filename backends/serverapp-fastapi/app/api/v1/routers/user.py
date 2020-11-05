@@ -3,8 +3,10 @@ from typing import Optional, Union
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
+from app.models.common import ListResponse
 from app.models.db.reviews import Reviews
 from app.models.db.users import Users
+from app.models.db.banlists import Banlists
 from app.models.db.wishlists import Wishlists
 from app.utils.password import hash
 from app.utils.ratings import calc_average_rating
@@ -12,6 +14,7 @@ from app.utils.wrapper import ApiException, Wrapper, wrap
 
 from .review import ListReviewResponse, ReviewResponse
 from .wishlist import MovieWishlistResponse
+from .banlist import UserBanlistResponse
 
 router = APIRouter()
 override_prefix = None
@@ -132,6 +135,32 @@ async def get_user_wishlist(username: str):
 
 
 # WISHLIST RELATED END
+
+
+# BANLIST RELATED START
+
+
+@router.get("/{username}/banlist", response_model=Wrapper[ListResponse[UserBanlistResponse]])
+async def get_user_banlist(username: str):
+    user = await Users.filter(username=username, delete_date=None).first()
+
+    if not user:
+        return ApiException(404, 2031, "That user doesn't exist.")
+
+    items = [
+        UserBanlistResponse(
+            banlist_id=str(banlist_item.banlist_id),
+            banned_user_id=str(banlist_item.banned_user_id)
+        )
+        for banlist_item in await Banlists.filter(
+            user_id=user.user_id, delete_date=None
+        )
+    ]
+
+    return wrap({"items": items})
+
+
+# BANLIST RELATED END
 
 
 @router.get(
