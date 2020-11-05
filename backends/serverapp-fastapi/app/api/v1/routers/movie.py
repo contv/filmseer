@@ -17,6 +17,7 @@ from app.models.db.movies import Movies
 from app.models.db.positions import Positions
 from app.models.db.ratings import Ratings
 from app.models.db.reviews import Reviews
+from app.models.db.banlists import Banlists
 from app.models.db.spoiler_votes import SpoilerVotes
 from app.utils.dict_storage.redis import RedisDictStorageDriver
 from app.utils.ratings import calc_average_rating
@@ -171,7 +172,8 @@ async def get_movie_reviews(
         return ApiException(400, 2701, "Invalid page/per_page parameter")
     user_id = request.session.get("user_id")
     # No need to raise exception if user_id = None as guest user should see the review
-    # TO DO: Filter reviews from Ban List
+
+    # Return the review for current user only (for this movie)
     if me:
         reviews = [
             ReviewResponse(
@@ -205,7 +207,20 @@ async def get_movie_reviews(
                 "rating", "helpful_votes", "funny_votes", "spoiler_votes", "user"
             )
         ]
+    # Return the review for all other users (for this movie)
     else:
+        exclude_list = []
+        exclude_list.append(user_id)
+
+        if user_id is not None:
+            ban_list = await Banlists.filter(user_id=user_id, delete_date=None).values("banned_user_id")
+            for item in ban_list: 
+                exclude_list.append(str(item["banned_user_id"]))
+
+        print(exclude_list)
+        print(type(exclude_list))
+
+
         reviews = [
             ReviewResponse(
                 review_id=str(r.review_id),
@@ -228,7 +243,7 @@ async def get_movie_reviews(
                     user_id=user_id, delete_date=None
                 ).count(),
             )
-            for r in await Reviews.filter(movie_id=movie_id, delete_date=None).exclude(user_id=user_id)
+            for r in await Reviews.filter(movie_id=movie_id, delete_date=None).exclude(user_id__in=exclude_list)
             .order_by("-create_date")
             .offset((page - 1) * per_page)
             .limit(per_page)
