@@ -2,13 +2,13 @@ import importlib
 import json
 import os
 import platform
-import sys
 import re
+import sys
 from pathlib import Path
+from urllib.parse import urlparse
 
 from dotenv import dotenv_values, find_dotenv
 from sshtunnel import SSHTunnelForwarder
-from urllib.parse import urlparse
 
 _mp = importlib.import_module("multiprocessing")
 
@@ -244,6 +244,9 @@ def start():
                 print("      `export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES`")
                 print("------------------------------------------------------------")
                 print()
+        elif platform.system() == "Linux":
+            # Fix OSError: [Errno 9] Bad file descriptor
+            _mp.set_start_method("spawn")
 
         for server_port in server_ports:
             if dev_mode:
