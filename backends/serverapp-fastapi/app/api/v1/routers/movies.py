@@ -78,8 +78,8 @@ async def get_recommendation(
 
     if size <= 0:
         size = 1
-    elif size > 100:
-        size = 100
+    elif size > 50:
+        size = 50
 
     if type == "foryou":
         user_id = request.session.get("user_id")

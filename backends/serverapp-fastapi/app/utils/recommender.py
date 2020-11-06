@@ -29,23 +29,22 @@ def get_rating_data():
             database="filmseer",
         )
         cursor = connection.cursor()
-        # print ( connection.get_dsn_parameters(),"\n")
         cursor.execute("SELECT version();")
         record = cursor.fetchone()
         print("You are connected to - ", record, "\n")
         cursor.execute(
             """
-                       SELECT distinct(movie_id) FROM public.movies WHERE movie_id IS NOT NULL
-                       """
+            SELECT distinct(movie_id) FROM public.movies WHERE movie_id IS NOT NULL
+            """
         )
         movie_set = set(item[0] for item in cursor.fetchall())
         with open("movie_set", "wb") as file:
             pickle.dump(movie_set, file, protocol=pickle.HIGHEST_PROTOCOL)
         cursor.execute(
             """
-                        SELECT user_id, movie_id, rating FROM public.ratings 
-                        WHERE rating IS NOT NULL
-                       """
+            SELECT user_id, movie_id, rating FROM public.ratings 
+            WHERE rating IS NOT NULL
+            """
         )
         data = cursor.fetchall()
         df = pd.DataFrame(data, columns=["user_id", "movie_id", "rating"])
