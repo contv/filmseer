@@ -1,5 +1,6 @@
 from app.models.db.banlists import Banlists
 from app.models.db.ratings import Ratings
+from app.models.db.reviews import Reviews
 
 
 async def calc_average_rating(
@@ -20,7 +21,11 @@ async def calc_average_rating(
         for item in exclude_rating:
             cumulative_rating = cumulative_rating - item["rating"]
 
-    return round(cumulative_rating / num_votes if num_votes > 0 else 0.0, 1)
+    average_rating = round(cumulative_rating / num_votes if num_votes > 0 else 0.0, 1)
+    rating = dict()
+    rating["average_rating"] = average_rating
+    rating["num_votes"] = num_votes
+    return rating
 
 
 __all__ = ["calc_average_rating"]

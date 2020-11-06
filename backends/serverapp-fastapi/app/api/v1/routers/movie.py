@@ -108,7 +108,7 @@ async def get_average_rating(movie_id: str, request: Request) -> Wrapper[dict]:
 
     # TODO remove ratings from blocked users
     return wrap(
-        {"average": await calc_average_rating(movie.cumulative_rating, movie.num_votes, user_id, movie_id)}
+        {"average": (await calc_average_rating(movie.cumulative_rating, movie.num_votes, user_id, movie_id))['average_rating']}
     )
 
 
@@ -134,8 +134,7 @@ async def get_movie(movie_id: str, request: Request):
         for p in await Positions.filter(movie_id=movie_id).prefetch_related("person")
     ]
 
-    # TODO remove ratings from blocked users
-    average_rating = await calc_average_rating(movie.cumulative_rating, movie.num_votes, user_id, movie_id)
+    rating = await calc_average_rating(movie.cumulative_rating, movie.num_votes, user_id, movie_id)
     movie_detail = MovieResponse(
         id=str(movie.movie_id),
         title=movie.title,
@@ -145,8 +144,8 @@ async def get_movie(movie_id: str, request: Request):
         image_url=movie.image,
         trailers=movie.trailer,
         num_reviews=movie.num_reviews,
-        num_votes=movie.num_votes,
-        average_rating=average_rating,
+        num_votes=rating['num_votes'],
+        average_rating=rating['average_rating'],
         genres=genres,
         crew=crew,
     )
