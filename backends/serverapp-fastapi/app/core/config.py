@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     SPA_ENTRY_FILE: str = str(
         (Path(__file__).resolve().parents[4] / "public" / "index.html").resolve()
     )
+    RECOMMENDER_RANDOM_SAMPLESIZE: int = 1000
 
     # CORS Settings
     CORS_ORIGINS: List[Union[AnyHttpUrl, constr(regex=r"^\*$")]] = []  # noqa: F722
