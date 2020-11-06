@@ -472,7 +472,7 @@ async def search_movies(
 
     search = search.script_fields(
         average_rating={
-            "script": {"id": "calculate_rating_field", "params": {"listban": ""}}
+            "script": {"id": "calculate_rating_field", "params": {"listban": list_ban}}
         }
     )
     # Execute search
