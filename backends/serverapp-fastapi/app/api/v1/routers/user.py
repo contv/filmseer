@@ -115,32 +115,27 @@ async def get_user_wishlist(username: str):
     if not user:
         return ApiException(404, 2031, "That user doesn't exist.")
 
-    items = [
-        MovieWishlistResponse(
-            wishlist_id=str(wishlist_item.wishlist_id),
-            movie_id=str(wishlist_item.movie_id),
-            title=wishlist_item.movie.title,
-            image_url=wishlist_item.movie.image,
-            release_year=wishlist_item.movie.release_date.year,
-            cumulativeRating=(
-                await calc_average_rating(
-                    wishlist_item.movie.cumulative_rating,
-                    wishlist_item.movie.num_votes,
-                    user.user_id,
-                    wishlist_item.movie_id,
-                )
-            )["cumulative_rating"],
-            num_votes = (await calc_average_rating(
-                wishlist_item.movie.cumulative_rating,
-                wishlist_item.movie.num_votes,
-                user.user_id,
-                wishlist_item.movie_id,
-            ))['num_votes'],            
+    items = []
+    for wishlist_item in await Wishlists.filter(
+        user_id=user.user_id, delete_date=None
+    ).prefetch_related("movie"):
+        rating = await calc_average_rating(
+            wishlist_item.movie.cumulative_rating,
+            wishlist_item.movie.num_votes,
+            user.user_id,
+            wishlist_item.movie_id,
         )
-        for wishlist_item in await Wishlists.filter(
-            user_id=user.user_id, delete_date=None
-        ).prefetch_related("movie")
-    ]
+        items.append(
+            MovieWishlistResponse(
+                wishlist_id=str(wishlist_item.wishlist_id),
+                movie_id=str(wishlist_item.movie_id),
+                title=wishlist_item.movie.title,
+                image_url=wishlist_item.movie.image,
+                release_year=wishlist_item.movie.release_date.year,
+                cumulativeRating=rating["cumulative_rating"],
+                num_votes=rating["num_votes"],
+            )
+        )
 
     return wrap({"items": items})
 
