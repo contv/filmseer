@@ -3,10 +3,13 @@ from random import choices
 from typing import Dict, List, Optional
 
 from dateutil.relativedelta import relativedelta
+from elasticsearch import RequestsHttpConnection, Urllib3HttpConnection
+from elasticsearch_dsl import Q, Search, connections
 
 from app.core.config import settings
 from app.models.db.movies import Movies
 from app.models.db.ratings import Ratings
+from app.utils.dict_storage.redis import RedisDictStorageDriver
 from app.utils.ratings import calc_average_rating
 from app.utils.recommender import load_movie_set, predict_on_movie, predict_on_user
 from app.utils.wrapper import ApiException, Wrapper, wrap
@@ -16,10 +19,7 @@ from pydantic import BaseModel
 from tortoise.exceptions import OperationalError
 from tortoise.functions import Count
 from tortoise.transactions import in_transaction
-from app.utils.dict_storage.redis import RedisDictStorageDriver
 
-from elasticsearch import RequestsHttpConnection, Urllib3HttpConnection
-from elasticsearch_dsl import Q, Search, connections
 from .movie import process_movie_payload
 
 router = APIRouter()
@@ -65,8 +65,9 @@ async def get_movie(movie_id: str):
 
     return recommendation
 
+
 async def get_movies(
-    request: Request, 
+    request: Request,
     movies: List[str],
     genres: Optional[List[str]] = Query([]),
     years: Optional[List[str]] = Query([]),
@@ -75,7 +76,7 @@ async def get_movies(
     page: Optional[int] = 1,
     sort: Optional[str] = ("relevance", "rating", "name", "year")[0],
     desc: Optional[bool] = True,
-    ):
+):
     conn = connections.create_connection(
         hosts=settings.ELASTICSEARCH_URI,
         alias=settings.ELASTICSEARCH_ALIAS,
@@ -95,14 +96,12 @@ async def get_movies(
 
     queries = [
         Q(
-            "bool", should=[
-                Q("match", movie_id=movie_id)
-                for movie_id in movies
-            ],
-            minimum_should_match=1
+            "bool",
+            should=[Q("match", movie_id=movie_id) for movie_id in movies],
+            minimum_should_match=1,
         )
     ]
-    
+
     search = Search(using=conn, index=settings.ELASTICSEARCH_MOVIEINDEX)
 
     for q in queries:
@@ -115,7 +114,7 @@ async def get_movies(
             "script": {"id": "calculate_rating_field", "params": {"listban": ""}}
         }
     )
-    
+
     # Execute search
     search = search.source(
         ["movie_id", "image", "title", "genres", "release_date", "positions"]
@@ -131,6 +130,7 @@ async def get_movies(
         preprocessed, years, directors, genres, per_page, page, sort, desc
     )
     return postprocessed
+
 
 @router.get("/recommendation", tags=["Movies"])
 async def get_recommendation(
@@ -185,7 +185,7 @@ async def get_recommendation(
         # check if this movie has been searched already
         searches = request.session["recommendations"]
         print(searches)
-        
+
         driver = RedisDictStorageDriver(
             key_prefix="recommendations:",
             key_filter=r"[^a-zA-Z0-9_-]+",
@@ -196,7 +196,7 @@ async def get_recommendation(
             redis_pool_max=settings.REDIS_POOL_MAX,
         )
         await driver.initialize_driver()
-        
+
         try:
             search_id = searches[movie_id]
         except KeyError:
@@ -204,22 +204,22 @@ async def get_recommendation(
             if len(searches.keys()) >= settings.REDIS_SEARCHES_MAX:
                 searches.pop(list(searches)[0])
             searches[movie_id] = search_id
-            
+
         # Attempt to retrieve stored movie payload from Redis
         movies, _ = await driver.get(search_id)
         if movies:
             movies = movies["movies"]
-        
+
         if not movies:
             try:
                 movies = await predict_on_movie(movie_id, size)
-                await driver.update(search_id, {"movies":movies})
+                await driver.update(search_id, {"movies": movies})
                 await driver.terminate_driver()
             except ValueError:
                 return ApiException(404, 3001, "Movie has not been rated before")
             except TypeError:
                 return ApiException(404, 3000, "Recommendation not available")
-        
+
     if type == "popular":
         cutoff_date = datetime.now() - relativedelta(days=recency)
         movies = (
@@ -246,7 +246,9 @@ async def get_recommendation(
         )
         movies = [movie[0] for movie in movies]
 
-    # Postprocess to apply filters, sorting and pagination 
-    postprocessed = await get_movies(request, movies, genres, years, directors, per_page, page, sort, desc)
-    
+    # Postprocess to apply filters, sorting and pagination
+    postprocessed = await get_movies(
+        request, movies, genres, years, directors, per_page, page, sort, desc
+    )
+
     return wrap(postprocessed)
