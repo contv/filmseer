@@ -1,16 +1,18 @@
-import { view } from "@risingstack/react-easy-state";
-import React from "react";
+import "./user.scss";
+
 import { Edit, Flag, MoreHorizontal, UserPlus, UserX } from "react-feather";
-import { useParams } from "react-router-dom";
+import { api, apiEffect } from "src/utils";
+
 import MovieItem from "src/app/components/movie-item";
 import Pagination from "src/app/components/pagination";
+import React from "react";
 import Review from "src/app/components/review";
 import { ReviewProps } from "src/app/components/review/review";
 import TileList from "src/app/components/tile-list";
-import userIcon from "src/app/components/user-menu/user-icon.svg";
 import VerticalList from "src/app/components/vertical-list";
-import { api, apiEffect } from "src/utils";
-import "./user.scss";
+import { useParams } from "react-router-dom";
+import userIcon from "src/app/components/user-menu/user-icon.svg";
+import { view } from "@risingstack/react-easy-state";
 
 export type User = {
   id: string;
@@ -25,7 +27,8 @@ type WishlistItem = {
   title: string;
   releaseYear: string;
   imageUrl?: string;
-  averageRating: number;
+  cumulativeRating: number;
+  numVotes: number;
 };
 
 const UserPage = (props: { className?: string }) => {
@@ -163,8 +166,8 @@ const UserPage = (props: { className?: string }) => {
                   year={parseInt(wishlistItem.releaseYear, 10)}
                   genres={[]}
                   imageUrl={wishlistItem.imageUrl}
-                  cumulativeRating={wishlistItem.averageRating}
-                  numRatings={1}
+                  cumulativeRating={wishlistItem.cumulativeRating}
+                  numRatings={wishlistItem.numVotes}
                   numReviews={0}
                 />
               </div>
