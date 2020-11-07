@@ -67,6 +67,8 @@ class SearchResponse(BaseModel):
     genres: Optional[List[str]]
     image_url: Optional[str]
     average_rating: float
+    num_votes: float
+    cumulative_rating: float
     score: float
 
     class Config:
@@ -629,6 +631,8 @@ async def process_movie_payload(
             genres=[genre["name"] for genre in movie["movie"]["genres"]],
             image_url=movie["movie"]["image"],
             average_rating=float(movie["movie"]["average_rating"][0]),
+            num_votes=float(movie["movie"]["average_rating"][1]),
+            cumulative_rating=float(movie["movie"]["average_rating"][2]),
             score=float(movie["score"]),
         )
 
