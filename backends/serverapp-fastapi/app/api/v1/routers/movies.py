@@ -40,32 +40,6 @@ class RecommendationResponse(BaseModel):
         allow_population_by_field_name = True
 
 
-async def get_movie(movie_id: str):
-    try:
-        movie = await Movies.filter(movie_id=movie_id, delete_date=None).first()
-    except OperationalError:
-        raise ApiException(401, 2501, "You cannot do that.")
-
-    if movie is None:
-        raise ApiException(404, 2100, "That movie doesn't exist")
-
-    genres = [genre.name for genre in await movie.genres]
-
-    # TODO remove ratings from blocked users
-    average_rating = calc_average_rating(movie.cumulative_rating, movie.num_votes)
-
-    recommendation = RecommendationResponse(
-        id=str(movie.movie_id),
-        title=movie.title,
-        release_year=str(movie.release_date.year),
-        genres=genres,
-        image_url=movie.image,
-        average_rating=average_rating,
-    )
-
-    return recommendation
-
-
 async def get_movies(
     request: Request,
     movies: List[str],
@@ -121,7 +95,6 @@ async def get_movies(
     )
     response = search.execute()
 
-    # Convert response into dict for Redis storage
     preprocessed = {
         hit.meta.id: {"score": hit.meta.score, "movie": hit.to_dict()}
         for hit in response
