@@ -24,8 +24,8 @@ class UserBanlistResponse(BaseModel):
         allow_population_by_field_name = True
 
 
-class UserInBanlistResponse(BaseModel):
-    inbanlist: bool
+class UserBannedResponse(BaseModel):
+    banned: bool
 
 
 @router.get(
@@ -48,20 +48,20 @@ async def get_banlist(request: Request):
     return wrap({"items": items})
 
 
-@router.get("/{banned_user_id}", response_model=Wrapper[UserInBanlistResponse])
+@router.get("/{banned_user_id}", response_model=Wrapper[UserBannedResponse])
 async def is_user_banlist(request: Request, banned_user_id: str):
     user_id = request.session.get("user_id")
 
     if not user_id:
         raise ApiException(401, 2500, "You must be logged in to see your wishlist.")
-    inbanlist = (
+    banned = (
         await Banlists.filter(
             banned_user_id=banned_user_id, user_id=user_id, delete_date=None
         ).first()
         is not None
     )
 
-    return wrap({"inbanlist": inbanlist})
+    return wrap({"banned": banned})
 
 
 @router.put("/{banned_user_id}")
