@@ -15,6 +15,8 @@ import { view } from "@risingstack/react-easy-state";
 
 type MovieInteractProps = {
   movieId: string;
+  userRating: number;
+  setUserRating: (newValue: number) => void;
 };
 
 const MovieInteract = (props: MovieInteractProps) => {;
@@ -87,9 +89,12 @@ return (
       <div>
         <Typography variant="body2">Your rating</Typography>
         <Stars
+          id="movie-interact-stars"
           movieId={props.movieId}
           size="medium"
           votable={true}
+          rating={props.userRating}
+          setRating={props.setUserRating}
         />
       </div>
       <div onClick={showPopupIfNotLoggedIn}>
