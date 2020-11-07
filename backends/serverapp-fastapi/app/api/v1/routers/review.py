@@ -68,12 +68,12 @@ async def search_user_review(
     request: Request, keyword: Optional[str] = "", page: int = 0, per_page: int = 0
 ):
     if per_page >= 42:
-        return ApiException(400, 2700, "Please limit the numer of items per page")
+        raise ApiException(400, 2700, "Please limit the numer of items per page")
     if (per_page < 0) or (page < 0):
-        return ApiException(400, 2701, "Invalid page/per_page parameter")
+        raise ApiException(400, 2701, "Invalid page/per_page parameter")
     user_id = request.session.get("user_id")
     if not user_id:
-        return ApiException(401, 2001, "You are not logged in")
+        raise ApiException(401, 2001, "You are not logged in")
 
     reviews = [
         ReviewResponse(
@@ -115,7 +115,7 @@ async def search_user_review(
 async def update_author_review(review_id: str, review: ReviewRequest, request: Request):
     session_user_id = request.session.get("user_id")
     if not session_user_id:
-        return ApiException(401, 2001, "You are not logged in")
+        raise ApiException(401, 2001, "You are not logged in")
 
     review = str(
         (
@@ -127,10 +127,10 @@ async def update_author_review(review_id: str, review: ReviewRequest, request: R
 
     review_user_id = review[0]["user_id"]
     if not review_user_id:
-        return ApiException(404, 2610, "Invalid review id.")
+        raise ApiException(404, 2610, "Invalid review id.")
 
     if session_user_id != review_user_id:
-        return ApiException(
+        raise ApiException(
             401, 2609, "You must be the author to update/delete the review."
         )
 
@@ -149,7 +149,7 @@ async def update_author_review(review_id: str, review: ReviewRequest, request: R
         await Movies.filter(movie_id=review_movie_id).update(num_reviews=num_reviews)
 
     except OperationalError:
-        return ApiException(500, 2501, "An exception occurred")
+        raise ApiException(500, 2501, "An exception occurred")
 
     return wrap({})
 
@@ -158,7 +158,7 @@ async def update_author_review(review_id: str, review: ReviewRequest, request: R
 async def delete_author_review(review_id: str, request: Request):
     session_user_id = request.session.get("user_id")
     if not session_user_id:
-        return ApiException(401, 2001, "You are not logged in")
+        raise ApiException(401, 2001, "You are not logged in")
 
     review = str(
         (
@@ -170,10 +170,10 @@ async def delete_author_review(review_id: str, request: Request):
 
     review_user_id = review[0]["user_id"]
     if not review_user_id:
-        return ApiException(404, 2610, "Invalid review id.")
+        raise ApiException(404, 2610, "Invalid review id.")
 
     if session_user_id != review_user_id:
-        return ApiException(
+        raise ApiException(
             401, 2609, "You must be the author to update/delete the review."
         )
     review_movie_id = review[0]["movie_id"]
@@ -194,7 +194,7 @@ async def delete_author_review(review_id: str, request: Request):
         ).count()
         await Movies.filter(movie_id=review_movie_id).update(num_reviews=num_reviews)
     except OperationalError:
-        return ApiException(500, 2501, "An exception occurred")
+        raise ApiException(500, 2501, "An exception occurred")
 
     return wrap({})
 
@@ -203,7 +203,7 @@ async def delete_author_review(review_id: str, request: Request):
 async def mark_review_helpful(review_id: str, request: Request):
     user_id = request.session.get("user_id")
     if not user_id:
-        return ApiException(
+        raise ApiException(
             401, 2600, "You must be logged in to mark the review as helpful."
         )
     try:
@@ -217,7 +217,7 @@ async def mark_review_helpful(review_id: str, request: Request):
             ).count()
             await Reviews.filter(review_id=review_id).update(num_helpful=num_helpful)
     except OperationalError:
-        return ApiException(500, 2501, "An exception occurred")
+        raise ApiException(500, 2501, "An exception occurred")
     return wrap({"count": num_helpful})
 
 
@@ -225,7 +225,7 @@ async def mark_review_helpful(review_id: str, request: Request):
 async def mark_review_funny(request: Request, review_id: str):
     user_id = request.session.get("user_id")
     if not user_id:
-        return ApiException(
+        raise ApiException(
             401, 2601, "You must be logged in to mark the review as funny."
         )
     try:
@@ -239,7 +239,7 @@ async def mark_review_funny(request: Request, review_id: str):
             ).count()
             await Reviews.filter(review_id=review_id).update(num_funny=num_funny)
     except OperationalError:
-        return ApiException(500, 2501, "An exception occurred")
+        raise ApiException(500, 2501, "An exception occurred")
     return wrap({"count": num_funny})
 
 
@@ -247,7 +247,7 @@ async def mark_review_funny(request: Request, review_id: str):
 async def mark_review_spoiler(request: Request, review_id: str):
     user_id = request.session.get("user_id")
     if not user_id:
-        return ApiException(
+        raise ApiException(
             401, 2602, "You must be logged in to mark the review as spoiler."
         )
     try:
@@ -261,7 +261,7 @@ async def mark_review_spoiler(request: Request, review_id: str):
             ).count()
             await Reviews.filter(review_id=review_id).update(num_spoiler=num_spoiler)
     except OperationalError:
-        return ApiException(500, 2501, "An exception occurred")
+        raise ApiException(500, 2501, "An exception occurred")
     return wrap({"count": num_spoiler})
 
 
@@ -269,7 +269,7 @@ async def mark_review_spoiler(request: Request, review_id: str):
 async def unmark_review_helpful(request: Request, review_id: str):
     user_id = request.session.get("user_id")
     if not user_id:
-        return ApiException(
+        raise ApiException(
             401, 2603, "You must be logged in to unmark the review as helpful."
         )
     try:
@@ -283,7 +283,7 @@ async def unmark_review_helpful(request: Request, review_id: str):
             ).count()
             await Reviews.filter(review_id=review_id).update(num_helpful=num_helpful)
     except OperationalError:
-        return ApiException(500, 2501, "An exception occurred")
+        raise ApiException(500, 2501, "An exception occurred")
     return wrap({"count": num_helpful})
 
 
@@ -291,7 +291,7 @@ async def unmark_review_helpful(request: Request, review_id: str):
 async def unmark_review_funny(request: Request, review_id: str):
     user_id = request.session.get("user_id")
     if not user_id:
-        return ApiException(
+        raise ApiException(
             401, 2604, "You must be logged in to unmark the review as funny."
         )
     try:
@@ -305,7 +305,7 @@ async def unmark_review_funny(request: Request, review_id: str):
             ).count()
             await Reviews.filter(review_id=review_id).update(num_funny=num_funny)
     except OperationalError:
-        return ApiException(500, 2501, "An exception occurred")
+        raise ApiException(500, 2501, "An exception occurred")
     return wrap({"count": num_funny})
 
 
@@ -313,7 +313,7 @@ async def unmark_review_funny(request: Request, review_id: str):
 async def unmark_review_spoiler(request: Request, review_id: str):
     user_id = request.session.get("user_id")
     if not user_id:
-        return ApiException(
+        raise ApiException(
             401, 2605, "You must be logged in to unmark the review as spoiler."
         )
     try:
@@ -327,5 +327,5 @@ async def unmark_review_spoiler(request: Request, review_id: str):
             ).count()
             await Reviews.filter(review_id=review_id).update(num_spoiler=num_spoiler)
     except OperationalError:
-        return ApiException(500, 2501, "An exception occurred")
+        raise ApiException(500, 2501, "An exception occurred")
     return wrap({"count": num_spoiler})

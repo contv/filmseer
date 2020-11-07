@@ -35,7 +35,7 @@ async def get_banlist(request: Request):
     user_id = request.session.get("user_id")
 
     if not user_id:
-        return ApiException(401, 2500, "You must be logged in to see your banlist.")
+        raise ApiException(401, 2500, "You must be logged in to see your banlist.")
 
     items = [
         UserBanlistResponse(
@@ -53,7 +53,7 @@ async def is_user_banlist(request: Request, banned_user_id: str):
     user_id = request.session.get("user_id")
 
     if not user_id:
-        return ApiException(401, 2500, "You must be logged in to see your wishlist.")
+        raise ApiException(401, 2500, "You must be logged in to see your wishlist.")
     inbanlist = (
         await Banlists.filter(
             banned_user_id=banned_user_id, user_id=user_id, delete_date=None
@@ -69,10 +69,10 @@ async def add_to_banlist(request: Request, banned_user_id: str):
     user_id = request.session.get("user_id")
 
     if not user_id:
-        return ApiException(401, 2500, "You must be logged in to add to wishlist.")
+        raise ApiException(401, 2500, "You must be logged in to add to wishlist.")
 
     if user_id == banned_user_id:
-        return ApiException(401, 2801, "You cannot ban yourself.")
+        raise ApiException(401, 2801, "You cannot ban yourself.")
 
     exists_in_banlist = await Banlists.get_or_none(
         banned_user_id=banned_user_id, user_id=user_id
@@ -83,12 +83,12 @@ async def add_to_banlist(request: Request, banned_user_id: str):
             exists_in_banlist.delete_date = None
             await exists_in_banlist.save()
         except OperationalError:
-            return ApiException(401, 2501, "You cannot do that.")
+            raise ApiException(401, 2501, "You cannot do that.")
     else:
         try:
             await Banlists(banned_user_id=banned_user_id, user_id=user_id).save()
         except OperationalError:
-            return ApiException(401, 2501, "You cannot do that.")
+            raise ApiException(401, 2501, "You cannot do that.")
 
     return wrap({})
 
@@ -98,7 +98,7 @@ async def delete_from_banlist(request: Request, banned_user_id: str):
     user_id = request.session.get("user_id")
 
     if not user_id:
-        return ApiException(401, 2500, "You must be logged in to delete from banlist.")
+        raise ApiException(401, 2500, "You must be logged in to delete from banlist.")
     exists_in_banlist = await Banlists.get_or_none(
         banned_user_id=banned_user_id, user_id=user_id
     )
@@ -108,8 +108,8 @@ async def delete_from_banlist(request: Request, banned_user_id: str):
             exists_in_banlist.delete_date = datetime.now()
             await exists_in_banlist.save()
         except OperationalError:
-            return ApiException(401, 2501, "You cannot do that.")
+            raise ApiException(401, 2501, "You cannot do that.")
     else:
-        return ApiException(401, 2800, "You haven't added this user to banlist yet.")
+        raise ApiException(401, 2800, "You haven't added this user to banlist yet.")
 
     return wrap({})

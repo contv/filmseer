@@ -53,9 +53,9 @@ async def create_user(register: Register, request: Request) -> Wrapper[dict]:
 )
 async def get_reviews_user(username: str, page: int = 0, per_page: int = 0):
     if per_page >= 42:
-        return ApiException(400, 2700, "Please limit the numer of items per page")
+        raise ApiException(400, 2700, "Please limit the numer of items per page")
     if (per_page < 0) or (page < 0):
-        return ApiException(400, 2701, "Invalid page/per_page parameter")
+        raise ApiException(400, 2701, "Invalid page/per_page parameter")
 
     user = (
         await Users.filter(username=username, delete_date=None)
@@ -63,7 +63,7 @@ async def get_reviews_user(username: str, page: int = 0, per_page: int = 0):
         .values("user_id")
     )
     if not user:
-        return ApiException(404, 2003, "Invalid user name.")
+        raise ApiException(404, 2003, "Invalid user name.")
 
     user_id = user[0]["user_id"]
 
@@ -113,7 +113,7 @@ async def get_user_wishlist(username: str):
     user = await Users.filter(username=username, delete_date=None).first()
 
     if not user:
-        return ApiException(404, 2031, "That user doesn't exist.")
+        raise ApiException(404, 2031, "That user doesn't exist.")
 
     items = []
     for wishlist_item in await Wishlists.filter(
@@ -153,7 +153,7 @@ async def get_user_banlist(username: str):
     user = await Users.filter(username=username, delete_date=None).first()
 
     if not user:
-        return ApiException(404, 2031, "That user doesn't exist.")
+        raise ApiException(404, 2031, "That user doesn't exist.")
 
     items = [
         UserBanlistResponse(

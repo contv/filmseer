@@ -101,10 +101,10 @@ async def get_average_rating(movie_id: str, request: Request) -> Wrapper[dict]:
             .first()
         )
     except OperationalError:
-        return ApiException(401, 2501, "You cannot do that.")
+        raise ApiException(401, 2501, "You cannot do that.")
 
     if movie is None:
-        return ApiException(404, 2100, "That movie doesn't exist")
+        raise ApiException(404, 2100, "That movie doesn't exist")
 
     # TODO remove ratings from blocked users
     return wrap(
@@ -118,7 +118,7 @@ async def get_movie(movie_id: str, request: Request):
     try:
         movie = await Movies.filter(movie_id=movie_id, delete_date=None).first()
     except OperationalError:
-        return ApiException(401, 2501, "You cannot do that.")
+        raise ApiException(401, 2501, "You cannot do that.")
 
     if movie is None:
         raise ApiException(404, 2100, "That movie doesn't exist")
@@ -167,9 +167,9 @@ async def get_movie_reviews(
     me: Optional[bool] = False,
 ):
     if per_page >= 42:
-        return ApiException(400, 2700, "Please limit the numer of items per page")
+        raise ApiException(400, 2700, "Please limit the numer of items per page")
     if (per_page < 0) or (page < 0):
-        return ApiException(400, 2701, "Invalid page/per_page parameter")
+        raise ApiException(400, 2701, "Invalid page/per_page parameter")
     user_id = request.session.get("user_id")
     # No need to raise exception if user_id = None as guest user should see the review
 
@@ -264,14 +264,14 @@ async def create_update_user_review(
     try:
         movie = await Movies.filter(movie_id=movie_id, delete_date=None).first()
     except OperationalError:
-        return ApiException(401, 2501, "You cannot do that.")
+        raise ApiException(401, 2501, "You cannot do that.")
 
     if movie is None:
-        return ApiException(404, 2100, "That movie doesn't exist")
+        raise ApiException(404, 2100, "That movie doesn't exist")
 
     user_id = request.session.get("user_id")
     if not user_id:
-        return ApiException(
+        raise ApiException(
             401, 2607, "You must be logged in to submit/update/delete a review"
         )
 
@@ -307,7 +307,7 @@ async def create_update_user_review(
             ).count()
             await Movies.filter(movie_id=movie_id).update(num_reviews=num_reviews)
     except OperationalError:
-        return ApiException(500, 2501, "An exception occurred")
+        raise ApiException(500, 2501, "An exception occurred")
 
     return wrap({"create_date": create_date})
 
@@ -316,7 +316,7 @@ async def create_update_user_review(
 async def delete_user_review(movie_id: str, request: Request):
     user_id = request.session.get("user_id")
     if not user_id:
-        return ApiException(
+        raise ApiException(
             401, 2607, "You must be logged in to submit/update/delete a review"
         )
     try:
@@ -343,7 +343,7 @@ async def delete_user_review(movie_id: str, request: Request):
             await Movies.filter(movie_id=movie_id).update(num_reviews=num_reviews)
 
     except OperationalError:
-        return ApiException(500, 2501, "An exception occurred")
+        raise ApiException(500, 2501, "An exception occurred")
 
     return wrap({})
 
@@ -669,9 +669,9 @@ async def process_movie_payload(
 async def rate_movie(request: Request, movie_id: str, rating: float):
     user_id = request.session.get("user_id")
     if not user_id:
-        return ApiException(500, 2001, "You are not logged in!")
+        raise ApiException(500, 2001, "You are not logged in!")
     if not 0 <= rating <= 5.0 or rating % 0.5 != 0.0:
-        return ApiException(500, 2101, "Invalid rating")
+        raise ApiException(500, 2101, "Invalid rating")
 
     try:
         async with in_transaction():
@@ -694,9 +694,9 @@ async def rate_movie(request: Request, movie_id: str, rating: float):
             current_rating = await Ratings.get(user_id=user_id, movie_id=movie_id)
             await update_review_rating(user_id, movie_id, current_rating)
     except OperationalError:
-        return ApiException(500, 2102, "Could not rate movie")
+        raise ApiException(500, 2102, "Could not rate movie")
     except IntegrityError:
-        return ApiException(500, 2104, "Could not update fields")
+        raise ApiException(500, 2104, "Could not update fields")
 
     return wrap({"id": str(current_rating.rating_id), "rating": current_rating.rating})
 
@@ -748,7 +748,7 @@ async def update_review_rating(
 async def delete_rating(request: Request, movie_id: str) -> Wrapper[dict]:
     user_id = request.session.get("user_id")
     if not user_id:
-        return ApiException(500, 2001, "You are not logged in!")
+        raise ApiException(500, 2001, "You are not logged in!")
     rating_id = ""
     rating = None
     try:
@@ -764,9 +764,9 @@ async def delete_rating(request: Request, movie_id: str) -> Wrapper[dict]:
                 await update_cumulative_rating(movie_id, -rating)
                 await update_review_rating(user_id, movie_id)
     except OperationalError:
-        return ApiException(500, 2103, "Could not find or delete rating")
+        raise ApiException(500, 2103, "Could not find or delete rating")
     except IntegrityError:
-        return ApiException(500, 2104, "Could not update fields")
+        raise ApiException(500, 2104, "Could not update fields")
 
     return wrap({"id": str(rating_id), "rating": rating})
 
@@ -775,13 +775,13 @@ async def delete_rating(request: Request, movie_id: str) -> Wrapper[dict]:
 async def get_current_user_rating(request: Request, movie_id: str) -> Wrapper[dict]:
     user_id = request.session.get("user_id")
     if not user_id:
-        return ApiException(500, 2001, "You are not logged in!")
+        raise ApiException(500, 2001, "You are not logged in!")
 
     rating = await Ratings.get_or_none(
         user_id=user_id, movie_id=movie_id, delete_date=None
     )
     if not rating:
         print(f'could not find rating')
-        return ApiException(500, 2103, "Could not find or delete rating")
+        raise ApiException(500, 2103, "Could not find or delete rating")
 
     return wrap({"id": str(rating.rating_id), "rating": rating.rating})

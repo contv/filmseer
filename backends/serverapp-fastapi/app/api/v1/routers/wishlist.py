@@ -41,7 +41,7 @@ async def get_wishlist(request: Request):
     user_id = request.session.get("user_id")
 
     if not user_id:
-        return ApiException(401, 2500, "You must be logged in to see your wishlist.")
+        raise ApiException(401, 2500, "You must be logged in to see your wishlist.")
 
     items = []
     for wishlist_item in await Wishlists.filter(
@@ -74,7 +74,7 @@ async def is_movie_wishlist(request: Request, movie_id: str):
     user_id = request.session.get("user_id")
 
     if not user_id:
-        return ApiException(401, 2500, "You must be logged in to see your wishlist.")
+        raise ApiException(401, 2500, "You must be logged in to see your wishlist.")
     added = (
         await Wishlists.filter(
             movie_id=movie_id, user_id=user_id, delete_date=None
@@ -90,7 +90,7 @@ async def add_to_wishlist(request: Request, movie_id: str):
     user_id = request.session.get("user_id")
 
     if not user_id:
-        return ApiException(401, 2500, "You must be logged in to add to wishlist.")
+        raise ApiException(401, 2500, "You must be logged in to add to wishlist.")
 
     previously_wishlisted = await Wishlists.get_or_none(
         movie_id=movie_id, user_id=user_id
@@ -101,12 +101,12 @@ async def add_to_wishlist(request: Request, movie_id: str):
             previously_wishlisted.delete_date = None
             await previously_wishlisted.save()
         except OperationalError:
-            return ApiException(401, 2501, "You cannot do that.")
+            raise ApiException(401, 2501, "You cannot do that.")
     else:
         try:
             await Wishlists(movie_id=movie_id, user_id=user_id).save()
         except OperationalError:
-            return ApiException(401, 2501, "You cannot do that.")
+            raise ApiException(401, 2501, "You cannot do that.")
 
     return wrap({})
 
@@ -116,7 +116,7 @@ async def delete_from_wishlist(request: Request, movie_id: str):
     user_id = request.session.get("user_id")
 
     if not user_id:
-        return ApiException(401, 2500, "You must be logged in to add to wishlist.")
+        raise ApiException(401, 2500, "You must be logged in to add to wishlist.")
     previously_wishlisted = await Wishlists.get_or_none(
         movie_id=movie_id, user_id=user_id
     )
@@ -126,8 +126,8 @@ async def delete_from_wishlist(request: Request, movie_id: str):
             previously_wishlisted.delete_date = datetime.now()
             await previously_wishlisted.save()
         except OperationalError:
-            return ApiException(401, 2501, "You cannot do that.")
+            raise ApiException(401, 2501, "You cannot do that.")
     else:
-        return ApiException(401, 2501, "You haven't wishlisted this movie yet.")
+        raise ApiException(401, 2501, "You haven't wishlisted this movie yet.")
 
     return wrap({})
