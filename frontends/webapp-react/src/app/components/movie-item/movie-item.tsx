@@ -78,6 +78,7 @@ const MovieItem = (props: MovieItemProps & { className?: string }) => {
           <Stars
             movieId={props.movieId}
             rating={avgRating}
+            setRating={()=>{}}
             size="small"
             votable={false}
           />
