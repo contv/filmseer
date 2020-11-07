@@ -1,6 +1,6 @@
 from datetime import datetime
 from random import choices
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from dateutil.relativedelta import relativedelta
 from elasticsearch import RequestsHttpConnection, Urllib3HttpConnection
@@ -25,19 +25,6 @@ from .movie import process_movie_payload
 router = APIRouter()
 override_prefix = None
 override_prefix_all = None
-
-
-class RecommendationResponse(BaseModel):
-    id: str
-    title: str
-    release_year: str
-    genres: Optional[List[str]]
-    image_url: Optional[str]
-    average_rating: float
-
-    class Config:
-        alias_generator = camelize
-        allow_population_by_field_name = True
 
 
 async def get_movies(
@@ -134,7 +121,7 @@ async def get_recommendation(
     if type == "foryou":
         user_id = request.session.get("user_id")
         if not user_id:
-            return ApiException(500, 2001, "You are not logged in!")
+            raise ApiException(500, 2001, "You are not logged in!")
         # Grab seen movies
         movies_seen = set(
             str(item[0])
@@ -150,12 +137,11 @@ async def get_recommendation(
         try:
             movies = await predict_on_user(user_id, unseen, size)
         except TypeError:
-            return ApiException(404, 3000, "Recommendation not available")
+            raise ApiException(404, 3000, "Recommendation not available")
     elif type == "detail":
         if not movie_id:
-            return ApiException(404, 3002, "You must provide a valid movie")
-        # check if this movie has been searched already
-        searches = request.session["recommendations"]
+            raise ApiException(404, 3002, "You must provide a valid movie")
+        # Check if movie has had recommendations calculated on it within same session 
         driver = RedisDictStorageDriver(
             key_prefix="recommendations:",
             key_filter=r"[^a-zA-Z0-9_-]+",
@@ -166,6 +152,7 @@ async def get_recommendation(
             redis_pool_max=settings.REDIS_POOL_MAX,
         )
         await driver.initialize_driver()
+        searches = request.session["recommendations"]
         try:
             search_id = searches[movie_id]
         except KeyError:
@@ -183,9 +170,9 @@ async def get_recommendation(
                 await driver.update(search_id, {"movies": movies})
                 await driver.terminate_driver()
             except ValueError:
-                return ApiException(404, 3001, "Movie has not been rated before")
+                raise ApiException(404, 3001, "Movie has not been rated before")
             except TypeError:
-                return ApiException(404, 3000, "Recommendation not available")
+                raise ApiException(404, 3000, "Recommendation not available")
     elif type == "popular":
         cutoff_date = datetime.now() - relativedelta(days=recency)
         movies = (
@@ -211,7 +198,7 @@ async def get_recommendation(
         )
         movies = [movie[0] for movie in movies]
     else:
-        return ApiException(404, 3003, "Invalid recommendation type") 
+        raise ApiException(404, 3003, "Invalid recommendation type") 
 
     # Postprocess to apply filters, sorting and pagination
     postprocessed = await get_movies(
