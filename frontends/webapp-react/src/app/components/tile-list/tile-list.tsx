@@ -8,9 +8,15 @@ type TileListProps = {
 };
 
 const TileList = (props: TileListProps & { className?: string }) => {
-  return <ul className={`TileList ${(props.className || "").trim()}`}>
-    {props.items.map((el) => <li className="TileList__item">{el}</li>)}
-  </ul>;
+  return (
+    <ul className={`TileList ${(props.className || "").trim()}`}>
+      {props.items.map((el, index) => (
+        <li className="TileList__item" key={`${index}`}>
+          {el}
+        </li>
+      ))}
+    </ul>
+  );
 };
 
 export default view(TileList);

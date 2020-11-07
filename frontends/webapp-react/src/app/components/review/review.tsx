@@ -1,10 +1,10 @@
 import "./review.scss";
 
+import { Link } from "react-router-dom";
 import { Rating } from "@material-ui/lab";
 import React from "react";
 import ReviewFlags from "src/app/components/review-flags";
 import { view } from "@risingstack/react-easy-state";
-import { Link } from "react-router-dom";
 
 export type ReviewProps = {
   reviewId: string;
@@ -24,10 +24,11 @@ export type ReviewProps = {
   numHelpful?: number;
   numFunny?: number;
   numSpoiler?: number;
+  hideFlags?: boolean;
 };
 
 const Review = (props: ReviewProps & { className?: string }) => {
-  const showSpoiler = props.containsSpoiler || (props.numHelpful || 0) > 10;
+  const showSpoiler = props.containsSpoiler || (props.numSpoiler || 0) > 9;
   const authorSpoiler = props.containsSpoiler;
   return (
     <div className={`Review ${(props.className || "").trim()}`}>
@@ -58,14 +59,16 @@ const Review = (props: ReviewProps & { className?: string }) => {
             <span className="Review__meta-reviews">reviews</span>
           )}
           {props.showMovie && (
-            <Link to={`/movie/${props.movieId}`}>{props.movieTitle} ({props.movieYear})</Link>
+            <Link to={`/movie/${props.movieId}`}>
+              {props.movieTitle} ({props.movieYear})
+            </Link>
           )}
           <span className="Review__date">
             posted at {`${new Date(props.createDate).toUTCString()}`}
           </span>
         </p>
 
-        <p className="Review__content">
+        <div className="Review__content">
           {showSpoiler ? (
             <details>
               <summary>
@@ -79,17 +82,19 @@ const Review = (props: ReviewProps & { className?: string }) => {
           ) : (
             <div>{props.description}</div>
           )}
-        </p>
+        </div>
       </div>
-      <ReviewFlags
-        reviewId={props.reviewId}
-        flaggedHelpful={props.flaggedHelpful}
-        flaggedFunny={props.flaggedFunny}
-        flaggedSpoiler={props.flaggedSpoiler}
-        numHelpful={props.numHelpful}
-        numFunny={props.numFunny}
-        numSpoiler={props.numSpoiler}
-      />
+      {!props.hideFlags && (
+        <ReviewFlags
+          reviewId={props.reviewId}
+          flaggedHelpful={props.flaggedHelpful}
+          flaggedFunny={props.flaggedFunny}
+          flaggedSpoiler={props.flaggedSpoiler}
+          numHelpful={props.numHelpful}
+          numFunny={props.numFunny}
+          numSpoiler={props.numSpoiler}
+        />
+      )}
     </div>
   );
 };

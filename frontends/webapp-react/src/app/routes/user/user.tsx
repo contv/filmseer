@@ -1,12 +1,13 @@
 import { view } from "@risingstack/react-easy-state";
 import React from "react";
-import { Edit } from "react-feather";
+import { Edit, Flag, MoreHorizontal, UserPlus, UserX } from "react-feather";
 import { useParams } from "react-router-dom";
 import MovieItem from "src/app/components/movie-item";
 import Pagination from "src/app/components/pagination";
 import Review from "src/app/components/review";
 import { ReviewProps } from "src/app/components/review/review";
 import TileList from "src/app/components/tile-list";
+import userIcon from "src/app/components/user-menu/user-icon.svg";
 import VerticalList from "src/app/components/vertical-list";
 import { api, apiEffect } from "src/utils";
 import "./user.scss";
@@ -32,8 +33,8 @@ const UserPage = (props: { className?: string }) => {
   const [user, setUser] = React.useState<User>();
   const [wishlist, setWishlist] = React.useState<WishlistItem[]>([]);
   const [reviews, setReviews] = React.useState<ReviewProps[]>([]);
-  const wishlistPerPage = 8;
-  const reviewsPerPage = 8;
+  const wishlistPerPage = 6;
+  const reviewsPerPage = 4;
   const [existing, setExisting] = React.useState(true);
   const isMe = !username;
 
@@ -44,7 +45,7 @@ const UserPage = (props: { className?: string }) => {
         method: "GET",
       },
       (response) => {
-        setUser(() => (response.data as User));
+        setUser(response.data as User);
       },
       (error) => {
         setExisting(false);
@@ -72,44 +73,74 @@ const UserPage = (props: { className?: string }) => {
             </div>
           )}
           <img
-            src={user.image}
+            src={user.image || userIcon}
             alt="Avatar"
             className="UserPage__avatar-image"
           />
         </div>
-        <div className="UserPage__username">{user.username}</div>
-        <div className="UserPage__bio">
-          {isMe && (
-            <div className="UserPage__edit">
-              <Edit size={18} />
-            </div>
-          )}
-          <div className="UserPage__bio-content">{user.description}</div>
+        <div className="UserPage__brief-info">
+          <div className="UserPage__username">{user.username}</div>
+          <div className="UserPage__bio">
+            <div className="UserPage__bio-content">{user.description}</div>
+            {isMe && (
+              <div className="UserPage__edit">
+                <Edit size={18} />
+              </div>
+            )}
+          </div>
         </div>
+        {!isMe && (
+          <div className="UserPage__operations">
+            <button className="UserPage__follow-button">
+              <UserPlus size={28} /> Follow
+            </button>
+            <div className="UserPage__more-operations">
+              <button className="UserPage__more-operation-button">
+                <MoreHorizontal size={28} />
+              </button>
+              <div className="UserPage__more-operation-dropdown">
+                <button className="UserPage__report-user-button UserPage__dropdown-button">
+                  <Flag size={22} /> Report
+                </button>
+                <button className="UserPage__block-user-button UserPage__dropdown-button">
+                  <UserX size={22} /> Block
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       <div className="UserPage__section">
         <div className="UserPage__section-title">Reviews</div>
         <VerticalList
           className="UserPage__reviews-list"
           items={reviews.map((review) => {
-            return <Review {...review} />;
+            return (
+              <Review
+                className="UserPage__review"
+                hideFlags={true}
+                {...review}
+              />
+            );
           })}
         />
-        <Pagination
-          displayType="numbered"
-          dataType="slice"
-          perPage={reviewsPerPage}
-          dataCallback={async () => {
-            const response = await api({
-              path: username ? `/user/${username}/reviews` : "/reviews",
-              method: "GET",
-            });
-            return response.data.items as ReviewProps[];
-          }}
-          renderCallback={(data) => {
-            setReviews(data as ReviewProps[]);
-          }}
-        />
+        <div className="UserPage__pagination-wrapper">
+          <Pagination
+            displayType="numbered"
+            dataType="slice"
+            perPage={reviewsPerPage}
+            dataCallback={async () => {
+              const response = await api({
+                path: username ? `/user/${username}/reviews` : "/reviews",
+                method: "GET",
+              });
+              return response.data.items as ReviewProps[];
+            }}
+            renderCallback={(data) => {
+              setReviews(data as ReviewProps[]);
+            }}
+          />
+        </div>
       </div>
       <div className="UserPage__section">
         <div className="UserPage__section-title">
@@ -124,8 +155,9 @@ const UserPage = (props: { className?: string }) => {
           className="UserPage__wishlist"
           items={wishlist.map((wishlistItem) => {
             return (
-              <div className="UserPage_wishlist-item-wrapper">
+              <div className="UserPage__wishlist-item-wrapper">
                 <MovieItem
+                  className="UserPage__movie-item"
                   movieId={wishlistItem.movieId}
                   title={wishlistItem.title}
                   year={parseInt(wishlistItem.releaseYear, 10)}
@@ -139,21 +171,25 @@ const UserPage = (props: { className?: string }) => {
             );
           })}
         />
-        <Pagination
-          displayType="numbered"
-          dataType="slice"
-          perPage={wishlistPerPage}
-          dataCallback={async () => {
-            const response = await api({
-              path: username ? `/user/${username}/wishlist` : "/wishlist",
-              method: "GET",
-            });
-            return response.data.items as WishlistItem[];
-          }}
-          renderCallback={(data) => {
-            setWishlist(data as WishlistItem[]);
-          }}
-        />
+        <div className="UserPage__pagination-wrapper">
+          <Pagination
+            displayType="numbered"
+            dataType="slice"
+            perPage={wishlistPerPage}
+            dataCallback={async () => {
+              const response = await api({
+                path: username ? `/user/${username}/wishlist` : "/wishlist",
+                method: "GET",
+              });
+              console.log("response length", response.data.items.length);
+              return response.data.items as WishlistItem[];
+            }}
+            renderCallback={(data) => {
+              console.log("length", data.length);
+              setWishlist(data as WishlistItem[]);
+            }}
+          />
+        </div>
       </div>
     </div>
   );

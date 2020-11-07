@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    openapi_url=settings.API_URL_PATH + "openapi.json" if settings.DEV_MODE else None,
+    openapi_url=settings.API_URL_PATH + "/openapi.json" if settings.DEV_MODE else None,
     docs_url="/docs" if settings.DEV_MODE else None,
     redoc_url="/redoc" if settings.DEV_MODE else None,
 )

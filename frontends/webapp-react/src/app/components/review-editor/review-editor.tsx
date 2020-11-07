@@ -14,7 +14,8 @@ export type ReviewEditorProps = {
   username?: string;
   profileImage?: string;
   createDate?: Date;
-  rating?: number;
+  rating: number;
+  setRating: Function;
   containsSpoiler?: Boolean;
   flaggedHelpful?: boolean;
   flaggedFunny?: boolean;
@@ -31,7 +32,7 @@ const ReviewEditor = (props: ReviewEditorProps & { className?: string }) => {
   const [editable, setEditable] = React.useState(props.disable);
   const [spoiler, setSpoiler] = React.useState(props.containsSpoiler || false);
   const [createDate, setCreateDate] = React.useState(props.createDate);
-  const [desc, setDesc] = React.useState(props.description);
+  const [desc, setDesc] = React.useState(props.description || "");
   const reviewDesc = async (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setDesc(event.target.value);
   };
@@ -97,6 +98,7 @@ const ReviewEditor = (props: ReviewEditorProps & { className?: string }) => {
             numFunny={props.numFunny}
             numSpoiler={props.numSpoiler}
             hideFlags={props.hideFlags}
+            hideStats={props.hideStats}
           />
         </div>
         <div className="ReviewEditor__function">
@@ -104,8 +106,10 @@ const ReviewEditor = (props: ReviewEditorProps & { className?: string }) => {
             <>
               <span>Your rating:</span>
               <Stars
+                id="review-editor-stars"
                 movieId={props.movieId}
                 rating={props.rating}
+                setRating={props.setRating}
                 size="small"
                 votable={editable ? false : true}
               />

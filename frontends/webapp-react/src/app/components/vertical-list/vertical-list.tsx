@@ -7,9 +7,15 @@ type VerticalListProps = {
 };
 
 const VerticalList = (props: VerticalListProps & { className?: string }) => {
-  return <ul className={`VerticalList ${(props.className || "").trim()}`}>
-    {props.items.map((el) => <li className="VerticalList__item">{el}</li>)}
-  </ul>;
+  return (
+    <ul className={`VerticalList ${(props.className || "").trim()}`}>
+      {props.items.map((el, index) => (
+        <li className="VerticalList__item" key={`${index}`}>
+          {el}
+        </li>
+      ))}
+    </ul>
+  );
 };
 
 export default view(VerticalList);
