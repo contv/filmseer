@@ -50,7 +50,7 @@ async def get_movies(
     page: Optional[int] = 1,
     sort: Optional[str] = ("relevance", "rating", "name", "year")[0],
     desc: Optional[bool] = True,
-):
+) -> Dict:
     conn = connections.create_connection(
         hosts=settings.ELASTICSEARCH_URI,
         alias=settings.ELASTICSEARCH_ALIAS,
@@ -105,7 +105,7 @@ async def get_movies(
     return postprocessed
 
 
-@router.get("/recommendation", tags=["Movies"])
+@router.get("/recommendation", tags=["Movies"], response_model=Wrapper[Dict])
 async def get_recommendation(
     request: Request,
     type: str,
