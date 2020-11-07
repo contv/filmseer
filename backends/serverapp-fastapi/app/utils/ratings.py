@@ -25,6 +25,7 @@ async def calc_average_rating(
     rating = dict()
     rating["average_rating"] = average_rating
     rating["num_votes"] = num_votes
+    rating["cumulative_rating"] = cumulative_rating
     return rating
 
 
