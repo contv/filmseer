@@ -114,6 +114,7 @@ const MovieDetailPage = (props: { className?: string }) => {
   const [authorReview, setAuthorReview] = useState<Array<ReviewProps>>();
   const [recommended, setRecommended] = useState<Array<MovieItemProps>>();
   const [hasError, setHasError] = useState<Boolean>(false);
+  const [userRating, setUserRating] = useState(0);
 
   useEffect(() => {
     if (state.loggedIn) {
@@ -125,6 +126,17 @@ const MovieDetailPage = (props: { className?: string }) => {
           setHasError(false);
         }
       });
+      api({
+        path: `/movie/${movieId}/rating`,
+        method: "GET",
+      }).then((res) => {
+        if (res.code !== 0) {
+          setHasError(true);
+        } else {
+          setUserRating(res.data.rating);
+          setHasError(false);
+        }
+      })
     }
     api({ path: `/movie/${movieId}`, method: "GET" }).then((res) => {
       if (res.code !== 0) {
@@ -170,9 +182,10 @@ const MovieDetailPage = (props: { className?: string }) => {
               {movieDetails.title} ({movieDetails.releaseYear})
             </h3>
             {movieDetails.genres &&
-              movieDetails.genres.map((genre) => (
+              movieDetails.genres.map((genre, i) => (
                 <GenreTile
                   id={genre}
+                  key={i}
                   text={genre === "\\N" ? "Genre not listed" : genre}
                 ></GenreTile>
               ))}
@@ -180,8 +193,10 @@ const MovieDetailPage = (props: { className?: string }) => {
               {movieDetails.numVotes > 0 && (
                 <>
                   <Stars
+                    id="movie-main-static"
                     movieId={movieId}
                     rating={movieDetails.averageRating}
+                    setRating={()=>{}}
                     size="small"
                     votable={false}
                   />
@@ -194,7 +209,7 @@ const MovieDetailPage = (props: { className?: string }) => {
             <p className="Movie__description">{movieDetails.description}</p>
           </div>
           <div className="Movie__interact">
-            <MovieInteract movieId={movieId} />
+            <MovieInteract movieId={movieId} userRating={userRating} setUserRating={setUserRating}/>
           </div>
         </MovieSection>
         {movieDetails.trailers && (
@@ -211,8 +226,8 @@ const MovieDetailPage = (props: { className?: string }) => {
         {movieDetails.crew && (
           <MovieSection heading="Cast and Crew">
             <div className="Cast">
-              {movieDetails.crew.map((castMember) => (
-                <div className="CastMember">
+              {movieDetails.crew.map((castMember, i) => (
+                <div key={i} className="CastMember">
                   <img width={60} src={castMember.image || avatar} alt=""></img>
                   <span className="Movie__castname">{castMember.name}</span>
                   <i>{castMember.position}</i>
@@ -250,7 +265,8 @@ const MovieDetailPage = (props: { className?: string }) => {
               description={authorReview[0].description}
               username={authorReview[0].username}
               createDate={authorReview[0].createDate}
-              rating={authorReview[0].rating}
+              rating={userRating}
+              setRating={setUserRating}
               profileImage={authorReview[0].profileImage || avatar}
               containsSpoiler={authorReview[0].containsSpoiler}
               flaggedFunny={authorReview[0].flaggedFunny}
@@ -272,6 +288,8 @@ const MovieDetailPage = (props: { className?: string }) => {
               profileImage={author.image || avatar}
               hideFlags={true}
               hideStats={true}
+              rating={userRating}
+              setRating={setUserRating}
             ></ReviewEditor>
           )}
           {reviews && reviews.length > 0 && (
