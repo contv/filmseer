@@ -151,13 +151,11 @@ async def get_recommendation(
             movies = await predict_on_user(user_id, unseen, size)
         except TypeError:
             return ApiException(404, 3000, "Recommendation not available")
-
-    if type == "detail":
+    elif type == "detail":
         if not movie_id:
             return ApiException(404, 3002, "You must provide a valid movie")
         # check if this movie has been searched already
         searches = request.session["recommendations"]
-
         driver = RedisDictStorageDriver(
             key_prefix="recommendations:",
             key_filter=r"[^a-zA-Z0-9_-]+",
@@ -168,7 +166,6 @@ async def get_recommendation(
             redis_pool_max=settings.REDIS_POOL_MAX,
         )
         await driver.initialize_driver()
-
         try:
             search_id = searches[movie_id]
         except KeyError:
@@ -176,13 +173,11 @@ async def get_recommendation(
             if len(searches.keys()) >= settings.REDIS_SEARCHES_MAX:
                 searches.pop(list(searches)[0])
             searches[movie_id] = search_id
-
         # Attempt to retrieve stored movie payload from Redis
         movies, _ = await driver.get(search_id)
         if movies:
             movies = movies["movies"]
-
-        if not movies:
+        else:
             try:
                 movies = await predict_on_movie(movie_id, size)
                 await driver.update(search_id, {"movies": movies})
@@ -191,8 +186,7 @@ async def get_recommendation(
                 return ApiException(404, 3001, "Movie has not been rated before")
             except TypeError:
                 return ApiException(404, 3000, "Recommendation not available")
-
-    if type == "popular":
+    elif type == "popular":
         cutoff_date = datetime.now() - relativedelta(days=recency)
         movies = (
             await Ratings.filter(create_date__gte=cutoff_date, delete_date=None)
@@ -203,8 +197,7 @@ async def get_recommendation(
             .values_list("movie_id", "movie_id_count")
         )
         movies = [movie[0] for movie in movies]
-
-    if type == "new":
+    elif type == "new":
         cutoff_date = datetime.now() - relativedelta(days=recency)
         movies = (
             await Movies.filter(
@@ -217,6 +210,8 @@ async def get_recommendation(
             .values_list("movie_id")
         )
         movies = [movie[0] for movie in movies]
+    else:
+        return ApiException(404, 3003, "Invalid recommendation type") 
 
     # Postprocess to apply filters, sorting and pagination
     postprocessed = await get_movies(
