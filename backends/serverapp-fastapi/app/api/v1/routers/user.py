@@ -122,14 +122,20 @@ async def get_user_wishlist(username: str):
             title=wishlist_item.movie.title,
             image_url=wishlist_item.movie.image,
             release_year=wishlist_item.movie.release_date.year,
-            average_rating=(
+            cumulativeRating=(
                 await calc_average_rating(
                     wishlist_item.movie.cumulative_rating,
                     wishlist_item.movie.num_votes,
                     user.user_id,
                     wishlist_item.movie_id,
                 )
-            )["average_rating"],
+            )["cumulative_rating"],
+            num_votes = (await calc_average_rating(
+                wishlist_item.movie.cumulative_rating,
+                wishlist_item.movie.num_votes,
+                user.user_id,
+                wishlist_item.movie_id,
+            ))['num_votes'],            
         )
         for wishlist_item in await Wishlists.filter(
             user_id=user.user_id, delete_date=None
