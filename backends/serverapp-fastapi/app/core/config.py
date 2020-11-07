@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import List, Optional, Union
 
-from pydantic import AnyHttpUrl, AnyUrl, BaseSettings, EmailStr, constr
+from pydantic import AnyHttpUrl, AnyUrl, BaseSettings, EmailStr, constr, DirectoryPath
 
 
 class Settings(BaseSettings):
@@ -37,7 +37,8 @@ class Settings(BaseSettings):
         (Path(__file__).resolve().parents[4] / "public" / "index.html").resolve()
     )
     RECOMMENDER_RANDOM_SAMPLESIZE: int = 1000
-
+    STORAGES_ROOT: DirectoryPath = (Path(__file__).resolve().parents[4] / "storages").resolve()    
+    
     # CORS Settings
     CORS_ORIGINS: List[Union[AnyHttpUrl, constr(regex=r"^\*$")]] = []  # noqa: F722
     CORS_ORIGIN_REGEX: str = ""

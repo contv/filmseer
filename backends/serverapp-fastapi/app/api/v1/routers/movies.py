@@ -16,6 +16,11 @@ from pydantic import BaseModel
 from tortoise.exceptions import OperationalError
 from tortoise.functions import Count
 from tortoise.transactions import in_transaction
+from app.utils.dict_storage.redis import RedisDictStorageDriver
+
+from elasticsearch import RequestsHttpConnection, Urllib3HttpConnection
+from elasticsearch_dsl import Q, Search, connections
+from .movie import process_movie_payload
 
 router = APIRouter()
 override_prefix = None
@@ -60,6 +65,72 @@ async def get_movie(movie_id: str):
 
     return recommendation
 
+async def get_movies(
+    request: Request, 
+    movies: List[str],
+    genres: Optional[List[str]] = Query([]),
+    years: Optional[List[str]] = Query([]),
+    directors: Optional[List[str]] = Query([]),
+    per_page: Optional[int] = None,
+    page: Optional[int] = 1,
+    sort: Optional[str] = ("relevance", "rating", "name", "year")[0],
+    desc: Optional[bool] = True,
+    ):
+    conn = connections.create_connection(
+        hosts=settings.ELASTICSEARCH_URI,
+        alias=settings.ELASTICSEARCH_ALIAS,
+        connection_class=RequestsHttpConnection
+        if settings.ELASTICSEARCH_TRANSPORTCLASS == "RequestsHttpConnection"
+        else Urllib3HttpConnection,
+        timeout=settings.ELASTICSEARCH_TIMEOUT,
+        use_ssl=settings.ELASTICSEARCH_USESSL,
+        verify_certs=settings.ELASTICSEARCH_VERIFYCERTS,
+        ssl_show_warn=settings.ELASTICSEARCH_SHOWSSLWARNINGS,
+        opaque_id=request.session.get("user_id")
+        or str(request.client.host) + ":" + str(request.client.port)
+        or None
+        if settings.ELASTICSEARCH_TRACEREQUESTS
+        else None,
+    )
+
+    queries = [
+        Q(
+            "bool", should=[
+                Q("match", movie_id=movie_id)
+                for movie_id in movies
+            ],
+            minimum_should_match=1
+        )
+    ]
+    
+    search = Search(using=conn, index=settings.ELASTICSEARCH_MOVIEINDEX)
+
+    for q in queries:
+        search = search.query(q)
+
+    # TODO Retrieve banlist and pass into script field
+    # eg "listban":"{uuid1},{uuid2}"
+    search = search.script_fields(
+        average_rating={
+            "script": {"id": "calculate_rating_field", "params": {"listban": ""}}
+        }
+    )
+    
+    # Execute search
+    search = search.source(
+        ["movie_id", "image", "title", "genres", "release_date", "positions"]
+    )
+    response = search.execute()
+
+    # Convert response into dict for Redis storage
+    preprocessed = {
+        hit.meta.id: {"score": hit.meta.score, "movie": hit.to_dict()}
+        for hit in response
+    }
+    postprocessed = await process_movie_payload(
+        preprocessed, years, directors, genres, per_page, page, sort, desc
+    )
+    return postprocessed
 
 @router.get("/recommendation", tags=["Movies"])
 async def get_recommendation(
@@ -68,8 +139,14 @@ async def get_recommendation(
     size: Optional[int] = 20,
     movie_id: Optional[str] = None,
     recency: Optional[int] = 7,
+    genres: Optional[List[str]] = Query([]),
+    years: Optional[List[str]] = Query([]),
+    directors: Optional[List[str]] = Query([]),
+    per_page: Optional[int] = None,
+    page: Optional[int] = 1,
+    sort: Optional[str] = ("relevance", "rating", "name", "year")[0],
+    desc: Optional[bool] = True,
 ):
-
     # Confine parameters to prevent excessive computation
     if recency < 0:
         recency = 0
@@ -105,13 +182,44 @@ async def get_recommendation(
     if type == "detail":
         if not movie_id:
             return ApiException(404, 3002, "You must provide a valid movie")
+        # check if this movie has been searched already
+        searches = request.session["recommendations"]
+        print(searches)
+        
+        driver = RedisDictStorageDriver(
+            key_prefix="recommendations:",
+            key_filter=r"[^a-zA-Z0-9_-]+",
+            ttl=settings.REDIS_SEARCH_TTL,
+            renew_on_ttl=settings.REDIS_SEARCH_TTL,
+            redis_uri=settings.REDIS_URI,
+            redis_pool_min=settings.REDIS_POOL_MIN,
+            redis_pool_max=settings.REDIS_POOL_MAX,
+        )
+        await driver.initialize_driver()
+        
         try:
-            movies = await predict_on_movie(movie_id, size)
-        except ValueError:
-            return ApiException(404, 3001, "Movie has not been rated before")
-        except TypeError:
-            return ApiException(404, 3000, "Recommendation not available")
-
+            search_id = searches[movie_id]
+        except KeyError:
+            search_id = await driver.create()
+            if len(searches.keys()) >= settings.REDIS_SEARCHES_MAX:
+                searches.pop(list(searches)[0])
+            searches[movie_id] = search_id
+            
+        # Attempt to retrieve stored movie payload from Redis
+        movies, _ = await driver.get(search_id)
+        if movies:
+            movies = movies["movies"]
+        
+        if not movies:
+            try:
+                movies = await predict_on_movie(movie_id, size)
+                await driver.update(search_id, {"movies":movies})
+                await driver.terminate_driver()
+            except ValueError:
+                return ApiException(404, 3001, "Movie has not been rated before")
+            except TypeError:
+                return ApiException(404, 3000, "Recommendation not available")
+        
     if type == "popular":
         cutoff_date = datetime.now() - relativedelta(days=recency)
         movies = (
@@ -138,5 +246,7 @@ async def get_recommendation(
         )
         movies = [movie[0] for movie in movies]
 
-    movies = [await get_movie(movie) for movie in movies]
-    return wrap(movies)
+    # Postprocess to apply filters, sorting and pagination 
+    postprocessed = await get_movies(request, movies, genres, years, directors, per_page, page, sort, desc)
+    
+    return wrap(postprocessed)
