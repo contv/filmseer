@@ -9,7 +9,7 @@ import state from "src/app/states";
 import "./stars.scss";
 
 type StarsProps = {
-  id: string;
+  id?: string;
   movieId: string;
   size: "small" | "medium" | "large";
   votable: boolean;

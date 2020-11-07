@@ -16,7 +16,7 @@ import { view } from "@risingstack/react-easy-state";
 type MovieInteractProps = {
   movieId: string;
   userRating: number;
-  setUserRating: Function;
+  setUserRating: (newValue: number) => void;
 };
 
 const MovieInteract = (props: MovieInteractProps) => {;
