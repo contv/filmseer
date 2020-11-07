@@ -771,7 +771,7 @@ async def delete_rating(request: Request, movie_id: str) -> Wrapper[dict]:
     return wrap({"id": str(rating_id), "rating": rating})
 
 
-@router.get("/{movie_id}/rating")
+@router.get("/{movie_id}/rating", tags=["Movies"], response_model=Wrapper[RatingResponse])
 async def get_current_user_rating(request: Request, movie_id: str) -> Wrapper[dict]:
     user_id = request.session.get("user_id")
     if not user_id:
@@ -781,6 +781,7 @@ async def get_current_user_rating(request: Request, movie_id: str) -> Wrapper[di
         user_id=user_id, movie_id=movie_id, delete_date=None
     )
     if not rating:
+        print(f'could not find rating')
         return ApiException(500, 2103, "Could not find or delete rating")
 
-    return wrap({"user_id": user_id, "movie_id": movie_id, "rating": rating.rating})
+    return wrap({"id": str(rating.rating_id), "rating": rating.rating})

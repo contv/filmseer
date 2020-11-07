@@ -114,7 +114,7 @@ const MovieDetailPage = (props: { className?: string }) => {
   const [authorReview, setAuthorReview] = useState<Array<ReviewProps>>();
   const [recommended, setRecommended] = useState<Array<MovieItemProps>>();
   const [hasError, setHasError] = useState<Boolean>(false);
-  const [userRating, setUserRating] = useState(0);
+  const [userRating, setUserRating] = useState<number>(0);
 
   useEffect(() => {
     if (state.loggedIn) {
@@ -130,9 +130,7 @@ const MovieDetailPage = (props: { className?: string }) => {
         path: `/movie/${movieId}/rating`,
         method: "GET",
       }).then((res) => {
-        if (res.code !== 0) {
-          setHasError(true);
-        } else {
+        if (res.code === 0) {
           setUserRating(res.data.rating);
           setHasError(false);
         }
