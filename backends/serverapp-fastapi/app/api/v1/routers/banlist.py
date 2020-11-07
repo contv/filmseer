@@ -71,6 +71,9 @@ async def add_to_banlist(request: Request, banned_user_id: str):
     if not user_id:
         return ApiException(401, 2500, "You must be logged in to add to wishlist.")
 
+    if user_id == banned_user_id:
+        return ApiException(401, 2801, "You cannot ban yourself.")
+
     exists_in_banlist = await Banlists.get_or_none(
         banned_user_id=banned_user_id, user_id=user_id
     )
