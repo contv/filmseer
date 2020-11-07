@@ -177,15 +177,13 @@ async def get_user_banlist(username: str):
 async def get_current_user(request: Request):
     user_id = request.session.get("user_id")
     if not user_id:
-        return wrap(error=ApiException(500, 2001, "You are not logged in!"))
+        raise ApiException(500, 2001, "You are not logged in!")
 
     user = await Users.get_or_none(user_id=user_id, delete_date=None).prefetch_related(
         "profile_image_id"
     )
     if not user:
-        return wrap(
-            error=ApiException(500, 2200, "That user's profile page was not found")
-        )
+        raise ApiException(500, 2200, "That user's profile page was not found")
 
     response = UserProfileResponse(
         id=str(user.user_id),
@@ -205,9 +203,7 @@ async def get_current_user(request: Request):
 async def get_user_profile(username: str):
     user = await Users.get_or_none(username=username, delete_date=None)
     if not user:
-        return wrap(
-            error=ApiException(500, 2200, "That user's profile page was not found")
-        )
+        raise ApiException(500, 2200, "That user's profile page was not found")
 
     response = UserProfileResponse(
         id=str(user.user_id),
