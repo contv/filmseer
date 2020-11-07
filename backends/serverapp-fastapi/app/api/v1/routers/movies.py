@@ -157,7 +157,6 @@ async def get_recommendation(
             return ApiException(404, 3002, "You must provide a valid movie")
         # check if this movie has been searched already
         searches = request.session["recommendations"]
-        print(searches)
 
         driver = RedisDictStorageDriver(
             key_prefix="recommendations:",
