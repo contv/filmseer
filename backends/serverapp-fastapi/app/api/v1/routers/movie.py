@@ -1,6 +1,6 @@
 import re
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Literal
 
 from elasticsearch import RequestsHttpConnection, Urllib3HttpConnection
 from elasticsearch_dsl import Q, Search, connections
@@ -28,6 +28,8 @@ from .review import ListReviewResponse, ReviewRequest, ReviewResponse, ReviewCre
 router = APIRouter()
 override_prefix = None
 override_prefix_all = None
+driver = None
+elasticsearch = None
 
 
 class Trailer(BaseModel):
@@ -91,6 +93,44 @@ class RatingResponse(BaseModel):
 
 class AverageRatingResponse(BaseModel):
     average: float
+
+@router.on_event("startup")
+async def connect_redis():
+    global driver
+    if not driver:
+        driver = RedisDictStorageDriver(
+            key_prefix="search:",
+            key_filter=r"[^a-zA-Z0-9_-]+",
+            ttl=settings.REDIS_SEARCH_TTL,
+            renew_on_ttl=settings.REDIS_SEARCH_TTL,
+            redis_uri=settings.REDIS_URI,
+            redis_pool_min=settings.REDIS_POOL_MIN,
+            redis_pool_max=settings.REDIS_POOL_MAX,
+        )
+        await driver.initialize_driver()
+    return driver
+
+@router.on_event("startup")
+def connect_elasticsearch():
+    global elasticsearch
+    if not elasticsearch:
+        elasticsearch = connections.create_connection(
+            hosts=settings.ELASTICSEARCH_URI,
+            alias=settings.ELASTICSEARCH_ALIAS,
+            connection_class=RequestsHttpConnection
+            if settings.ELASTICSEARCH_TRANSPORTCLASS == "RequestsHttpConnection"
+            else Urllib3HttpConnection,
+            timeout=settings.ELASTICSEARCH_TIMEOUT,
+            use_ssl=settings.ELASTICSEARCH_USESSL,
+            verify_certs=settings.ELASTICSEARCH_VERIFYCERTS,
+            ssl_show_warn=settings.ELASTICSEARCH_SHOWSSLWARNINGS,
+        )
+    return elasticsearch
+
+@router.on_event("shutdown")
+async def close_redis():
+    global driver
+    await driver.terminate_driver()
 
 
 @router.get("/{movie_id}/ratings", response_model=Wrapper[AverageRatingResponse])
@@ -362,20 +402,12 @@ async def search_movies(
     directors: Optional[List[str]] = Query([]),
     per_page: Optional[int] = None,
     page: Optional[int] = 1,
-    sort: Optional[str] = ("relevance", "rating", "name", "year")[0],
+    sort: Literal["relevance", "rating", "name", "year"] = "relevance",
     desc: Optional[bool] = True,
 ):
-    # Initialise driver
-    driver = RedisDictStorageDriver(
-        key_prefix="search:",
-        key_filter=r"[^a-zA-Z0-9_-]+",
-        ttl=settings.REDIS_SEARCH_TTL,
-        renew_on_ttl=settings.REDIS_SEARCH_TTL,
-        redis_uri=settings.REDIS_URI,
-        redis_pool_min=settings.REDIS_POOL_MIN,
-        redis_pool_max=settings.REDIS_POOL_MAX,
-    )
-    await driver.initialize_driver()
+    global driver
+    if not driver:
+        driver = await connect_redis()
 
     # Lookup existing search in session
     searches = request.session["searches"]
@@ -396,24 +428,11 @@ async def search_movies(
                 payload, years, directors, genres, per_page, page, sort, desc
             )
         )
-
+    
     # Otherwise perform new Elasticsearch query
-    conn = connections.create_connection(
-        hosts=settings.ELASTICSEARCH_URI,
-        alias=settings.ELASTICSEARCH_ALIAS,
-        connection_class=RequestsHttpConnection
-        if settings.ELASTICSEARCH_TRANSPORTCLASS == "RequestsHttpConnection"
-        else Urllib3HttpConnection,
-        timeout=settings.ELASTICSEARCH_TIMEOUT,
-        use_ssl=settings.ELASTICSEARCH_USESSL,
-        verify_certs=settings.ELASTICSEARCH_VERIFYCERTS,
-        ssl_show_warn=settings.ELASTICSEARCH_SHOWSSLWARNINGS,
-        opaque_id=request.session.get("user_id")
-        or str(request.client.host) + ":" + str(request.client.port)
-        or None
-        if settings.ELASTICSEARCH_TRACEREQUESTS
-        else None,
-    )
+    global elasticsearch
+    if not elasticsearch:
+        elasticsearch = connect_elasticsearch()
 
     # Build query context for scoring results
     years_in_keywords = re.findall("(\d{4})", keywords)
@@ -456,7 +475,7 @@ async def search_movies(
         )
     ]
 
-    search = Search(using=conn, index=settings.ELASTICSEARCH_MOVIEINDEX).extra(
+    search = Search(using=elasticsearch, index=settings.ELASTICSEARCH_MOVIEINDEX).extra(
         size=settings.ELASTICSEARCH_RESPONSESIZE
     )
 
@@ -785,7 +804,6 @@ async def get_current_user_rating(request: Request, movie_id: str) -> Wrapper[di
         user_id=user_id, movie_id=movie_id, delete_date=None
     )
     if not rating:
-        print(f'could not find rating')
         raise ApiException(500, 2103, "Could not find or delete rating")
 
     return wrap({"id": str(rating.rating_id), "rating": rating.rating})

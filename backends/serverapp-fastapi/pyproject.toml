@@ -26,6 +26,9 @@ cryptography = "^3.1.1"
 pyhumps = "^1.6.1"
 sshtunnel = "^0.1.5"
 elasticsearch-dsl = "^7.3.0"
+surprise = "^0.1"
+scikit-surprise = "^1.1.1"
+pandas = "^1.1.4"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
@@ -42,6 +45,7 @@ start = "scripts.start:start"
 setup = "scripts.setup:setup_clean"
 setup-noclean = "scripts.setup:setup_noclean"
 setup-nodrop = "scripts.setup:setup_nodrop"
+train = "scripts.train:main"
 
 [tool.isort]
 multi_line_output = 3
