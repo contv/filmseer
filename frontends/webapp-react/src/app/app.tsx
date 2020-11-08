@@ -1,28 +1,36 @@
-import { StylesProvider } from "@material-ui/core/styles";
-import { view } from "@risingstack/react-easy-state";
-import React, { useState } from "react";
+import "./app.scss";
+
 import {
-  BrowserRouter as Router,
   Link,
   Redirect,
   Route,
+  BrowserRouter as Router,
   Switch,
 } from "react-router-dom";
-import "./app.scss";
-import SearchBar from "./components/search-bar";
-import UserMenu from "./components/user-menu";
-import logo from "./logo.svg";
+import React, { useState } from "react";
+
 import HomePage from "./routes/home";
 import MovieDetailPage from "./routes/movie";
+import SearchBar from "./components/search-bar";
 import SearchPage from "./routes/search";
+import { StylesProvider } from "@material-ui/core/styles";
+import UserMenu from "./components/user-menu";
 import UserPage from "./routes/user";
+import logo from "./logo.svg";
+import { view } from "@risingstack/react-easy-state";
 
 const App = () => {
   const [searchTerm, setSearchTerm] = useState<string>();
+  const [choiceTerm, setChoiceTerm] = useState<string>();
 
   const performSearch = (text: string) => {
     setSearchTerm(encodeURI(text));
   };
+
+  const performChoice = (text: string) => {
+    setChoiceTerm(encodeURI(text));
+  };
+
 
   return (
     <StylesProvider injectFirst>
@@ -35,6 +43,7 @@ const App = () => {
             <SearchBar
               type="header"
               onSearch={(text) => performSearch(text)}
+              onChose={(text) => performChoice(text)}
               className="Header__search-bar"
               height={48}
             ></SearchBar>
@@ -42,6 +51,7 @@ const App = () => {
           </header>
           <article className="App__main Main">
               {searchTerm && (<Redirect to={{ pathname: `/search/${searchTerm}`}}/>)}
+              {choiceTerm && (<Redirect to={{ pathname: `/movie/${choiceTerm}`}}/>)}
             <Switch>
               <Route path="/search/:searchString?">
                 <SearchPage className="Main__search" />
