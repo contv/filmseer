@@ -108,7 +108,7 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
           "1fr " + (props.height ? props.height + "px" : "2em"),
       }}
     >
-      <div className="Searchbar__input">
+      <div className="SearchBar__input">
         <AutoSuggest
           suggestions={suggestions}
           onSuggestionsClearRequested={() => setSuggestions([])}
@@ -126,7 +126,6 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
               setValue(newValue);
             },
           }}
-          highlightFirstSuggestion={true}
         />
       </div>
 

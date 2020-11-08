@@ -17,6 +17,7 @@
     border: 1px solid var(--gray-5);
     padding: 0.5ex 0.5em;
     box-sizing: border-box;
+    width: 100%;
   }  
 }
 
@@ -25,9 +26,8 @@
 }
 
 .react-autosuggest__input {
-  height: 26px;
-  width: 500px;
-  padding: 10px 20px;
+  width: 100%;
+  padding: 10px;
   background-color: var(--gray-5);
   font-family: Helvetica, sans-serif;
   font-weight: 300;
