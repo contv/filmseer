@@ -6,6 +6,8 @@ import React from "react";
 import { Search } from "react-feather";
 import axios from "axios";
 import { view } from "@risingstack/react-easy-state";
+import AutosuggestHighlightMatch from "autosuggest-highlight/match"
+import AutosuggestHighlightParse from "autosuggest-highlight/parse"
 
 type SearchBarProps = {
   type: string;
@@ -30,7 +32,8 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
       "release_date"
     ].substring(0, 4);
     const suggestionText = title + " (" + year + ")"
-    
+    const matches = AutosuggestHighlightMatch(suggestionText, value);
+    const parts = AutosuggestHighlightParse(suggestionText, matches);
     return (
       <div className="suggestion-content">
         {image && (
@@ -41,7 +44,17 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
             style={{ marginRight: "5px" }}
           ></img>
         )}
-        {suggestionText}
+      <span className="name">
+        {
+          parts.map((part, index) => {
+            const className = part.highlight ? 'highlight' : "";
+
+            return (
+              <span className={className} key={index}>{part.text}</span>
+            );
+          })
+        }
+      </span>
       </div>
     );
   };
@@ -74,17 +87,10 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
       });
   };
 
-  const onChange = (event: any, { newValue, method }: any) => {
-    setValue(newValue);
-    console.log(method);
-    if (method === "enter") {
-      console.log("HI THERE");
-    }
-  };
 
   let textInput = React.useRef(null);
   function handleClick() {
-    props.onSearch((textInput.current || { value: "" }).value);
+    props.onSearch(value);
   }
 
   function handleInput(event: React.KeyboardEvent<HTMLInputElement>) {
@@ -107,9 +113,9 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
           suggestions={suggestions}
           onSuggestionsClearRequested={() => setSuggestions([])}
           onSuggestionsFetchRequested={({ value }) => fetchSuggestion(value)}
-          onSuggestionSelected={(_, { suggestionValue, method }) => {
+          onSuggestionSelected={(_, { suggestion, suggestionValue, method }) => {
             setValue(suggestionValue);
-            console.log(method);
+            props.onChose(JSON.parse(JSON.stringify(suggestion))["movie_id"])
           }}
           getSuggestionValue={(suggestion) => getSuggestionValue(suggestion)}
           renderSuggestion={(suggestion) => renderSuggestion(suggestion)}
