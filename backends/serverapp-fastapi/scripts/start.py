@@ -282,7 +282,7 @@ def start():
             ]:
                 try:
                     json_object = json.loads(env_dict.get("SSH_TUNNEL_LIST_JSON", ""))
-                except ValueError as e:
+                except ValueError:
                     print("ERROR: SSH_TUNNEL_LIST_JSON value is not a valid JSON")
                     sys.exit(1)
 
@@ -293,11 +293,12 @@ def start():
                     local_bind = ssh_object["local_bind"]
                     try:
                         bastion_parsed = urlparse(bastion_url)
-                    except ValueError as e:
+                    except ValueError:
                         print(
                             "ERROR: Bastion value "
                             + bastion_url
-                            + " is not a valid value. Valid value is ssh://user(:password)@host:port"
+                            + " is not a valid value. Valid value is "
+                            + "ssh://user(:password)@host:port"
                         )
                         sys.exit(1)
 
@@ -307,7 +308,7 @@ def start():
                     bastion_password = bastion_parsed.password
                     try:
                         remote_regex = re.search(r"(.*):(.*)", remote_bind)
-                    except ValueError as e:
+                    except ValueError:
                         print(
                             "ERROR: Remote value "
                             + remote_bind
@@ -320,7 +321,7 @@ def start():
 
                     try:
                         local_regex = re.search(r"(.*):(.*)", local_bind)
-                    except ValueError as e:
+                    except ValueError:
                         print(
                             "ERROR: Local value "
                             + local_bind

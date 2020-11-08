@@ -1,14 +1,15 @@
+import "./movie-item.scss";
+
 import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
 import CardHeader from "@material-ui/core/CardHeader";
 import CardMedia from "@material-ui/core/CardMedia";
-import Typography from "@material-ui/core/Typography";
-import { view } from "@risingstack/react-easy-state";
-import React from "react";
-import { useHistory } from "react-router-dom";
 import GenreTile from "../genre-tile";
+import React from "react";
 import Stars from "../stars";
-import "./movie-item.scss";
+import Typography from "@material-ui/core/Typography";
+import { useHistory } from "react-router-dom";
+import { view } from "@risingstack/react-easy-state";
 
 export type MovieItemProps = {
   movieId: string;
@@ -44,7 +45,6 @@ export const nFormatter = (num: number, digits: number) => {
 
 const MovieItem = (props: MovieItemProps & { className?: string }) => {
   let history = useHistory();
-
   const avgRating: number = parseFloat(
     (props.cumulativeRating / props.numRatings).toFixed(1)
   );

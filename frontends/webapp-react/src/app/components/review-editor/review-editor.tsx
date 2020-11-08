@@ -98,6 +98,7 @@ const ReviewEditor = (props: ReviewEditorProps & { className?: string }) => {
             numFunny={props.numFunny}
             numSpoiler={props.numSpoiler}
             hideFlags={props.hideFlags}
+            hideStats={props.hideStats}
           />
         </div>
         <div className="ReviewEditor__function">

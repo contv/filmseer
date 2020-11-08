@@ -3,8 +3,10 @@ from typing import Optional, Union
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
+from app.models.common import ListResponse
 from app.models.db.reviews import Reviews
 from app.models.db.users import Users
+from app.models.db.banlists import Banlists
 from app.models.db.wishlists import Wishlists
 from app.utils.password import hash
 from app.utils.ratings import calc_average_rating
@@ -12,6 +14,7 @@ from app.utils.wrapper import ApiException, Wrapper, wrap
 
 from .review import ListReviewResponse, ReviewResponse
 from .wishlist import MovieWishlistResponse
+from .banlist import UserBanlistResponse
 
 router = APIRouter()
 override_prefix = None
@@ -50,9 +53,9 @@ async def create_user(register: Register, request: Request) -> Wrapper[dict]:
 )
 async def get_reviews_user(username: str, page: int = 0, per_page: int = 0):
     if per_page >= 42:
-        return ApiException(400, 2700, "Please limit the numer of items per page")
+        raise ApiException(400, 2700, "Please limit the numer of items per page")
     if (per_page < 0) or (page < 0):
-        return ApiException(400, 2701, "Invalid page/per_page parameter")
+        raise ApiException(400, 2701, "Invalid page/per_page parameter")
 
     user = (
         await Users.filter(username=username, delete_date=None)
@@ -60,7 +63,7 @@ async def get_reviews_user(username: str, page: int = 0, per_page: int = 0):
         .values("user_id")
     )
     if not user:
-        return ApiException(404, 2003, "Invalid user name.")
+        raise ApiException(404, 2003, "Invalid user name.")
 
     user_id = user[0]["user_id"]
 
@@ -110,28 +113,62 @@ async def get_user_wishlist(username: str):
     user = await Users.filter(username=username, delete_date=None).first()
 
     if not user:
-        return ApiException(404, 2031, "That user doesn't exist.")
+        raise ApiException(404, 2031, "That user doesn't exist.")
 
-    items = [
-        MovieWishlistResponse(
-            wishlist_id=str(wishlist_item.wishlist_id),
-            movie_id=str(wishlist_item.movie_id),
-            title=wishlist_item.movie.title,
-            image_url=wishlist_item.movie.image,
-            release_year=wishlist_item.movie.release_date.year,
-            average_rating=calc_average_rating(
-                wishlist_item.movie.cumulative_rating, wishlist_item.movie.num_votes
-            ),
+    items = []
+    for wishlist_item in await Wishlists.filter(
+        user_id=user.user_id, delete_date=None
+    ).prefetch_related("movie"):
+        rating = await calc_average_rating(
+            wishlist_item.movie.cumulative_rating,
+            wishlist_item.movie.num_votes,
+            user.user_id,
+            wishlist_item.movie_id,
         )
-        for wishlist_item in await Wishlists.filter(
-            user_id=user.user_id, delete_date=None
-        ).prefetch_related("movie")
-    ]
+        items.append(
+            MovieWishlistResponse(
+                wishlist_id=str(wishlist_item.wishlist_id),
+                movie_id=str(wishlist_item.movie_id),
+                title=wishlist_item.movie.title,
+                image_url=wishlist_item.movie.image,
+                release_year=wishlist_item.movie.release_date.year,
+                cumulativeRating=rating["cumulative_rating"],
+                num_votes=rating["num_votes"],
+            )
+        )
 
     return wrap({"items": items})
 
 
 # WISHLIST RELATED END
+
+
+# BANLIST RELATED START
+
+
+@router.get(
+    "/{username}/banlist", response_model=Wrapper[ListResponse[UserBanlistResponse]]
+)
+async def get_user_banlist(username: str):
+    user = await Users.filter(username=username, delete_date=None).first()
+
+    if not user:
+        raise ApiException(404, 2031, "That user doesn't exist.")
+
+    items = [
+        UserBanlistResponse(
+            banlist_id=str(banlist_item.banlist_id),
+            banned_user_id=str(banlist_item.banned_user_id),
+        )
+        for banlist_item in await Banlists.filter(
+            user_id=user.user_id, delete_date=None
+        )
+    ]
+
+    return wrap({"items": items})
+
+
+# BANLIST RELATED END
 
 
 @router.get(
@@ -140,15 +177,13 @@ async def get_user_wishlist(username: str):
 async def get_current_user(request: Request):
     user_id = request.session.get("user_id")
     if not user_id:
-        return wrap(error=ApiException(500, 2001, "You are not logged in!"))
+        raise ApiException(500, 2001, "You are not logged in!")
 
     user = await Users.get_or_none(user_id=user_id, delete_date=None).prefetch_related(
         "profile_image_id"
     )
     if not user:
-        return wrap(
-            error=ApiException(500, 2200, "That user's profile page was not found")
-        )
+        raise ApiException(500, 2200, "That user's profile page was not found")
 
     response = UserProfileResponse(
         id=str(user.user_id),
@@ -168,9 +203,7 @@ async def get_current_user(request: Request):
 async def get_user_profile(username: str):
     user = await Users.get_or_none(username=username, delete_date=None)
     if not user:
-        return wrap(
-            error=ApiException(500, 2200, "That user's profile page was not found")
-        )
+        raise ApiException(500, 2200, "That user's profile page was not found")
 
     response = UserProfileResponse(
         id=str(user.user_id),

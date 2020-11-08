@@ -28,6 +28,8 @@ class Users(Model):
     # Relational fields
     reports: fields.ReverseRelation["Reports"]
     ratings: fields.ReverseRelation["Ratings"]
-    reviews = fields.ReverseRelation["Reviews"]
-
+    reviews: fields.ReverseRelation["Reviews"]
+    banning_user_id: fields.ReverseRelation["Banlists"] 
+    banned_user_id: fields.ReverseRelation["Banlists"]
+    
 __all__ = ["Users"]
