@@ -1,11 +1,12 @@
 from datetime import datetime
 from random import choices
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Literal
 
 from dateutil.relativedelta import relativedelta
 from elasticsearch import RequestsHttpConnection, Urllib3HttpConnection
 from elasticsearch_dsl import Q, Search, connections
 
+import asyncio
 from app.core.config import settings
 from app.models.db.movies import Movies
 from app.models.db.ratings import Ratings
@@ -15,7 +16,7 @@ from app.utils.recommender import load_movie_set, predict_on_movie, predict_on_u
 from app.utils.wrapper import ApiException, Wrapper, wrap
 from fastapi import APIRouter, Query, Request
 from humps import camelize
-from pydantic import BaseModel
+from pydantic import BaseModel, conint
 from tortoise.exceptions import OperationalError
 from tortoise.functions import Count
 from tortoise.transactions import in_transaction
@@ -25,6 +26,49 @@ from .movie import process_movie_payload
 router = APIRouter()
 override_prefix = None
 override_prefix_all = None
+driver = None
+elasticsearch = None
+
+
+@router.on_event("startup")
+async def connect_redis():
+    global driver
+    if not driver:
+        driver = RedisDictStorageDriver(
+            key_prefix="recommendations:",
+            key_filter=r"[^a-zA-Z0-9_-]+",
+            ttl=settings.REDIS_SEARCH_TTL,
+            renew_on_ttl=settings.REDIS_SEARCH_TTL,
+            redis_uri=settings.REDIS_URI,
+            redis_pool_min=settings.REDIS_POOL_MIN,
+            redis_pool_max=settings.REDIS_POOL_MAX,
+        )
+        await driver.initialize_driver()
+    return driver
+
+
+@router.on_event("startup")
+def connect_elasticsearch():
+    global elasticsearch
+    if not elasticsearch:
+        elasticsearch = connections.create_connection(
+            hosts=settings.ELASTICSEARCH_URI,
+            alias=settings.ELASTICSEARCH_ALIAS,
+            connection_class=RequestsHttpConnection
+            if settings.ELASTICSEARCH_TRANSPORTCLASS == "RequestsHttpConnection"
+            else Urllib3HttpConnection,
+            timeout=settings.ELASTICSEARCH_TIMEOUT,
+            use_ssl=settings.ELASTICSEARCH_USESSL,
+            verify_certs=settings.ELASTICSEARCH_VERIFYCERTS,
+            ssl_show_warn=settings.ELASTICSEARCH_SHOWSSLWARNINGS,
+        )
+    return elasticsearch
+
+
+@router.on_event("shutdown")
+async def close_redis():
+    global driver
+    await driver.terminate_driver()
 
 
 async def get_movies(
@@ -38,22 +82,9 @@ async def get_movies(
     sort: Optional[str] = ("relevance", "rating", "name", "year")[0],
     desc: Optional[bool] = True,
 ) -> Dict:
-    conn = connections.create_connection(
-        hosts=settings.ELASTICSEARCH_URI,
-        alias=settings.ELASTICSEARCH_ALIAS,
-        connection_class=RequestsHttpConnection
-        if settings.ELASTICSEARCH_TRANSPORTCLASS == "RequestsHttpConnection"
-        else Urllib3HttpConnection,
-        timeout=settings.ELASTICSEARCH_TIMEOUT,
-        use_ssl=settings.ELASTICSEARCH_USESSL,
-        verify_certs=settings.ELASTICSEARCH_VERIFYCERTS,
-        ssl_show_warn=settings.ELASTICSEARCH_SHOWSSLWARNINGS,
-        opaque_id=request.session.get("user_id")
-        or str(request.client.host) + ":" + str(request.client.port)
-        or None
-        if settings.ELASTICSEARCH_TRACEREQUESTS
-        else None,
-    )
+    global elasticsearch
+    if not elasticsearch:
+        connect_elasticsearch()
 
     queries = [
         Q(
@@ -63,7 +94,7 @@ async def get_movies(
         )
     ]
 
-    search = Search(using=conn, index=settings.ELASTICSEARCH_MOVIEINDEX)
+    search = Search(using=elasticsearch, index=settings.ELASTICSEARCH_MOVIEINDEX)
 
     for q in queries:
         search = search.query(q)
@@ -75,7 +106,6 @@ async def get_movies(
             "script": {"id": "calculate_rating_field", "params": {"listban": ""}}
         }
     )
-
     # Execute search
     search = search.source(
         ["movie_id", "image", "title", "genres", "release_date", "positions"]
@@ -95,28 +125,21 @@ async def get_movies(
 @router.get("/recommendation", tags=["Movies"], response_model=Wrapper[Dict])
 async def get_recommendation(
     request: Request,
-    type: str,
-    size: Optional[int] = 20,
+    type: Literal["foryou", "detail", "new", "popular"],
+    size: conint(gt=0, le=50) = 20,
     movie_id: Optional[str] = None,
-    recency: Optional[int] = 7,
+    recency: conint(gt=0, le=30) = 7,
     genres: Optional[List[str]] = Query([]),
     years: Optional[List[str]] = Query([]),
     directors: Optional[List[str]] = Query([]),
     per_page: Optional[int] = None,
     page: Optional[int] = 1,
-    sort: Optional[str] = ("relevance", "rating", "name", "year")[0],
+    sort: Literal["relevance", "rating", "name", "year"] = "relevance",
     desc: Optional[bool] = True,
 ):
-    # Confine parameters to prevent excessive computation
-    if recency < 0:
-        recency = 0
-    elif recency > 30:
-        recency = 30
-
-    if size <= 0:
-        size = 1
-    elif size > 50:
-        size = 50
+    global driver
+    if not driver:
+        driver = await connect_redis()
 
     if type == "foryou":
         user_id = request.session.get("user_id")
@@ -141,17 +164,7 @@ async def get_recommendation(
     elif type == "detail":
         if not movie_id:
             raise ApiException(404, 3002, "You must provide a valid movie")
-        # Check if movie has had recommendations calculated on it within same session 
-        driver = RedisDictStorageDriver(
-            key_prefix="recommendations:",
-            key_filter=r"[^a-zA-Z0-9_-]+",
-            ttl=settings.REDIS_SEARCH_TTL,
-            renew_on_ttl=settings.REDIS_SEARCH_TTL,
-            redis_uri=settings.REDIS_URI,
-            redis_pool_min=settings.REDIS_POOL_MIN,
-            redis_pool_max=settings.REDIS_POOL_MAX,
-        )
-        await driver.initialize_driver()
+        # Check if movie has had recommendations calculated on it within same session
         searches = request.session["recommendations"]
         try:
             search_id = searches[movie_id]
@@ -168,7 +181,6 @@ async def get_recommendation(
             try:
                 movies = await predict_on_movie(movie_id, size)
                 await driver.update(search_id, {"movies": movies})
-                await driver.terminate_driver()
             except ValueError:
                 raise ApiException(404, 3001, "Movie has not been rated before")
             except TypeError:
@@ -198,7 +210,7 @@ async def get_recommendation(
         )
         movies = [movie[0] for movie in movies]
     else:
-        raise ApiException(404, 3003, "Invalid recommendation type") 
+        raise ApiException(404, 3003, "Invalid recommendation type")
 
     # Postprocess to apply filters, sorting and pagination
     postprocessed = await get_movies(
