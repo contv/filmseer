@@ -412,8 +412,8 @@ async def search_movies(
     
     # Otherwise perform new Elasticsearch query
     global elasticsearch
-    # if not elasticsearch:
-    #     elasticsearch = connect_elasticsearch()
+    if not elasticsearch:
+        elasticsearch = connect_elasticsearch()
 
     # Build query context for scoring results
     years_in_keywords = re.findall("(\d{4})", keywords)

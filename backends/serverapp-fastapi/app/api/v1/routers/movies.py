@@ -79,7 +79,7 @@ async def get_movies(
     directors: Optional[List[str]] = Query([]),
     per_page: Optional[int] = None,
     page: Optional[int] = 1,
-    sort: Optional[str] = ("relevance", "rating", "name", "year")[0],
+    sort: Literal["relevance", "rating", "name", "year"] = "relevance",
     desc: Optional[bool] = True,
 ) -> Dict:
     global elasticsearch
