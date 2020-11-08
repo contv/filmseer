@@ -61,9 +61,10 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
 
   const fetchSuggestion = (value: string) => {
     setValue(value);
+    
     const results: [] = [];
     axios
-      .post("https://localhost:2900/movie/_search", {
+      .post("http://ec2-3-25-228-117.ap-southeast-2.compute.amazonaws.com:2900/movie/_search", {
         query: {
           multi_match: {
             query: value,
