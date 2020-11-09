@@ -125,7 +125,7 @@ async def get_movies(
 @router.get("/recommendation", tags=["Movies"], response_model=Wrapper[Dict])
 async def get_recommendation(
     request: Request,
-    type: Literal["foryou", "detail", "new", "popular"],
+    type: str, # "foryou", "detail", "new", "popular"
     size: conint(gt=0, le=50) = 20,
     movie_id: Optional[str] = None,
     recency: conint(gt=0, le=30) = 7,
@@ -134,7 +134,7 @@ async def get_recommendation(
     directors: Optional[List[str]] = Query([]),
     per_page: Optional[int] = None,
     page: Optional[int] = 1,
-    sort: Literal["relevance", "rating", "name", "year"] = "relevance",
+    sort: str = ("relevance", "rating", "name", "year")[0],
     desc: Optional[bool] = True,
 ):
     global driver
