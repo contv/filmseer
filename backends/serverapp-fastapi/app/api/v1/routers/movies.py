@@ -12,6 +12,7 @@ from tortoise.functions import Count
 from app.core.config import settings
 from app.models.db.movies import Movies
 from app.models.db.ratings import Ratings
+from app.models.db.banlists import Banlists
 from app.utils.dict_storage.redis import RedisDictStorageDriver
 from app.utils.recommender import load_movie_set, predict_on_movie, predict_on_user
 from app.utils.wrapper import ApiException, Wrapper, wrap
@@ -94,11 +95,18 @@ async def get_movies(
     for q in queries:
         search = search.query(q)
 
-    # TODO Retrieve banlist and pass into script field
-    # eg "listban":"{uuid1},{uuid2}"
+    list_ban = ""
+    user_id = request.session.get("user_id")
+    if user_id is not None:
+        user_ban_list = await Banlists.filter(user_id=user_id, delete_date=None).values(
+            "banned_user_id"
+        )
+        user_ban_list = [str(item["banned_user_id"]) for item in user_ban_list]
+        list_ban = ",".join(user_ban_list)
+    
     search = search.script_fields(
         average_rating={
-            "script": {"id": "calculate_rating_field", "params": {"listban": ""}}
+            "script": {"id": "calculate_rating_field", "params": {"listban": list_ban}}
         }
     )
     # Execute search
