@@ -9,19 +9,21 @@ from surprise import SVD, KNNBaseline, Reader, dump
 from app.core.config import settings
 
 # Import models and dicts globally
-_, movie_movie_recommender = dump.load(
+try:
+    _, movie_movie_recommender = dump.load(
     settings.STORAGES_ROOT / "recommender/movie_movie_recommender"
-)
-_, user_movie_recommender = dump.load(
-    settings.STORAGES_ROOT / "recommender/user_movie_recommender"
-)
-with open(settings.STORAGES_ROOT / "recommender/raw_to_inner_id", "rb") as file:
-    raw_to_inner = pickle.load(file)
-with open(settings.STORAGES_ROOT / "recommender/inner_to_raw_id", "rb") as file:
-    inner_to_raw = pickle.load(file)
-with open(settings.STORAGES_ROOT / "recommender/movie_set", "rb") as file:
-    movie_set = pickle.load(file)
-
+    )
+    _, user_movie_recommender = dump.load(
+        settings.STORAGES_ROOT / "recommender/user_movie_recommender"
+    )
+    with open(settings.STORAGES_ROOT / "recommender/raw_to_inner_id", "rb") as file:
+        raw_to_inner = pickle.load(file)
+    with open(settings.STORAGES_ROOT / "recommender/inner_to_raw_id", "rb") as file:
+        inner_to_raw = pickle.load(file)
+    with open(settings.STORAGES_ROOT / "recommender/movie_set", "rb") as file:
+        movie_set = pickle.load(file)
+except FileNotFoundError:
+    pass
 
 async def predict_on_movie(movie_id: str, size: int = 10):
     global movie_movie_recommender

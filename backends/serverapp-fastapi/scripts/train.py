@@ -56,7 +56,6 @@ async def train():
             file,
             protocol=pickle.HIGHEST_PROTOCOL,
         )
-    print(list(trainset._raw2inner_id_items)[0:5])
 
     # Train kNN recommender for getting movies similar to a given movie
     sim_options = {"name": "pearson_baseline", "user_based": False}

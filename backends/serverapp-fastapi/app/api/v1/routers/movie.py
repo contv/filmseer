@@ -422,7 +422,6 @@ async def search_movies(
     # Attempt to retrieve stored movie payload from Redis
     payload, _ = await driver.get(search_id)
     if payload:
-        await driver.terminate_driver()
         return wrap(
             await process_movie_payload(
                 payload, years, directors, genres, per_page, page, sort, desc
@@ -510,7 +509,6 @@ async def search_movies(
 
     # Save response in Redis
     await driver.update(search_id, preprocessed)
-    await driver.terminate_driver()
 
     return wrap(
         await process_movie_payload(
