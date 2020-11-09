@@ -18,6 +18,11 @@
         max-width: 150px !important;
         margin: auto;
       }
+
+      &__header {
+        height: 100%;
+        align-items: flex-start;
+      }
     }
   }
 
