@@ -1,4 +1,31 @@
-.Search__item {
-    padding: 20px;
-    width: 200px;
+.SearchPage {
+  &__item {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: stretch;
+    align-items: stretch;
+    height: 100%;
+    margin-bottom: 16px;
+
+    .MovieItem {
+      flex: 1;
+
+      &__card {
+        height: 100%;
+        display: flex;
+        flex-flow: column;
+        justify-content: space-between;
+        max-width: 150px !important;
+        margin: auto;
+      }
+    }
+  }
+
+  &__list {
+    width: 80%;
+    margin: 40px auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-gap: 24px;
+  }
 }
