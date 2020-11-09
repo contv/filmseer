@@ -1,23 +1,18 @@
-import asyncio
 from datetime import datetime
 from random import choices
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
 
 from dateutil.relativedelta import relativedelta
 from elasticsearch import RequestsHttpConnection, Urllib3HttpConnection
 from elasticsearch_dsl import Q, Search, connections
 from fastapi import APIRouter, Query, Request
-from humps import camelize
-from pydantic import BaseModel, conint
-from tortoise.exceptions import OperationalError
+from pydantic import conint
 from tortoise.functions import Count
-from tortoise.transactions import in_transaction
 
 from app.core.config import settings
 from app.models.db.movies import Movies
 from app.models.db.ratings import Ratings
 from app.utils.dict_storage.redis import RedisDictStorageDriver
-from app.utils.ratings import calc_average_rating
 from app.utils.recommender import load_movie_set, predict_on_movie, predict_on_user
 from app.utils.wrapper import ApiException, Wrapper, wrap
 
@@ -125,7 +120,7 @@ async def get_movies(
 @router.get("/recommendation", tags=["Movies"], response_model=Wrapper[Dict])
 async def get_recommendation(
     request: Request,
-    type: str, # "foryou", "detail", "new", "popular"
+    type: str,  # "foryou", "detail", "new", "popular"
     size: conint(gt=0, le=50) = 20,
     movie_id: Optional[str] = None,
     recency: conint(gt=0, le=30) = 7,
