@@ -1,12 +1,18 @@
+import asyncio
 from datetime import datetime
 from random import choices
-from typing import Dict, List, Optional, Union, Literal
+from typing import Dict, List, Optional, Union
 
 from dateutil.relativedelta import relativedelta
 from elasticsearch import RequestsHttpConnection, Urllib3HttpConnection
 from elasticsearch_dsl import Q, Search, connections
+from fastapi import APIRouter, Query, Request
+from humps import camelize
+from pydantic import BaseModel, conint
+from tortoise.exceptions import OperationalError
+from tortoise.functions import Count
+from tortoise.transactions import in_transaction
 
-import asyncio
 from app.core.config import settings
 from app.models.db.movies import Movies
 from app.models.db.ratings import Ratings
@@ -14,12 +20,6 @@ from app.utils.dict_storage.redis import RedisDictStorageDriver
 from app.utils.ratings import calc_average_rating
 from app.utils.recommender import load_movie_set, predict_on_movie, predict_on_user
 from app.utils.wrapper import ApiException, Wrapper, wrap
-from fastapi import APIRouter, Query, Request
-from humps import camelize
-from pydantic import BaseModel, conint
-from tortoise.exceptions import OperationalError
-from tortoise.functions import Count
-from tortoise.transactions import in_transaction
 
 from .movie import process_movie_payload
 
@@ -79,7 +79,7 @@ async def get_movies(
     directors: Optional[List[str]] = Query([]),
     per_page: Optional[int] = None,
     page: Optional[int] = 1,
-    sort: Literal["relevance", "rating", "name", "year"] = "relevance",
+    sort: str = ("relevance", "rating", "name", "year")[0],
     desc: Optional[bool] = True,
 ) -> Dict:
     global elasticsearch

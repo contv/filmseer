@@ -1,6 +1,6 @@
 import re
 from datetime import datetime
-from typing import Dict, List, Optional, Literal
+from typing import Dict, List, Optional
 
 from elasticsearch import RequestsHttpConnection, Urllib3HttpConnection
 from elasticsearch_dsl import Q, Search, connections
@@ -402,7 +402,7 @@ async def search_movies(
     directors: Optional[List[str]] = Query([]),
     per_page: Optional[int] = None,
     page: Optional[int] = 1,
-    sort: Literal["relevance", "rating", "name", "year"] = "relevance",
+    sort: str = ("relevance", "rating", "name", "year")[0],
     desc: Optional[bool] = True,
 ):
     global driver
