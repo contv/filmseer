@@ -29,8 +29,7 @@
     "typescript": "^3.7.5",
     "react-autosuggest": "^10.0.3",
     "axios": "^0.21.0",
-    "autosuggest-highlight": "^3.1.1",
-    "react-themeable-ts": "^1.0.0"
+    "autosuggest-highlight": "^3.1.1"
   },
   "scripts": {
     "start": "react-scripts start",
