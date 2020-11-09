@@ -1,9 +1,10 @@
 import "./search-bar.scss";
-
 import AutoSuggest from "react-autosuggest";
-import { Highlight } from "react-highlighter-ts";
 import React from "react";
 import { Search } from "react-feather";
+import { themeable } from 'react-themeable-ts';
+
+
 import axios from "axios";
 import { view } from "@risingstack/react-easy-state";
 import AutosuggestHighlightMatch from "autosuggest-highlight/match"
@@ -24,7 +25,23 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
   const getSuggestionValue = (suggestion: any) => {
     return JSON.parse(JSON.stringify(suggestion))["title"];
   };
-
+  const theme = {
+    container:                'SearchBar__container',
+    containerOpen:            'SearchBar__container--open',
+    input:                    'SearchBar__input',
+    inputOpen:                'SearchBar__input--open',
+    inputFocused:             'SearchBar__input--focused',
+    suggestionsContainer:     'SearchBar__suggestions-container',
+    suggestionsContainerOpen: 'SearchBar__suggestions-container--open',
+    suggestionsList:          'SearchBar__suggestions-list',
+    suggestion:               'SearchBar__suggestion',
+    suggestionFirst:          'SearchBar__suggestion--first',
+    suggestionHighlighted:    'SearchBar__suggestion--highlighted',
+    sectionContainer:         'SearchBar__section-container',
+    sectionContainerFirst:    'SearchBar__section-container--first',
+    sectionTitle:             'SearchBar__section-title'
+    };
+  
   const renderSuggestion = (suggestion: any) => {
     const title = JSON.parse(JSON.stringify(suggestion))["title"];
     const image = JSON.parse(JSON.stringify(suggestion))["image"];
@@ -47,7 +64,7 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
       <span className="name">
         {
           parts.map((part, index) => {
-            const className = part.highlight ? 'highlight' : "";
+            const className = part.highlight ? 'SearchBar__highlight' : "";
 
             return (
               <span className={className} key={index}>{part.text}</span>
@@ -88,17 +105,10 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
       });
   };
 
-
-  let textInput = React.useRef(null);
   function handleClick() {
     props.onSearch(value);
   }
 
-  function handleInput(event: React.KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "Enter") {
-      props.onSearch((textInput.current || { value: "" }).value);
-    }
-  }
   return (
     <div
       className={`SearchBar ${(props.className || "").trim()}`}
@@ -109,9 +119,11 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
           "1fr " + (props.height ? props.height + "px" : "2em"),
       }}
     >
-      <div className="SearchBar__input">
+
+      <div className="SearchBar__outer">
         <AutoSuggest
           suggestions={suggestions}
+          theme={theme}
           onSuggestionsClearRequested={() => setSuggestions([])}
           onSuggestionsFetchRequested={({ value }) => fetchSuggestion(value)}
           onSuggestionSelected={(_, { suggestion, suggestionValue, method }) => {
