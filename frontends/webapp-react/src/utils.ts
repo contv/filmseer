@@ -14,8 +14,8 @@ type RequestMethodType =
 type ApiParamType = {
   path?: string;
   method?: RequestMethodType;
-  params?: object;
-  body?: object;
+  params?: { [key: string]: any };
+  body?: { [key: string]: any };
 };
 
 type WrapperExceptionType = { code: number; message: string };
@@ -59,7 +59,6 @@ class ApiError extends Error {
 const api = (
   { path, method, params, body }: ApiParamType = { path: "/", method: "GET" }
 ) => {
-  console.log("before", body);
   if (params instanceof URLSearchParams) {
     params = Object.fromEntries(params);
   } else {
@@ -68,6 +67,19 @@ const api = (
   if (body instanceof URLSearchParams) {
     params = Object.assign({}, params, Object.fromEntries(body));
     body = {};
+  }
+  if (typeof params === "object") {
+    Object.keys(params).forEach(
+      (key) =>
+        params &&
+        (params[key] === undefined || params[key] === null) &&
+        delete params[key]
+    );
+  }
+  if (typeof body === "object") {
+    Object.keys(body).forEach(
+      (key) => body && body[key] === undefined && delete body[key]
+    );
   }
   if (
     !body ||

@@ -1,6 +1,6 @@
 import re
 from datetime import datetime
-from typing import Dict, List, Optional, Literal
+from typing import Dict, List, Optional
 
 from elasticsearch import RequestsHttpConnection, Urllib3HttpConnection
 from elasticsearch_dsl import Q, Search, connections
@@ -94,6 +94,7 @@ class RatingResponse(BaseModel):
 class AverageRatingResponse(BaseModel):
     average: float
 
+
 @router.on_event("startup")
 async def connect_redis():
     global driver
@@ -109,6 +110,7 @@ async def connect_redis():
         )
         await driver.initialize_driver()
     return driver
+
 
 @router.on_event("startup")
 def connect_elasticsearch():
@@ -126,6 +128,7 @@ def connect_elasticsearch():
             ssl_show_warn=settings.ELASTICSEARCH_SHOWSSLWARNINGS,
         )
     return elasticsearch
+
 
 @router.on_event("shutdown")
 async def close_redis():
@@ -150,7 +153,13 @@ async def get_average_rating(movie_id: str, request: Request) -> Wrapper[dict]:
 
     # TODO remove ratings from blocked users
     return wrap(
-        {"average": (await calc_average_rating(movie.cumulative_rating, movie.num_votes, user_id, movie_id))['average_rating']}
+        {
+            "average": (
+                await calc_average_rating(
+                    movie.cumulative_rating, movie.num_votes, user_id, movie_id
+                )
+            )["average_rating"]
+        }
     )
 
 
@@ -176,7 +185,9 @@ async def get_movie(movie_id: str, request: Request):
         for p in await Positions.filter(movie_id=movie_id).prefetch_related("person")
     ]
 
-    rating = await calc_average_rating(movie.cumulative_rating, movie.num_votes, user_id, movie_id)
+    rating = await calc_average_rating(
+        movie.cumulative_rating, movie.num_votes, user_id, movie_id
+    )
     movie_detail = MovieResponse(
         id=str(movie.movie_id),
         title=movie.title,
@@ -186,8 +197,8 @@ async def get_movie(movie_id: str, request: Request):
         image_url=movie.image,
         trailers=movie.trailer,
         num_reviews=movie.num_reviews,
-        num_votes=rating['num_votes'],
-        average_rating=rating['average_rating'],
+        num_votes=rating["num_votes"],
+        average_rating=rating["average_rating"],
         genres=genres,
         crew=crew,
     )
@@ -402,7 +413,7 @@ async def search_movies(
     directors: Optional[List[str]] = Query([]),
     per_page: Optional[int] = None,
     page: Optional[int] = 1,
-    sort: Literal["relevance", "rating", "name", "year"] = "relevance",
+    sort: str = ("relevance", "rating", "name", "year")[0],
     desc: Optional[bool] = True,
 ):
     global driver
@@ -410,7 +421,7 @@ async def search_movies(
         driver = await connect_redis()
 
     # Lookup existing search in session
-    searches = request.session["searches"]
+    searches = request.session.get("searches", {})
     try:
         search_id = searches[keywords]
     except KeyError:
@@ -418,6 +429,7 @@ async def search_movies(
         if len(searches.keys()) >= settings.REDIS_SEARCHES_MAX:
             searches.pop(list(searches)[0])
         searches[keywords] = search_id
+        request.session["searches"] = searches
 
     # Attempt to retrieve stored movie payload from Redis
     payload, _ = await driver.get(search_id)
@@ -427,14 +439,14 @@ async def search_movies(
                 payload, years, directors, genres, per_page, page, sort, desc
             )
         )
-    
+
     # Otherwise perform new Elasticsearch query
     global elasticsearch
     if not elasticsearch:
         elasticsearch = connect_elasticsearch()
 
     # Build query context for scoring results
-    years_in_keywords = re.findall("(\d{4})", keywords)
+    years_in_keywords = re.findall(r"(\d{4})", keywords)
     queries = [
         Q(
             "bool",
@@ -792,7 +804,9 @@ async def delete_rating(request: Request, movie_id: str) -> Wrapper[dict]:
     return wrap({"id": str(rating_id), "rating": rating})
 
 
-@router.get("/{movie_id}/rating", tags=["Movies"], response_model=Wrapper[RatingResponse])
+@router.get(
+    "/{movie_id}/rating", tags=["Movies"], response_model=Wrapper[RatingResponse]
+)
 async def get_current_user_rating(request: Request, movie_id: str) -> Wrapper[dict]:
     user_id = request.session.get("user_id")
     if not user_id:

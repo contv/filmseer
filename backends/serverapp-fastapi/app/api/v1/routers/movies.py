@@ -1,25 +1,21 @@
 from datetime import datetime
 from random import choices
-from typing import Dict, List, Optional, Union, Literal
+from typing import Dict, List, Optional
 
 from dateutil.relativedelta import relativedelta
 from elasticsearch import RequestsHttpConnection, Urllib3HttpConnection
 from elasticsearch_dsl import Q, Search, connections
+from fastapi import APIRouter, Query, Request
+from pydantic import conint
+from tortoise.functions import Count
 
-import asyncio
 from app.core.config import settings
 from app.models.db.movies import Movies
 from app.models.db.ratings import Ratings
+from app.models.db.banlists import Banlists
 from app.utils.dict_storage.redis import RedisDictStorageDriver
-from app.utils.ratings import calc_average_rating
 from app.utils.recommender import load_movie_set, predict_on_movie, predict_on_user
 from app.utils.wrapper import ApiException, Wrapper, wrap
-from fastapi import APIRouter, Query, Request
-from humps import camelize
-from pydantic import BaseModel, conint
-from tortoise.exceptions import OperationalError
-from tortoise.functions import Count
-from tortoise.transactions import in_transaction
 
 from .movie import process_movie_payload
 
@@ -79,7 +75,7 @@ async def get_movies(
     directors: Optional[List[str]] = Query([]),
     per_page: Optional[int] = None,
     page: Optional[int] = 1,
-    sort: Literal["relevance", "rating", "name", "year"] = "relevance",
+    sort: str = ("relevance", "rating", "name", "year")[0],
     desc: Optional[bool] = True,
 ) -> Dict:
     global elasticsearch
@@ -99,11 +95,18 @@ async def get_movies(
     for q in queries:
         search = search.query(q)
 
-    # TODO Retrieve banlist and pass into script field
-    # eg "listban":"{uuid1},{uuid2}"
+    list_ban = ""
+    user_id = request.session.get("user_id")
+    if user_id is not None:
+        user_ban_list = await Banlists.filter(user_id=user_id, delete_date=None).values(
+            "banned_user_id"
+        )
+        user_ban_list = [str(item["banned_user_id"]) for item in user_ban_list]
+        list_ban = ",".join(user_ban_list)
+    
     search = search.script_fields(
         average_rating={
-            "script": {"id": "calculate_rating_field", "params": {"listban": ""}}
+            "script": {"id": "calculate_rating_field", "params": {"listban": list_ban}}
         }
     )
     # Execute search
@@ -125,7 +128,7 @@ async def get_movies(
 @router.get("/recommendation", tags=["Movies"], response_model=Wrapper[Dict])
 async def get_recommendation(
     request: Request,
-    type: Literal["foryou", "detail", "new", "popular"],
+    type: str,  # "foryou", "detail", "new", "popular"
     size: conint(gt=0, le=50) = 20,
     movie_id: Optional[str] = None,
     recency: conint(gt=0, le=30) = 7,
@@ -134,7 +137,7 @@ async def get_recommendation(
     directors: Optional[List[str]] = Query([]),
     per_page: Optional[int] = None,
     page: Optional[int] = 1,
-    sort: Literal["relevance", "rating", "name", "year"] = "relevance",
+    sort: str = ("relevance", "rating", "name", "year")[0],
     desc: Optional[bool] = True,
 ):
     global driver
