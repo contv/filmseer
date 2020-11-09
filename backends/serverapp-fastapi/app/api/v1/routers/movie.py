@@ -421,7 +421,7 @@ async def search_movies(
         driver = await connect_redis()
 
     # Lookup existing search in session
-    searches = request.session["searches"]
+    searches = request.session.get("searches", {})
     try:
         search_id = searches[keywords]
     except KeyError:
@@ -429,6 +429,7 @@ async def search_movies(
         if len(searches.keys()) >= settings.REDIS_SEARCHES_MAX:
             searches.pop(list(searches)[0])
         searches[keywords] = search_id
+        request.session["searches"] = searches
 
     # Attempt to retrieve stored movie payload from Redis
     payload, _ = await driver.get(search_id)
