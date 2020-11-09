@@ -347,6 +347,10 @@ def start():
                     ssh_tunnel.start()
             while True:
                 time.sleep(1)
+                for ssh_tunnel in ssh_server_list:
+                    if not ssh_tunnel.is_active:
+                        print("WARNING: SSH Tunnel is DOWN! Restarting...")
+                        ssh_tunnel.restart()
         except KeyboardInterrupt:
             print("INFO: Shutting down uvicorn instances...")
             for server_port, instance in uvicorn_instances.items():
