@@ -19,22 +19,8 @@ type SearchItem = {
   numReviews: number;
 };
 
-const groupItems = (group: any, size: any, length: any) =>
-  group
-    .reduce(
-      (prev: any, _: any, index: any, original: any) =>
-        index % size === 0
-          ? prev.concat([original.slice(index, index + size)])
-          : prev,
-      []
-    )
-    .filter((_: any, index: any) => index < length);
-
 const SearchPage = (props: { className?: string }) => {
   const { searchString } = useParams<{ searchString?: string }>();
-  const [groupedResults, setGroupedResults] = useState<
-    Array<Array<SearchItem>>
-  >();
   const [movies, setMovies] = useState<SearchItem[]>([]);
   const [hasError, setHasError] = useState<Boolean>(false);
   const [genreFilter, setGenreFilter] = useState<string>();
@@ -57,15 +43,17 @@ const SearchPage = (props: { className?: string }) => {
     setGenreFilter(event.target.value);
   };
 
-  const getParamUpdater = (name: string) => {
-    if (name === "Genre") {
+  const getParamUpdater = (key: string) => {
+    if (key === "genre") {
       return updateGenre;
     }
-    if (name === "Directors") {
+    if (key === "director") {
       return updateDirector;
-    } else {
+    }
+    if (key === "year") {
       return updateYears;
     }
+    return () => {};
   };
 
   useEffect(() => {
@@ -86,10 +74,7 @@ const SearchPage = (props: { className?: string }) => {
       if (res.code !== 0) {
         setHasError(true);
       } else {
-        console.log(res.data);
         setMovies(res.data.movies as SearchItem[]);
-        const grouped = groupItems(res.data.movies, 8, 10);
-        setGroupedResults(grouped);
         setFilters(res.data.filters);
       }
     });
@@ -115,7 +100,7 @@ const SearchPage = (props: { className?: string }) => {
                 name={filter.name}
                 type={filter.type}
                 selections={filter.selections}
-                updateSearchParams={getParamUpdater(filter.name)}
+                updateSearchParams={getParamUpdater(filter.key)}
               />
             ))}
         </div>
