@@ -445,7 +445,7 @@ async def search_movies(
         elasticsearch = connect_elasticsearch()
 
     # Build query context for scoring results
-    years_in_keywords = re.findall("(\d{4})", keywords)
+    years_in_keywords = re.findall(r"(\d{4})", keywords)
     queries = [
         Q(
             "bool",
