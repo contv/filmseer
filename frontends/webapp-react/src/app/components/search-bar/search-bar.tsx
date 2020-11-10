@@ -3,9 +3,10 @@ import "./search-bar.scss";
 import AutoSuggest from "react-autosuggest";
 import AutosuggestHighlightMatch from "autosuggest-highlight/match";
 import AutosuggestHighlightParse from "autosuggest-highlight/parse";
-import React from "react";
+import React from "react"
 import { Search } from "react-feather";
 import axios from "axios";
+import { debounce } from "lodash"
 import { view } from "@risingstack/react-easy-state";
 
 type SearchBarProps = {
@@ -15,6 +16,7 @@ type SearchBarProps = {
   onSearch: (text: string) => void;
   onChose: (movieId: string) => void;
 };
+
 
 const SearchBar = (props: SearchBarProps & { className?: string }) => {
   const [value, setValue] = React.useState("");
@@ -39,6 +41,7 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
     sectionContainerFirst: "SearchBar__section-container--first",
     sectionTitle: "SearchBar__section-title",
   };
+
 
   const renderSuggestion = (suggestion: any) => {
     const title = JSON.parse(JSON.stringify(suggestion))["title"];
@@ -74,7 +77,9 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
     );
   };
 
-  const fetchSuggestion = (value: string) => {
+  const debouncedFetchSuggestions = React.useCallback(debounce(fetchSuggestions, 200), []);
+
+  function fetchSuggestions (value: string)  {
     const results: [] = [];
     const esUrl = (process.env || {}).REACT_APP_ELASTICSEARCH_URL 
     if (esUrl) {
@@ -125,7 +130,7 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
           suggestions={suggestions}
           theme={theme}
           onSuggestionsClearRequested={() => setSuggestions([])}
-          onSuggestionsFetchRequested={({ value }) => fetchSuggestion(value)}
+          onSuggestionsFetchRequested={({ value }) => debouncedFetchSuggestions(value)}
           onSuggestionSelected={(
             _,
             { suggestion, suggestionValue, method }
