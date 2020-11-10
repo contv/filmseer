@@ -17,6 +17,7 @@
     "@types/react": "^16.9.49",
     "@types/react-autosuggest": "^10.0.1",
     "@types/react-dom": "^16.9.8",
+    "@types/lodash": "^4.14.165",
     "autosuggest-highlight": "^3.1.1",
     "axios": "^0.21.0",
     "copyfiles": "^2.3.0",

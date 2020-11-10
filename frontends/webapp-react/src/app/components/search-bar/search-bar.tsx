@@ -75,8 +75,6 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
   };
 
   const fetchSuggestion = (value: string) => {
-    setValue(value);
-
     const results: [] = [];
     const esUrl = (process.env || {}).REACT_APP_ELASTICSEARCH_URL 
     if (esUrl) {
