@@ -27,7 +27,7 @@ const App = () => {
     setSearchTerm(encodeURI(text));
   };
 
-  const performChoice = (text: string) => {
+  const performSelectSuggestion = (text: string) => {
     setSuggestionTerm(encodeURI(text));
   };
 
@@ -43,7 +43,7 @@ const App = () => {
             <SearchBar
               type="header"
               onSearch={(text) => performSearch(text)}
-              onSelectSuggestion={(text) => performChoice(text)}
+              onSelectSuggestion={(text) => performSelectSuggestion(text)}
               className="Header__search-bar"
               height={48}
             ></SearchBar>
