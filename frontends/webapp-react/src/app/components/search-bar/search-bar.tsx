@@ -57,7 +57,7 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
     return (
       <div className="suggestion-content">
         {image && (
-          <img src={image} className="SearchBar__sugesstion-poster"></img>
+          <img src={image} className="SearchBar__sugesstion-poster" alt="poster"></img>
         )}
         <span className="name">
           {parts.map((part, index) => {
