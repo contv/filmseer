@@ -1,0 +1,53 @@
+.SettingsPage {
+  &__drawer {
+    width: 240px;
+    flex-shrink: 0;
+  }
+
+  &__drawerPaper {
+    width: 240px;
+  }
+
+  &__toolbar {
+    height: 350px;
+  }
+
+  &__heading {
+    margin-bottom: 20px;
+  }
+
+  &__main {
+    padding-left: 320px;
+  }
+
+  &__user {
+    padding-top: 40px;
+    padding-bottom: 50px;
+  }
+
+  &__avatar {
+    width: 120px;
+    height: 120px;
+    margin-top: 20px;
+  }
+
+  &__form {
+    &__header {
+      font-size: 1rem;
+      padding-top: 10px;
+    }
+    &__box {
+      margin-right: 10px;
+    }
+
+    &__end {
+      display: inline;
+      justify-content: end;
+    }
+
+    &__button {
+      margin-top: 30px;
+      justify-self: end;
+    }
+  }
+}
