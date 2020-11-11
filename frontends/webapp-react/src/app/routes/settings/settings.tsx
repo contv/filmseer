@@ -1,3 +1,7 @@
+import { view } from "@risingstack/react-easy-state";
+import React, { useEffect, useState } from "react";
+import { useHistory } from "react-router-dom";
+import state from "src/app/states";
 import Avatar from "@material-ui/core/Avatar";
 import Box from "@material-ui/core/Box";
 import Button from "@material-ui/core/Button";
@@ -13,10 +17,6 @@ import Typography from "@material-ui/core/Typography";
 import AccountBoxIcon from "@material-ui/icons/AccountBox";
 import SaveIcon from "@material-ui/icons/Save";
 import SecurityIcon from "@material-ui/icons/Security";
-import { view } from "@risingstack/react-easy-state";
-import React, { useEffect, useState } from "react";
-import { useHistory } from "react-router-dom";
-import state from "src/app/states";
 import { apiEffect, ApiError } from "src/utils";
 import "./settings.scss";
 
