@@ -9,11 +9,11 @@ import {
   MovieItemProps,
   nFormatter,
 } from "src/app/components/movie-item/movie-item";
+import movieLogo from "src/app/components/movie-item/movie-logo.png";
 import MovieSection from "src/app/components/movie-section";
 import Review from "src/app/components/review";
 import ReviewEditor from "src/app/components/review-editor";
 import avatar from "src/app/components/review/default-avatar.png";
-import movieLogo from "src/app/components/movie-item/movie-logo.png";
 import { ReviewProps } from "src/app/components/review/review";
 import Stars from "src/app/components/stars";
 import TileList from "src/app/components/tile-list";
@@ -21,7 +21,7 @@ import Trailer from "src/app/components/trailer";
 import VerticalList from "src/app/components/vertical-list";
 import { User } from "src/app/routes/user/user";
 import state from "src/app/states";
-import { api } from "src/utils";
+import { api, apiEffect } from "src/utils";
 import "./movie.scss";
 
 type CastMember = {
@@ -126,15 +126,15 @@ const MovieDetailPage = (props: { className?: string }) => {
           setHasError(false);
         }
       });
-      api({
-        path: `/movie/${movieId}/rating`,
-        method: "GET",
-      }).then((res) => {
-        if (res.code === 0) {
+      apiEffect(
+        {
+          path: `/movie/${movieId}/rating`,
+          method: "GET",
+        },
+        (res) => {
           setUserRating(res.data.rating);
-          setHasError(false);
         }
-      })
+      )();
     }
     api({ path: `/movie/${movieId}`, method: "GET" }).then((res) => {
       if (res.code !== 0) {
@@ -173,7 +173,11 @@ const MovieDetailPage = (props: { className?: string }) => {
       <div className={`MovieDetailPage ${(props.className || "").trim()}`}>
         <MovieSection>
           <div className="Movie__poster">
-            <img src={movieDetails.imageUrl || movieLogo} alt="" className="Movie__poster-image"/>
+            <img
+              src={movieDetails.imageUrl || movieLogo}
+              alt=""
+              className="Movie__poster-image"
+            />
           </div>
           <div className="Movie__about">
             <h3 className="Movie__title">
@@ -194,7 +198,7 @@ const MovieDetailPage = (props: { className?: string }) => {
                     id="movie-main-static"
                     movieId={movieId}
                     rating={movieDetails.averageRating}
-                    setRating={()=>{}}
+                    setRating={() => {}}
                     size="small"
                     votable={false}
                   />
@@ -207,7 +211,11 @@ const MovieDetailPage = (props: { className?: string }) => {
             <p className="Movie__description">{movieDetails.description}</p>
           </div>
           <div className="Movie__interact">
-            <MovieInteract movieId={movieId} userRating={userRating} setUserRating={setUserRating}/>
+            <MovieInteract
+              movieId={movieId}
+              userRating={userRating}
+              setUserRating={setUserRating}
+            />
           </div>
         </MovieSection>
         {movieDetails.trailers && (
