@@ -45,9 +45,10 @@ export const nFormatter = (num: number, digits: number) => {
 
 const MovieItem = (props: MovieItemProps & { className?: string }) => {
   let history = useHistory();
-  const avgRating: number = parseFloat(
+
+  const avgRating: number = props.numRatings ? parseFloat(
     (props.cumulativeRating / props.numRatings).toFixed(1)
-  );
+  ) : 0;
   const formattedNumRatings: string = nFormatter(props.numRatings, 0);
 
   const handleClick = () => {

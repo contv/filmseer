@@ -15,8 +15,8 @@ type SearchItem = {
   genres: string[];
   imageUrl?: string;
   averageRating: number;
-  numRatings: number;
-  numReviews: number;
+  numVotes: number;
+  cumulativeRating: number;
 };
 
 const SearchPage = (props: { className?: string }) => {
@@ -35,7 +35,6 @@ const SearchPage = (props: { className?: string }) => {
   };
 
   const updateDirector = (event: any) => {
-    console.log(event.target.value);
     setDirectorFilter(event.target.value);
   };
 
@@ -139,9 +138,9 @@ const SearchPage = (props: { className?: string }) => {
                   text: g,
                 }))}
                 imageUrl={movie.imageUrl || movieLogo}
-                cumulativeRating={78}
-                numRatings={20}
-                numReviews={3}
+                cumulativeRating={movie.cumulativeRating}
+                numRatings={movie.numVotes}
+                numReviews={0}
               />
             ))}
           />
