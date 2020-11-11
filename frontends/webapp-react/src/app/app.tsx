@@ -21,14 +21,14 @@ import { view } from "@risingstack/react-easy-state";
 
 const App = () => {
   const [searchTerm, setSearchTerm] = useState<string>();
-  const [choiceTerm, setChoiceTerm] = useState<string>();
+  const [suggestionTerm, setSuggestionTerm] = useState<string>();
 
   const performSearch = (text: string) => {
     setSearchTerm(encodeURI(text));
   };
 
   const performChoice = (text: string) => {
-    setChoiceTerm(encodeURI(text));
+    setSuggestionTerm(encodeURI(text));
   };
 
 
@@ -43,7 +43,7 @@ const App = () => {
             <SearchBar
               type="header"
               onSearch={(text) => performSearch(text)}
-              onChose={(text) => performChoice(text)}
+              onSelectSuggestion={(text) => performChoice(text)}
               className="Header__search-bar"
               height={48}
             ></SearchBar>
@@ -51,7 +51,7 @@ const App = () => {
           </header>
           <article className="App__main Main">
               {searchTerm && (<Redirect to={{ pathname: `/search/${searchTerm}`}}/>)}
-              {choiceTerm && (<Redirect to={{ pathname: `/movie/${choiceTerm}`}}/>)}
+              {suggestionTerm && (<Redirect to={{ pathname: `/movie/${suggestionTerm}`}}/>)}
             <Switch>
               <Route path="/search/:searchString?">
                 <SearchPage className="Main__search" />

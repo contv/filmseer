@@ -3,11 +3,11 @@ import "./search-bar.scss";
 import AutoSuggest from "react-autosuggest";
 import AutosuggestHighlightMatch from "autosuggest-highlight/match";
 import AutosuggestHighlightParse from "autosuggest-highlight/parse";
-import { Console } from "console";
-import React from "react"
+import React from "react";
 import { Search } from "react-feather";
 import axios from "axios";
-import { debounce } from "lodash"
+import { debounce } from "lodash";
+import https from "https";
 import { view } from "@risingstack/react-easy-state";
 
 type SearchBarProps = {
@@ -15,11 +15,10 @@ type SearchBarProps = {
   height?: number;
   width?: number;
   onSearch: (text: string) => void;
-  onChose: (movieId: string) => void;
+  onSelectSuggestion: (movieId: string) => void;
   debounceTime?: number;
   sizeSuggestion?: number;
 };
-
 
 const SearchBar = (props: SearchBarProps & { className?: string }) => {
   const [value, setValue] = React.useState("");
@@ -28,6 +27,7 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
   const getSuggestionValue = (suggestion: any) => {
     return JSON.parse(JSON.stringify(suggestion))["title"];
   };
+
   const theme = {
     container: "SearchBar__container",
     containerOpen: "SearchBar__container--open",
@@ -45,7 +45,6 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
     sectionTitle: "SearchBar__section-title",
   };
 
-
   const renderSuggestion = (suggestion: any) => {
     const title = JSON.parse(JSON.stringify(suggestion))["title"];
     const image = JSON.parse(JSON.stringify(suggestion))["image"];
@@ -58,12 +57,7 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
     return (
       <div className="suggestion-content">
         {image && (
-          <img
-            src={image}
-            width={36}
-            height={48}
-            style={{ marginRight: "5px" }}
-          ></img>
+          <img src={image} className="SearchBar__sugesstion-poster"></img>
         )}
         <span className="name">
           {parts.map((part, index) => {
@@ -80,12 +74,19 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
     );
   };
 
-  const debouncedFetchSuggestions = React.useCallback(debounce(fetchSuggestions, props.debounceTime || 150), []);
+  const debouncedFetchSuggestions = React.useCallback(
+    debounce(fetchSuggestions, props.debounceTime || 150),
+    []
+  );
 
-  function fetchSuggestions (value: string)  {
-    const results: [] = [];
-    const esUrl = (process.env || {}).REACT_APP_ELASTICSEARCH_URL 
+  function fetchSuggestions(value: string) {
+    const esUrl = ((process.env || {}).REACT_APP_ELASTICSEARCH_URL) || "https://localhost:2900";
+    const useSSL = (((process.env || {}).REACT_APP_ELASTICSEARCH_USESSL) || false) as boolean;
     if (esUrl) {
+      const agent = new https.Agent({  
+        rejectUnauthorized: useSSL
+      });
+      
       axios
         .post(esUrl + "/movie/_search", {
           query: {
@@ -103,7 +104,7 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
           size: props.sizeSuggestion || 8,
           _source: ["movie_id", "title", "release_date", "image"],
           sort: ["_score"],
-        })
+        }, { httpsAgent: agent })
         .then((res) => {
           const results = res.data.hits.hits.map(
             (h: { _source: any }) => h._source
@@ -111,20 +112,19 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
           setSuggestions(results);
         });
     } else {
-      setSuggestions(results);
+      setSuggestions([]);
     }
-  };
+  }
 
   function handleClick() {
     props.onSearch(value);
   }
 
   function handleEnter(event: React.KeyboardEvent<any>) {
-    if (event.key === 'Enter') {
-      handleClick()
+    if (event.key === "Enter") {
+      handleClick();
     }
   }
-
 
   return (
     <div
@@ -141,13 +141,12 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
           suggestions={suggestions}
           theme={theme}
           onSuggestionsClearRequested={() => setSuggestions([])}
-          onSuggestionsFetchRequested={({ value }) => debouncedFetchSuggestions(value)}
-          onSuggestionSelected={(
-            _,
-            { suggestion, suggestionValue, method }
-          ) => {
+          onSuggestionsFetchRequested={({ value }) =>
+            debouncedFetchSuggestions(value)
+          }
+          onSuggestionSelected={(_, { suggestion, suggestionValue }) => {
             setValue(suggestionValue);
-            props.onChose(JSON.parse(JSON.stringify(suggestion))["movie_id"]);
+            props.onSelectSuggestion(JSON.parse(JSON.stringify(suggestion))["movie_id"]);
           }}
           getSuggestionValue={(suggestion) => getSuggestionValue(suggestion)}
           renderSuggestion={(suggestion) => renderSuggestion(suggestion)}

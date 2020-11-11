@@ -91,6 +91,12 @@
   &__suggestion--focused .highlight {
     color: #120000;
   }
+
+  &__sugesstion-poster {
+    width: 36px;
+    height: 48px;
+    margin-right: 5px;
+  }
   
   &__suggestion--highlighted {
     background-color: #0C7EAF;
