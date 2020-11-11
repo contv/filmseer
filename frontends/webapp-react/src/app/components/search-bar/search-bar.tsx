@@ -3,6 +3,7 @@ import "./search-bar.scss";
 import AutoSuggest from "react-autosuggest";
 import AutosuggestHighlightMatch from "autosuggest-highlight/match";
 import AutosuggestHighlightParse from "autosuggest-highlight/parse";
+import { Console } from "console";
 import React from "react"
 import { Search } from "react-feather";
 import axios from "axios";
@@ -15,6 +16,8 @@ type SearchBarProps = {
   width?: number;
   onSearch: (text: string) => void;
   onChose: (movieId: string) => void;
+  debounceTime?: number;
+  sizeSuggestion?: number;
 };
 
 
@@ -77,7 +80,7 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
     );
   };
 
-  const debouncedFetchSuggestions = React.useCallback(debounce(fetchSuggestions, 200), []);
+  const debouncedFetchSuggestions = React.useCallback(debounce(fetchSuggestions, props.debounceTime || 150), []);
 
   function fetchSuggestions (value: string)  {
     const results: [] = [];
@@ -97,6 +100,7 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
               ],
             },
           },
+          size: props.sizeSuggestion || 8,
           _source: ["movie_id", "title", "release_date", "image"],
           sort: ["_score"],
         })
@@ -114,6 +118,13 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
   function handleClick() {
     props.onSearch(value);
   }
+
+  function handleEnter(event: React.KeyboardEvent<any>) {
+    if (event.key === 'Enter') {
+      handleClick()
+    }
+  }
+
 
   return (
     <div
@@ -143,6 +154,9 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
           inputProps={{
             placeholder: "Search...",
             value: value,
+            onKeyDown: (event) => {
+              handleEnter(event);
+            },
             onChange: (_, { newValue }) => {
               setValue(newValue);
             },
