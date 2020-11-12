@@ -16,6 +16,7 @@ import HomePage from "./routes/home";
 import MovieDetailPage from "./routes/movie";
 import SearchPage from "./routes/search";
 import UserPage from "./routes/user";
+import SettingsPage from "./routes/settings";
 
 const App = () => {
   const [searchTerm, setSearchTerm] = useState<string>();
@@ -52,10 +53,13 @@ const App = () => {
               <Route path="/movie/:movieId?">
                 <MovieDetailPage className="Main__movie" />
               </Route>
+              <Route path="/settings/:username?">
+                <SettingsPage className="Main__settings" />
+              </Route>
               <Route path="/">
                 <HomePage className="Main__home" />
               </Route>
-            </Switch>
+            </Switch> 
           </article>
         </Router>
       </div>
