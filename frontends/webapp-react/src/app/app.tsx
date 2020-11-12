@@ -13,11 +13,10 @@ import HomePage from "./routes/home";
 import MovieDetailPage from "./routes/movie";
 import SearchBar from "./components/search-bar";
 import SearchPage from "./routes/search";
+import SettingsPage from "./routes/settings";
 import { StylesProvider } from "@material-ui/core/styles";
 import UserMenu from "./components/user-menu";
 import UserPage from "./routes/user";
-import logo from "./logo.svg";
-import { view } from "@risingstack/react-easy-state";
 
 const App = () => {
   const [searchTerm, setSearchTerm] = useState<string>();
@@ -62,10 +61,13 @@ const App = () => {
               <Route path="/movie/:movieId?">
                 <MovieDetailPage className="Main__movie" />
               </Route>
+              <Route path="/settings/:username?">
+                <SettingsPage className="Main__settings" />
+              </Route>
               <Route path="/">
                 <HomePage className="Main__home" />
               </Route>
-            </Switch>
+            </Switch> 
           </article>
         </Router>
       </div>

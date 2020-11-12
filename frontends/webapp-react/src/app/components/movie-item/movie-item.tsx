@@ -76,7 +76,7 @@ const MovieItem = (props: MovieItemProps & { className?: string }) => {
           subheader={genres}
         ></CardHeader>
         <CardContent className="MovieItem__content">
-          <Stars
+          {props.numRatings > 0  && (<><Stars
             movieId={props.movieId}
             rating={avgRating}
             setRating={()=>{}}
@@ -85,7 +85,7 @@ const MovieItem = (props: MovieItemProps & { className?: string }) => {
           />
           <Typography>
             {avgRating}({formattedNumRatings})
-          </Typography>
+          </Typography></>)}
         </CardContent>
       </Card>
     </div>
