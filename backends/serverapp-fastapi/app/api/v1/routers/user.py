@@ -2,6 +2,7 @@ from typing import Optional, Union
 
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
+from humps import camelize
 
 from app.models.common import ListResponse
 from app.models.db.reviews import Reviews
@@ -29,6 +30,10 @@ class UpdateUser(BaseModel):
     username: Optional[str]
     current_password: Optional[str]
     new_password: Optional[str]
+    
+    class Config:
+        alias_generator = camelize
+        allow_population_by_field_name = True
 
 class UserProfileResponse(BaseModel):
     id: str
@@ -226,13 +231,14 @@ async def modify_user(request: Request, form: UpdateUser):
     if not user_id:
         raise ApiException(500, 2001, "You are not logged in!")
     
-    print(form)
-    
     user = await Users.get_or_none(user_id=user_id, delete_date=None)
     if not user:
         raise ApiException(500, 2200, "That user's profile was not found")
 
     if form.username:
+        existing_username = await Users.get_or_none(username__iexact=form.username)
+        if existing_username and str(existing_username.user_id) != str(user_id):
+            raise ApiException(500, 2021, "This username already exists")
         user.username = form.username
         await user.save(update_fields=["username"])
             
