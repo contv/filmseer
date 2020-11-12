@@ -807,7 +807,7 @@ async def delete_rating(request: Request, movie_id: str) -> Wrapper[dict]:
 @router.get(
     "/{movie_id}/rating", tags=["Movies"], response_model=Wrapper[RatingResponse]
 )
-async def get_current_user_rating(request: Request, movie_id: str) -> Wrapper[dict]:
+async def get_current_user_rating(request: Request, movie_id: str):
     user_id = request.session.get("user_id")
     if not user_id:
         raise ApiException(500, 2001, "You are not logged in!")
@@ -815,7 +815,14 @@ async def get_current_user_rating(request: Request, movie_id: str) -> Wrapper[di
     rating = await Ratings.get_or_none(
         user_id=user_id, movie_id=movie_id, delete_date=None
     )
-    if not rating:
-        raise ApiException(500, 2103, "Could not find or delete rating")
 
-    return wrap({"id": str(rating.rating_id), "rating": rating.rating})
+    if not rating:
+        return wrap(
+            code=200,
+            message="No rating exists for this user",
+            exceptions=[ApiException(500, 2103, "Could not find or delete rating")],
+        )
+
+    response = RatingResponse(id=str(rating.rating_id), rating=rating.rating)
+
+    return wrap(response)

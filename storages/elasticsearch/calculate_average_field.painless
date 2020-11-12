@@ -1,0 +1,8 @@
+curl -X POST "http://$ELASTICSEARCH_HOST/_scripts/calculate_rating_field" -H 'Content-Type: application/json' -d'
+{
+	"script": {
+		"lang": "painless",
+		"source": "double cumulative_rating = 0; int num_rating=0; double average_rating=0; List result = new ArrayList(); for (int i = 0; i < doc[\u0027ratings.rating\u0027].length; ++i) { if ((!(params.listban.contains(params[\u0027_source\u0027][\u0027ratings\u0027][i].user_id))) && (params[\u0027_source\u0027][\u0027ratings\u0027][i].rating!=null)) { cumulative_rating += params[\u0027_source\u0027][\u0027ratings\u0027][i].rating; num_rating +=1; average_rating=cumulative_rating/num_rating }} result.add(average_rating); result.add(num_rating); result.add(cumulative_rating); return result;"
+	}
+}
+'
