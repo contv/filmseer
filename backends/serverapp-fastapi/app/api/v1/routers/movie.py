@@ -620,7 +620,7 @@ async def process_movie_payload(
         )
     elif sort == "name":
         postprocessed = sorted(
-            postprocessed, key=lambda x: x["movie"]["title"], reverse=not desc
+            postprocessed, key=lambda x: x["movie"]["title"], reverse=desc
         )
     elif sort == "year":
         postprocessed = sorted(
