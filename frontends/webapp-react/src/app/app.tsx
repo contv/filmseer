@@ -17,6 +17,8 @@ import SettingsPage from "./routes/settings";
 import { StylesProvider } from "@material-ui/core/styles";
 import UserMenu from "./components/user-menu";
 import UserPage from "./routes/user";
+import logo from "./logo.svg";
+import { view } from "@risingstack/react-easy-state";
 
 const App = () => {
   const [searchTerm, setSearchTerm] = useState<string>();
