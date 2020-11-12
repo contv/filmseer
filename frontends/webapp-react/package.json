@@ -19,7 +19,6 @@
     "@types/react-dom": "^16.9.8",
     "@types/lodash": "^4.14.165",
     "autosuggest-highlight": "^3.1.1",
-    "axios": "^0.21.0",
     "copyfiles": "^2.3.0",
     "lodash": "^4.17.20",
     "node-sass": "^4.14.1",

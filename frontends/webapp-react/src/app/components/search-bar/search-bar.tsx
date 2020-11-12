@@ -5,9 +5,8 @@ import AutosuggestHighlightMatch from "autosuggest-highlight/match";
 import AutosuggestHighlightParse from "autosuggest-highlight/parse";
 import React from "react";
 import { Search } from "react-feather";
-import axios from "axios";
+import { api } from "src/utils";
 import { debounce } from "lodash";
-import https from "https";
 import { view } from "@risingstack/react-easy-state";
 
 type SearchBarProps = {
@@ -20,12 +19,19 @@ type SearchBarProps = {
   sizeSuggestion?: number;
 };
 
+type SuggestionItem = {
+  id: string;
+  releaseDate: string;
+  imageUrl: string;
+  title: string;
+};
+
 const SearchBar = (props: SearchBarProps & { className?: string }) => {
   const [value, setValue] = React.useState("");
-  const [suggestions, setSuggestions] = React.useState<[]>([]);
+  const [suggestions, setSuggestions] = React.useState<SuggestionItem[]>([]);
 
-  const getSuggestionValue = (suggestion: any) => {
-    return JSON.parse(JSON.stringify(suggestion))["title"];
+  const getSuggestionValue = (suggestion: SuggestionItem) => {
+    return suggestion.title;
   };
 
   const theme = {
@@ -45,19 +51,21 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
     sectionTitle: "SearchBar__section-title",
   };
 
-  const renderSuggestion = (suggestion: any) => {
-    const title = JSON.parse(JSON.stringify(suggestion))["title"];
-    const image = JSON.parse(JSON.stringify(suggestion))["image"];
-    const year = JSON.parse(JSON.stringify(suggestion))[
-      "release_date"
-    ].substring(0, 4);
+  const renderSuggestion = (suggestion: SuggestionItem) => {
+    const title = suggestion.title;
+    const image = suggestion.imageUrl;
+    const year = suggestion.releaseDate.substring(0, 4);
     const suggestionText = title + " (" + year + ")";
     const matches = AutosuggestHighlightMatch(suggestionText, value);
     const parts = AutosuggestHighlightParse(suggestionText, matches);
     return (
       <div className="suggestion-content">
         {image && (
-          <img src={image} className="SearchBar__sugesstion-poster" alt="poster"></img>
+          <img
+            src={image}
+            className="SearchBar__sugesstion-poster"
+            alt="poster"
+          ></img>
         )}
         <span className="name">
           {parts.map((part, index) => {
@@ -80,40 +88,20 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
   );
 
   function fetchSuggestions(value: string) {
-    const esUrl = ((process.env || {}).REACT_APP_ELASTICSEARCH_URL) || "https://localhost:2900";
-    const useSSL = (((process.env || {}).REACT_APP_ELASTICSEARCH_USESSL) || false) as boolean;
-    if (esUrl) {
-      const agent = new https.Agent({  
-        rejectUnauthorized: useSSL
-      });
-      
-      axios
-        .post(esUrl + "/movie/_search", {
-          query: {
-            multi_match: {
-              query: value,
-              fields: [
-                "title^10",
-                "description",
-                "genres.name",
-                "positions.people",
-                "positions.char_name",
-              ],
-            },
-          },
-          size: props.sizeSuggestion || 8,
-          _source: ["movie_id", "title", "release_date", "image"],
-          sort: ["_score"],
-        }, { httpsAgent: agent })
-        .then((res) => {
-          const results = res.data.hits.hits.map(
-            (h: { _source: any }) => h._source
-          );
-          setSuggestions(results);
-        });
-    } else {
-      setSuggestions([]);
-    }
+    api({
+      path: `/movies/search-hint`,
+      method: "GET",
+      params: {
+        keyword: value,
+        limit: props.sizeSuggestion || 8,
+      },
+    }).then((res) => {
+      if (res.code !== 0) {
+        setSuggestions([]);
+      } else {
+        setSuggestions(res.data.items);
+      }
+    });
   }
 
   function handleClick() {
@@ -146,7 +134,7 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
           }
           onSuggestionSelected={(_, { suggestion, suggestionValue }) => {
             setValue(suggestionValue);
-            props.onSelectSuggestion(JSON.parse(JSON.stringify(suggestion))["movie_id"]);
+            props.onSelectSuggestion(suggestion.id);
           }}
           getSuggestionValue={(suggestion) => getSuggestionValue(suggestion)}
           renderSuggestion={(suggestion) => renderSuggestion(suggestion)}
