@@ -7,10 +7,13 @@ import Register from "src/app/popups/register";
 import state from "src/app/states";
 import { api, apiEffect } from "src/utils";
 import user from "./user-icon.svg";
+import { useHistory } from "react-router-dom";
 import "./user-menu.scss";
 
 const UserMenu = (props: {className?: string}) => {
   const [popupVisible, setPopupVisible] = React.useState(false);
+
+  let history = useHistory()
 
   React.useEffect(
     apiEffect(
@@ -43,7 +46,7 @@ const UserMenu = (props: {className?: string}) => {
         <button className="UserMenu__icon">
           <img src={user} alt="Profile" className="UserMenu__profile-icon" />
         </button>
-        <button className="UserMenu__icon">
+        <button className="UserMenu__icon" onClick={()=>{history.push("/settings")}}>
           <Settings className="UserMenu__profile-icon" />
         </button>
         <button className="UserMenu__button" onClick={doLogout}>
