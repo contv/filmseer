@@ -1,20 +1,19 @@
 from datetime import datetime
 from random import choices
 from typing import Dict, List, Optional
-from pydantic import BaseModel
 
 from dateutil.relativedelta import relativedelta
 from elasticsearch import RequestsHttpConnection, Urllib3HttpConnection
 from elasticsearch_dsl import Q, Search, connections
 from fastapi import APIRouter, Query, Request
-from pydantic import conint
-from tortoise.functions import Count
 from humps import camelize
+from pydantic import BaseModel, conint
+from tortoise.functions import Count
 
 from app.core.config import settings
+from app.models.db.banlists import Banlists
 from app.models.db.movies import Movies
 from app.models.db.ratings import Ratings
-from app.models.db.banlists import Banlists
 from app.utils.dict_storage.redis import RedisDictStorageDriver
 from app.utils.recommender import load_movie_set, predict_on_movie, predict_on_user
 from app.utils.wrapper import ApiException, Wrapper, wrap
@@ -37,6 +36,7 @@ class MovieSuggestion(BaseModel):
     class Config:
         alias_generator = camelize
         allow_population_by_field_name = True
+
 
 class ListMovieSuggestion(BaseModel):
     items: List[MovieSuggestion]
@@ -141,7 +141,9 @@ async def get_movies(
     return postprocessed
 
 
-@router.get("/search-hint", tags=["Movies"], response_model=Wrapper[ListMovieSuggestion])
+@router.get(
+    "/search-hint", tags=["Movies"], response_model=Wrapper[ListMovieSuggestion]
+)
 async def get_suggestion(keyword: str = "", limit: Optional[int] = 8):
     global elasticsearch
     if not elasticsearch:
