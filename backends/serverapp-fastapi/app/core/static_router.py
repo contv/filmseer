@@ -107,7 +107,7 @@ def handle_static_routes(app: FastAPI) -> FastAPI:
         directory=settings.STATIC_FILE_ROOT,
         html=True,
         check_dir=True,
-        exclude_paths=[settings.API_URL_PATH + "{whatever:path}"]
+        exclude_paths=[settings.API_URL_PATH + "/{whatever:path}"]
         + (
             [settings.API_URL_PATH + "/openapi.json", "/docs", "/redoc"]
             if settings.DEV_MODE
