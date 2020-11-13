@@ -265,3 +265,4 @@ storages/cache/**/*
 storages/contents/**/*
 storages/database/postgres/**/*
 storages/sessions/**/*
+storages/recommender/**/*
