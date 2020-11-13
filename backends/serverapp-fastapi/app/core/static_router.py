@@ -109,7 +109,7 @@ def handle_static_routes(app: FastAPI) -> FastAPI:
         check_dir=True,
         exclude_paths=[settings.API_URL_PATH + "{whatever:path}"]
         + (
-            [settings.API_URL_PATH + "openapi.json", "/docs", "/redoc"]
+            [settings.API_URL_PATH + "/openapi.json", "/docs", "/redoc"]
             if settings.DEV_MODE
             else []
         ),
