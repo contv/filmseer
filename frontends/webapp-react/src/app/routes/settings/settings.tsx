@@ -47,6 +47,10 @@ const SettingsPage = (props: { className?: string }) => {
   ] = useState("");
   const [receivedResponse, setReceivedResponse] = useState(false);
   const [hasResponseError, setHasResponseError] = useState(false);
+<<<<<<< HEAD
+=======
+  const [responseErrorMessage, setResponseErrorMessage] = useState("");
+>>>>>>> master
 
   // Form submit handler
   const submitUpdate = async (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -61,6 +65,10 @@ const SettingsPage = (props: { className?: string }) => {
     setNewPasswordRepeatHasError(false);
     setReceivedResponse(false);
     setHasResponseError(false);
+<<<<<<< HEAD
+=======
+    setResponseErrorMessage("");
+>>>>>>> master
     // Validate fields
     try {
       if (user && username !== user.username) {
@@ -140,6 +148,10 @@ const SettingsPage = (props: { className?: string }) => {
           (error) => {
             setReceivedResponse(true);
             setHasResponseError(true);
+<<<<<<< HEAD
+=======
+            setResponseErrorMessage(error.message);
+>>>>>>> master
           }
         )();
       }
@@ -163,6 +175,10 @@ const SettingsPage = (props: { className?: string }) => {
       },
       (error) => {
         setDidMount(true);
+<<<<<<< HEAD
+=======
+
+>>>>>>> master
         console.warn(error);
       },
       () => state.loggedIn
@@ -297,7 +313,11 @@ const SettingsPage = (props: { className?: string }) => {
           </Grid>
           {receivedResponse ? (
             hasResponseError ? (
+<<<<<<< HEAD
               <Typography>Incorrect password</Typography>
+=======
+              <Typography>{responseErrorMessage}</Typography>
+>>>>>>> master
             ) : (
               <Typography>Successfully updated details</Typography>
             )

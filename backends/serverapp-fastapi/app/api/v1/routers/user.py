@@ -3,6 +3,7 @@ import base64
 
 from fastapi import APIRouter, Request, File, UploadFile
 from pydantic import BaseModel
+from humps import camelize
 
 from app.models.common import ListResponse
 from app.models.db.reviews import Reviews
@@ -32,6 +33,10 @@ class UpdateUser(BaseModel):
     new_password: Optional[str]
     description: Optional[str]
     image: Optional[bytes]
+    
+    class Config:
+        alias_generator = camelize
+        allow_population_by_field_name = True
 
 class UserProfileResponse(BaseModel):
     id: str
@@ -223,30 +228,18 @@ async def get_user_profile(username: str):
     "/", tags=["User"], response_model=Wrapper
 )
 async def modify_user(request: Request, form: UpdateUser):
-        
     user_id = request.session.get("user_id")
     if not user_id:
         raise ApiException(500, 2001, "You are not logged in!")
-
+    
     user = await Users.get_or_none(user_id=user_id, delete_date=None)
-
-    if form.image:
-        image_url = "storages/images/users/" + user_id + ".png"
-        with open("../../" + image_url, "wb") as f:
-            f.write(base64.decodebytes(form.image))
-        user.image = image_url
-        await user.save(update_fields=["image"])
-
-    if form.description:
-        if len(form.description) > 140:
-            raise ApiException(500, 2102, "Your description must be 140 characters or less.")
-        else:
-            user.description = form.description
-            await user.save(update_fields=["description"])
     if not user:
         raise ApiException(500, 2200, "That user's profile was not found")
 
     if form.username:
+        existing_username = await Users.get_or_none(username__iexact=form.username)
+        if existing_username and str(existing_username.user_id) != str(user_id):
+            raise ApiException(500, 2021, "This username already exists")
         user.username = form.username
         await user.save(update_fields=["username"])
             
@@ -255,5 +248,22 @@ async def modify_user(request: Request, form: UpdateUser):
             raise ApiException(500, 2010, "Incorrect username or password")
         user.password_hash = hash(form.new_password)
         await user.save(update_fields=["password_hash"])
-        
+    
+    if form.image:
+        image_url = "storages/images/users/" + user_id + ".png"
+        with open("../../" + image_url, "wb") as f:
+            f.write(base64.decodebytes(form.image))
+        user.image = image_url
+        await user.save(update_fields=["image"])
+
+    if form.description is not None:
+        if len(form.description) > 140:
+            raise ApiException(500, 2102, "Your description must be 140 characters or less.")
+        else:
+            if len(form.description) == 0:
+                user.description = None
+            else:
+                user.description = form.description
+            await user.save(update_fields=["description"])
+
     return wrap({})
