@@ -1,6 +1,7 @@
 from datetime import datetime
 from random import choices
 from typing import Dict, List, Optional
+from pydantic import BaseModel
 
 from dateutil.relativedelta import relativedelta
 from elasticsearch import RequestsHttpConnection, Urllib3HttpConnection
@@ -8,6 +9,7 @@ from elasticsearch_dsl import Q, Search, connections
 from fastapi import APIRouter, Query, Request
 from pydantic import conint
 from tortoise.functions import Count
+from humps import camelize
 
 from app.core.config import settings
 from app.models.db.movies import Movies
@@ -24,6 +26,20 @@ override_prefix = None
 override_prefix_all = None
 driver = None
 elasticsearch = None
+
+
+class MovieSuggestion(BaseModel):
+    id: str
+    title: str
+    release_date: str
+    image_url: Optional[str]
+
+    class Config:
+        alias_generator = camelize
+        allow_population_by_field_name = True
+
+class ListMovieSuggestion(BaseModel):
+    items: List[MovieSuggestion]
 
 
 @router.on_event("startup")
@@ -103,7 +119,7 @@ async def get_movies(
         )
         user_ban_list = [str(item["banned_user_id"]) for item in user_ban_list]
         list_ban = ",".join(user_ban_list)
-    
+
     search = search.script_fields(
         average_rating={
             "script": {"id": "calculate_rating_field", "params": {"listban": list_ban}}
@@ -123,6 +139,56 @@ async def get_movies(
         preprocessed, years, directors, genres, per_page, page, sort, desc
     )
     return postprocessed
+
+
+@router.get("/search-hint", tags=["Movies"], response_model=Wrapper[ListMovieSuggestion])
+async def get_suggestion(keyword: str = "", limit: Optional[int] = 8):
+    global elasticsearch
+    if not elasticsearch:
+        elasticsearch = connect_elasticsearch()
+
+    queries = [
+        Q(
+            "bool",
+            must=[
+                Q(
+                    "multi_match",
+                    query=keyword,
+                    fields=[
+                        "title^10",
+                        "description",
+                        "genres.name",
+                        "positions.people",
+                        "positions.char_name",
+                    ],
+                )
+            ],
+        )
+    ]
+
+    search = Search(using=elasticsearch, index=settings.ELASTICSEARCH_MOVIEINDEX).extra(
+        size=limit
+    )
+
+    for q in queries:
+        search = search.query(q)
+
+    search = search.source(["movie_id", "title", "image", "release_date"])
+
+    search = search.sort({"_score": {"order": "desc"}})
+    response = search.execute()
+
+    suggestions = [
+        MovieSuggestion(
+            id=hit.movie_id,
+            title=hit.title,
+            release_date=hit.release_date,
+            image_url=hit.image,
+        )
+        for hit in response
+    ]
+
+    return wrap({"items": suggestions})
 
 
 @router.get("/recommendation", tags=["Movies"], response_model=Wrapper[Dict])
