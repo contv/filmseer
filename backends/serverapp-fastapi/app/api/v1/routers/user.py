@@ -1,4 +1,5 @@
-from typing import Optional, Union
+from typing import Optional, Union, List
+import base64
 
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
@@ -30,6 +31,8 @@ class UpdateUser(BaseModel):
     username: Optional[str]
     current_password: Optional[str]
     new_password: Optional[str]
+    description: Optional[str]
+    image: Optional[bytes]
     
     class Config:
         alias_generator = camelize
@@ -39,7 +42,7 @@ class UserProfileResponse(BaseModel):
     id: str
     username: str
     description: Optional[str]
-    image: Optional[bytes]
+    image: Optional[str]
 
 
 @router.post("/", tags=["user"])
@@ -188,9 +191,7 @@ async def get_current_user(request: Request):
     if not user_id:
         raise ApiException(500, 2001, "You are not logged in!")
 
-    user = await Users.get_or_none(user_id=user_id, delete_date=None).prefetch_related(
-        "profile_image_id"
-    )
+    user = await Users.get_or_none(user_id=user_id, delete_date=None)
     if not user:
         raise ApiException(500, 2200, "That user's profile page was not found")
 
@@ -198,7 +199,7 @@ async def get_current_user(request: Request):
         id=str(user.user_id),
         username=user.username,
         description=user.description,
-        image=user.profile_image_id.content if user.profile_image_id else None,
+        image=user.image if user.image else None,
     )
 
     return wrap(response)
@@ -218,7 +219,7 @@ async def get_user_profile(username: str):
         id=str(user.user_id),
         username=user.username,
         description=user.description,
-        image=user.profile_image_id.content if user.profile_image_id else None,
+        image=user.image if user.image else None,
     )
 
     return wrap(response)
@@ -247,5 +248,22 @@ async def modify_user(request: Request, form: UpdateUser):
             raise ApiException(500, 2010, "Incorrect username or password")
         user.password_hash = hash(form.new_password)
         await user.save(update_fields=["password_hash"])
-        
+    
+    if form.image:
+        image_url = "storages/images/users/" + user_id + ".png"
+        with open("../../" + image_url, "wb") as f:
+            f.write(base64.decodebytes(form.image))
+        user.image = image_url
+        await user.save(update_fields=["image"])
+
+    if form.description is not None:
+        if len(form.description) > 140:
+            raise ApiException(500, 2102, "Your description must be 140 characters or less.")
+        else:
+            if len(form.description) == 0:
+                user.description = None
+            else:
+                user.description = form.description
+            await user.save(update_fields=["description"])
+
     return wrap({})
