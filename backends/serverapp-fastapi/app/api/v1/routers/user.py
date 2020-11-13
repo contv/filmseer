@@ -1,7 +1,7 @@
 from typing import Optional, Union, List
 import base64
 
-from fastapi import APIRouter, Request, File, UploadFile
+from fastapi import APIRouter, Request
 from pydantic import BaseModel
 from humps import camelize
 
