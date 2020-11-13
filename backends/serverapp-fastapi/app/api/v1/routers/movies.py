@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 from random import choices
 from typing import Dict, List, Optional
@@ -18,13 +19,36 @@ from app.utils.dict_storage.redis import RedisDictStorageDriver
 from app.utils.recommender import load_movie_set, predict_on_movie, predict_on_user
 from app.utils.wrapper import ApiException, Wrapper, wrap
 
-from .movie import process_movie_payload
-
 router = APIRouter()
 override_prefix = None
 override_prefix_all = None
-driver = None
+
+search_cache_driver = None
+recommendation_cahce_driver = None
 elasticsearch = None
+
+
+class FilterResponse(BaseModel):
+    type: str
+    name: str
+    key: str
+    selections: List
+
+
+class SearchResponse(BaseModel):
+    id: str
+    title: str
+    release_year: str
+    genres: Optional[List[str]]
+    image_url: Optional[str]
+    average_rating: float
+    num_votes: float
+    cumulative_rating: float
+    score: float
+
+    class Config:
+        alias_generator = camelize
+        allow_population_by_field_name = True
 
 
 class MovieSuggestion(BaseModel):
@@ -43,10 +67,27 @@ class ListMovieSuggestion(BaseModel):
 
 
 @router.on_event("startup")
-async def connect_redis():
-    global driver
-    if not driver:
-        driver = RedisDictStorageDriver(
+async def init_search_cache_driver():
+    global search_cache_driver
+    if not search_cache_driver:
+        search_cache_driver = RedisDictStorageDriver(
+            key_prefix="search:",
+            key_filter=r"[^a-zA-Z0-9_-]+",
+            ttl=settings.REDIS_SEARCH_TTL,
+            renew_on_ttl=settings.REDIS_SEARCH_TTL,
+            redis_uri=settings.REDIS_URI,
+            redis_pool_min=settings.REDIS_POOL_MIN,
+            redis_pool_max=settings.REDIS_POOL_MAX,
+        )
+        await search_cache_driver.initialize_driver()
+    return search_cache_driver
+
+
+@router.on_event("startup")
+async def init_recommendation_cahce_driver():
+    global recommendation_cahce_driver
+    if not recommendation_cahce_driver:
+        recommendation_cahce_driver = RedisDictStorageDriver(
             key_prefix="recommendations:",
             key_filter=r"[^a-zA-Z0-9_-]+",
             ttl=settings.REDIS_SEARCH_TTL,
@@ -55,8 +96,8 @@ async def connect_redis():
             redis_pool_min=settings.REDIS_POOL_MIN,
             redis_pool_max=settings.REDIS_POOL_MAX,
         )
-        await driver.initialize_driver()
-    return driver
+        await recommendation_cahce_driver.initialize_driver()
+    return recommendation_cahce_driver
 
 
 @router.on_event("startup")
@@ -78,14 +119,21 @@ def connect_elasticsearch():
 
 
 @router.on_event("shutdown")
-async def close_redis():
-    global driver
-    await driver.terminate_driver()
+async def terminate_recommendation_cache_driver():
+    global recommendation_cahce_driver
+    await recommendation_cahce_driver.terminate_driver()
 
 
-async def get_movies(
+@router.on_event("shutdown")
+async def terminate_search_cache_driver():
+    global search_cache_driver
+    await search_cache_driver.terminate_driver()
+
+
+@router.get("/", tags=["movies"], response_model=Wrapper[Dict])
+async def search_movies(
     request: Request,
-    movies: List[str],
+    keywords: str = "",
     genres: Optional[List[str]] = Query([]),
     years: Optional[List[str]] = Query([]),
     directors: Optional[List[str]] = Query([]),
@@ -93,20 +141,284 @@ async def get_movies(
     page: Optional[int] = 1,
     sort: str = ("relevance", "rating", "name", "year")[0],
     desc: Optional[bool] = True,
+):
+    return wrap(
+        await get_movies(
+            request=request,
+            keywords=keywords,
+            genres=genres,
+            years=years,
+            directors=directors,
+            per_page=per_page,
+            page=page,
+            sort=sort,
+            desc=desc,
+            cache_result=True,
+        )
+    )
+
+
+async def process_movie_payload(
+    preprocessed: Dict,
+    year_filter: Optional[List[str]],
+    director_filter: Optional[List[str]],
+    genre_filter: Optional[List[str]],
+    per_page: Optional[int],
+    page: Optional[int],
+    sort: Optional[str],
+    desc: Optional[bool],
 ) -> Dict:
+    """
+    Given a preprocessed Elasticsearch response payload, apply filters, sorting and
+    pagination, and returns an ordered array of SearchResponse objects each representing
+    a movie tile
+    """
+    # Populate filter options based on total payload
+    genre_set = set(
+        genre["name"]
+        for movie_id in preprocessed
+        if preprocessed[movie_id]["movie"]["genres"]
+        for genre in preprocessed[movie_id]["movie"]["genres"]
+    )
+    director_set = set(
+        position["people"]["name"]
+        for movie_id in preprocessed
+        if preprocessed[movie_id]["movie"]["positions"]
+        for position in preprocessed[movie_id]["movie"]["positions"]
+        if position["position"] == "director"
+    )
+    year_set = set(
+        preprocessed[movie_id]["movie"]["release_date"][0:4]
+        for movie_id in preprocessed
+        if preprocessed[movie_id]["movie"]["release_date"]
+    )
+
+    # Use dicts for fast insertion of count, extract the values and discard keys later
+    genre_selections = {
+        genre: {"key": genre, "name": genre, "count": 0} for genre in genre_set
+    }
+    director_selections = {
+        director: {"key": director, "name": director, "count": 0}
+        for director in director_set
+    }
+    year_selections = {
+        year: {"key": year, "name": year, "count": 0} for year in year_set
+    }
+
+    # Filter
+    postprocessed = []
+    for movie_id in preprocessed:
+        genre_filter_pass, year_filter_pass, director_filter_pass = True, True, True
+        movie = preprocessed[movie_id]["movie"]
+        if genre_filter:
+            try:
+                genres = set(genre["name"] for genre in movie["genres"])
+                if not genres.intersection(genre_filter):
+                    genre_filter_pass = False
+            except TypeError:
+                genre_filter_pass = False
+        if year_filter:
+            try:
+                year = movie["release_date"][0:4]
+                if year not in year_filter:
+                    year_filter_pass = False
+            except TypeError:
+                year_filter_pass = False
+        if director_filter:
+            try:
+                directors = set(
+                    position["people"]["name"]
+                    for position in movie["positions"]
+                    if position["position"] == "director"
+                )
+                if not directors.intersection(director_filter):
+                    director_filter_pass = False
+            except TypeError:
+                director_filter_pass = False
+        if genre_filter_pass and year_filter_pass and director_filter_pass:
+            postprocessed.append(preprocessed[movie_id])
+
+    # Sort
+    if sort == "relevance":
+        postprocessed = sorted(postprocessed, key=lambda x: x["movie"]["title"])
+        postprocessed = sorted(postprocessed, key=lambda x: x["score"], reverse=desc)
+    elif sort == "rating":
+        postprocessed = sorted(postprocessed, key=lambda x: x["movie"]["title"])
+        postprocessed = sorted(
+            postprocessed, key=lambda x: x["movie"]["average_rating"], reverse=desc
+        )
+    elif sort == "name":
+        postprocessed = sorted(
+            postprocessed, key=lambda x: x["movie"]["title"], reverse=desc
+        )
+    elif sort == "year":
+        postprocessed = sorted(
+            postprocessed, key=lambda x: x["movie"]["average_rating"], reverse=True
+        )
+        postprocessed = sorted(
+            postprocessed, key=lambda x: x["movie"]["release_date"], reverse=desc
+        )
+
+    # Pagination
+    if per_page:
+        start = (page - 1) * per_page
+        end = page * per_page
+        if start < 0 or start > len(postprocessed):
+            start = 0
+        if end < 0 or end > len(postprocessed):
+            end = len(postprocessed)
+        postprocessed = postprocessed[start:end]
+
+    # Populate filter counts using filtered results only
+    for movie in postprocessed:
+        if movie["movie"]["genres"]:
+            for genre in movie["movie"]["genres"]:
+                genre_selections[genre["name"]]["count"] += 1
+        if movie["movie"]["positions"]:
+            for position in movie["movie"]["positions"]:
+                if position["position"] == "director":
+                    director_selections[position["people"]["name"]]["count"] += 1
+        if movie["movie"]["release_date"]:
+            year_selections[movie["movie"]["release_date"][0:4]]["count"] += 1
+
+    genre_selections = FilterResponse(
+        type="list",
+        name="Genre",
+        key="genre",
+        selections=sorted(list(genre_selections.values()), key=lambda x: x["name"]),
+    )
+
+    director_selections = FilterResponse(
+        type="list",
+        name="Directors",
+        key="director",
+        selections=sorted(list(director_selections.values()), key=lambda x: x["name"]),
+    )
+
+    year_selections = FilterResponse(
+        type="slide",
+        name="Year",
+        key="year",
+        selections=sorted(list(year_selections.values()), key=lambda x: x["name"]),
+    )
+
+    # Convert to SearchResponse objects
+    for i in range(len(postprocessed)):
+        movie = postprocessed[i]
+        postprocessed[i] = SearchResponse(
+            id=movie["movie"]["movie_id"],
+            title=movie["movie"]["title"],
+            release_year=movie["movie"]["release_date"][0:4],
+            genres=[genre["name"] for genre in movie["movie"]["genres"]],
+            image_url=movie["movie"]["image"],
+            average_rating=float(movie["movie"]["average_rating"][0]),
+            num_votes=float(movie["movie"]["average_rating"][1]),
+            cumulative_rating=float(movie["movie"]["average_rating"][2]),
+            score=float(movie["score"]),
+        )
+
+    response = {
+        "movies": postprocessed,
+        "filters": [genre_selections, director_selections, year_selections],
+    }
+
+    return response
+
+
+async def get_movies(
+    request: Request,
+    movies: Optional[List[str]] = None,
+    keywords: Optional[str] = None,
+    genres: Optional[List[str]] = Query([]),
+    years: Optional[List[str]] = Query([]),
+    directors: Optional[List[str]] = Query([]),
+    per_page: Optional[int] = None,
+    page: Optional[int] = 1,
+    sort: str = ("relevance", "rating", "name", "year")[0],
+    desc: Optional[bool] = True,
+    cache_result: bool = False,
+) -> Dict:
+    if cache_result and keywords is not None:
+        global search_cache_driver
+        if not search_cache_driver:
+            search_cache_driver = await init_search_cache_driver()
+
+        # Lookup existing search in session
+        searches = request.session.get("searches", {})
+        try:
+            search_id = searches[keywords]
+        except KeyError:
+            search_id = await search_cache_driver.create()
+            if len(searches.keys()) >= settings.REDIS_SEARCHES_MAX:
+                searches.pop(list(searches)[0])
+            searches[keywords] = search_id
+            request.session["searches"] = searches
+
+        # Attempt to retrieve stored movie payload from Redis
+        payload, _ = await search_cache_driver.get(search_id)
+        if payload:
+            return await process_movie_payload(
+                payload, years, directors, genres, per_page, page, sort, desc
+            )
+
     global elasticsearch
     if not elasticsearch:
         connect_elasticsearch()
 
+    # Build query context for scoring results
+    years_in_keywords: List[str] = (
+        re.findall(r"(\d{4})", keywords) if keywords is not None else []
+    )
     queries = [
         Q(
             "bool",
-            should=[Q("match", movie_id=movie_id) for movie_id in movies],
-            minimum_should_match=1,
+            must=[
+                Q(
+                    "multi_match",
+                    query=keywords,
+                    fields=[
+                        "title^10",
+                        "description",
+                        "genres.name",
+                        "positions.people",
+                        "positions.char_name",
+                    ],
+                )
+            ]
+            if keywords is not None
+            else None,
+            should=[
+                Q(
+                    {
+                        "bool": {
+                            "should": [
+                                {
+                                    "range": {
+                                        "release_date": {
+                                            "gte": year + "||/y",
+                                            "lte": year + "||/y",
+                                            "format": "yyyy",
+                                        }
+                                    }
+                                },
+                            ],
+                        },
+                    }
+                )
+                for year in years_in_keywords
+            ]
+            + (
+                [Q("match", movie_id=movie_id) for movie_id in movies]
+                if movies is not None
+                else []
+            ),
+            minimum_should_match=1 if movies is not None or years_in_keywords else 0,
         )
     ]
 
-    search = Search(using=elasticsearch, index=settings.ELASTICSEARCH_MOVIEINDEX)
+    search = Search(using=elasticsearch, index=settings.ELASTICSEARCH_MOVIEINDEX).extra(
+        size=settings.ELASTICSEARCH_RESPONSESIZE
+    )
 
     for q in queries:
         search = search.query(q)
@@ -135,6 +447,11 @@ async def get_movies(
         hit.meta.id: {"score": hit.meta.score, "movie": hit.to_dict()}
         for hit in response
     }
+
+    if cache_result:
+        # Save response in Redis
+        await search_cache_driver.update(search_id, preprocessed)
+
     postprocessed = await process_movie_payload(
         preprocessed, years, directors, genres, per_page, page, sort, desc
     )
@@ -208,9 +525,9 @@ async def get_recommendation(
     sort: str = ("relevance", "rating", "name", "year")[0],
     desc: Optional[bool] = True,
 ):
-    global driver
-    if not driver:
-        driver = await connect_redis()
+    global recommendation_cahce_driver
+    if not recommendation_cahce_driver:
+        recommendation_cahce_driver = await init_recommendation_cahce_driver()
 
     if type == "foryou":
         user_id = request.session.get("user_id")
@@ -240,18 +557,18 @@ async def get_recommendation(
         try:
             search_id = searches[movie_id]
         except KeyError:
-            search_id = await driver.create()
+            search_id = await recommendation_cahce_driver.create()
             if len(searches.keys()) >= settings.REDIS_SEARCHES_MAX:
                 searches.pop(list(searches)[0])
             searches[movie_id] = search_id
         # Attempt to retrieve stored movie payload from Redis
-        movies, _ = await driver.get(search_id)
+        movies, _ = await recommendation_cahce_driver.get(search_id)
         if movies:
             movies = movies["movies"]
         else:
             try:
                 movies = await predict_on_movie(movie_id, size)
-                await driver.update(search_id, {"movies": movies})
+                await recommendation_cahce_driver.update(search_id, {"movies": movies})
             except ValueError:
                 raise ApiException(404, 3001, "Movie has not been rated before")
             except TypeError:
@@ -285,7 +602,16 @@ async def get_recommendation(
 
     # Postprocess to apply filters, sorting and pagination
     postprocessed = await get_movies(
-        request, movies, genres, years, directors, per_page, page, sort, desc
+        request=request,
+        movies=movies,
+        genres=genres,
+        years=years,
+        directors=directors,
+        per_page=per_page,
+        page=page,
+        sort=sort,
+        desc=desc,
+        cache_result=True,
     )
 
     return wrap(postprocessed)
