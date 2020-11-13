@@ -166,6 +166,7 @@ const SettingsPage = (props: { className?: string }) => {
       },
       (error) => {
         setDidMount(true);
+
         console.warn(error);
       },
       () => state.loggedIn
