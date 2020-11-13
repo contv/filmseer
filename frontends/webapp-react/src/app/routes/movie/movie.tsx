@@ -16,7 +16,7 @@ import ReviewEditor from "src/app/components/review-editor";
 import avatar from "src/app/components/review/default-avatar.png";
 import { ReviewProps } from "src/app/components/review/review";
 import Stars from "src/app/components/stars";
-import TileList from "src/app/components/tile-list";
+import HorizontalList from "src/app/components/horizontal-list";
 import Trailer from "src/app/components/trailer";
 import VerticalList from "src/app/components/vertical-list";
 import { User } from "src/app/routes/user/user";
@@ -220,7 +220,7 @@ const MovieDetailPage = (props: { className?: string }) => {
         </MovieSection>
         {movieDetails.trailers && (
           <MovieSection heading="Trailers">
-            <TileList
+            <HorizontalList
               items={movieDetails.trailers.map((trailer) => (
                 <div className="Movie__trailer">
                   <Trailer site={trailer.site} videoId={trailer.key}></Trailer>
@@ -244,7 +244,7 @@ const MovieDetailPage = (props: { className?: string }) => {
         )}
         {recommended && (
           <MovieSection heading="Recommended">
-            <TileList
+            <HorizontalList
               items={recommended.map((movie) => (
                 <div className="Movie__review">
                   <MovieItem
