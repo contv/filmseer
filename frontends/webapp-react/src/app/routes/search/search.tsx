@@ -22,6 +22,7 @@ type SearchItem = {
 const SearchPage = (props: { className?: string }) => {
   const { searchString } = useParams<{ searchString?: string }>();
   const [movies, setMovies] = useState<SearchItem[]>([]);
+  const [isSearching, setIsSearching] = useState<Boolean>(true);
   const [hasError, setHasError] = useState<Boolean>(false);
   const [genreFilter, setGenreFilter] = useState<string>();
   const [directorFilter, setDirectorFilter] = useState<string>();
@@ -56,6 +57,7 @@ const SearchPage = (props: { className?: string }) => {
   };
 
   useEffect(() => {
+    !isSearching && setIsSearching(true);
     api({
       path: "/movie/",
       method: "GET",
@@ -70,6 +72,7 @@ const SearchPage = (props: { className?: string }) => {
         desc: descending,
       },
     }).then((res) => {
+      isSearching && setIsSearching(false);
       if (res.code !== 0) {
         setHasError(true);
       } else {
@@ -85,6 +88,14 @@ const SearchPage = (props: { className?: string }) => {
     descending,
     yearFilter,
   ]);
+
+  if (isSearching) {
+    return <div>Searching...</div>;
+  }
+
+  if (hasError) {
+    return <div>An error occurred, please try again.</div>;
+  }
 
   if (movies && filters) {
     return (
