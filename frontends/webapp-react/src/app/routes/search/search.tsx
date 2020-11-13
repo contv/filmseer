@@ -72,7 +72,7 @@ const SearchPage = (props: { className?: string }) => {
         desc: descending,
       },
     }).then((res) => {
-      isSearching && setIsSearching(false);
+      setIsSearching(false);
       if (res.code !== 0) {
         setHasError(true);
       } else {
@@ -119,6 +119,7 @@ const SearchPage = (props: { className?: string }) => {
           <select
             name="sort"
             onChange={(event) => setSortBy(event.target.value)}
+            value={sortBy}
           >
             <option value="relevance">Relevance</option>
             <option value="rating">Rating</option>
@@ -130,6 +131,7 @@ const SearchPage = (props: { className?: string }) => {
             onChange={(event) =>
               setDescending(event.target.value === "descending")
             }
+            value={descending ? "descending" : "ascending"}
           >
             <option value="descending">Descending</option>
             <option value="ascending">Ascending</option>
