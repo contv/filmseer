@@ -5,7 +5,6 @@ import Filter from "src/app/components/filter";
 import MovieItem from "src/app/components/movie-item/movie-item";
 import movieLogo from "src/app/components/movie-item/movie-logo.png";
 import TileList from "src/app/components/tile-list";
-import Pagination from "src/app/components/pagination";
 import { api } from "src/utils";
 import "./search.scss";
 
@@ -98,13 +97,12 @@ const SearchPage = (props: { className?: string }) => {
     return <div>An error occurred, please try again.</div>;
   }
 
-  
   return (
     <div className={`SearchPage ${(props.className || "").trim()}`}>
       <h3>Search results for "{searchString}"</h3>
-      <div className="SearchPage__filters">
-        {filters &&
-          filters.map((filter) => (
+      {filters && (
+        <div className="SearchPage__filters">
+          {filters.map((filter) => (
             <Filter
               key={filter.key}
               filterKey={filter.key}
@@ -114,30 +112,33 @@ const SearchPage = (props: { className?: string }) => {
               updateSearchParams={getParamUpdater(filter.key)}
             />
           ))}
-      </div>
-      <div className="SearchPage__sort">
-        <label htmlFor="sort">Sort by</label>
-        <select
-          name="sort"
-          onChange={(event) => setSortBy(event.target.value)}
-          value={sortBy}
-        >
-          <option value="relevance">Relevance</option>
-          <option value="rating">Rating</option>
-          <option value="name">Name</option>
-          <option value="year">Year</option>
-        </select>
-        <select
-          name="order"
-          onChange={(event) =>
-            setDescending(event.target.value === "descending")
-          }
-          value={descending ? "descending" : "ascending"}
-        >
-          <option value="descending">Descending</option>
-          <option value="ascending">Ascending</option>
-        </select>
-      </div>
+        </div>
+      )}
+      {filters && (
+        <div className="SearchPage__sort">
+          <label htmlFor="sort">Sort by</label>
+          <select
+            name="sort"
+            onChange={(event) => setSortBy(event.target.value)}
+            value={sortBy}
+          >
+            <option value="relevance">Relevance</option>
+            <option value="rating">Rating</option>
+            <option value="name">Name</option>
+            <option value="year">Year</option>
+          </select>
+          <select
+            name="order"
+            onChange={(event) =>
+              setDescending(event.target.value === "descending")
+            }
+            value={descending ? "descending" : "ascending"}
+          >
+            <option value="descending">Descending</option>
+            <option value="ascending">Ascending</option>
+          </select>
+        </div>
+      )}
       {movies ? (
         <TileList
           className="SearchPage__list"
@@ -158,7 +159,9 @@ const SearchPage = (props: { className?: string }) => {
             />
           ))}
         />
-      ) : <div>Sorry, we couldn't find any results.</div>}
+      ) : (
+        <div>Sorry, we couldn't find any results.</div>
+      )}
     </div>
   );
 };
