@@ -48,8 +48,8 @@ const SearchPage = (props: { className?: string }) => {
   //   CONTAINER_MAX_WIDTH + GRID_GAP
   // ) / (ITEM_MAX_WIDTH + GRID_GAP) * NUMBER_OF_ROWS
   const perPage = Math.floor(
-    ((document.body.clientWidth * 0.8 + 24) / (150 + 24)) * 4
-  );
+    ((document.body.clientWidth * 0.8 + 24) / (150 + 24))
+  ) * 4;
 
   const updateYears = (event: any) => {
     setYearFilter(event.target.value);
