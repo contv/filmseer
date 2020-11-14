@@ -42,6 +42,15 @@ const SearchPage = (props: { className?: string }) => {
   const [totalPages, setTotalPages] = React.useState<number>(0);
   let paginationHandle: Handle<typeof Pagination>;
 
+  // This is an UGLY approach, but a CSS reader is even worse
+  // UPDATE THIS WHEN YOU MODIFY SCSS
+  // const perPage = (
+  //   CONTAINER_MAX_WIDTH + GRID_GAP
+  // ) / (ITEM_MAX_WIDTH + GRID_GAP) * NUMBER_OF_ROWS
+  const perPage = Math.floor(
+    ((document.body.clientWidth * 0.8 + 24) / (150 + 24)) * 4
+  );
+
   const updateYears = (event: any) => {
     setYearFilter(event.target.value);
   };
@@ -170,7 +179,7 @@ const SearchPage = (props: { className?: string }) => {
                 genres: genreFilter,
                 directors: directorFilter,
                 years: yearFilter,
-                per_page: 20,
+                per_page: perPage,
                 page: page,
                 sort: sortBy,
                 desc: descending,
