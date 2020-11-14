@@ -19,7 +19,7 @@ override_prefix_all = None
 class UserBanlistResponse(BaseModel):
     banlist_id: str
     banned_user_id: str
-    banned_user_name: str
+    banned_username: str
     banned_user_image: Optional[str]
 
     class Config:
@@ -51,7 +51,7 @@ async def get_banlist(request: Request):
             UserBanlistResponse(
                 banlist_id=str(banlist_item.banlist_id),
                 banned_user_id=str(banlist_item.banned_user_id),
-                banned_user_name=banned_user["username"],
+                banned_username=banned_user["username"],
                 banned_user_image=banned_user["image"],
             )
         )
@@ -59,15 +59,15 @@ async def get_banlist(request: Request):
     return wrap({"items": items})
 
 
-@router.get("/{banned_user_name}", response_model=Wrapper[UserBannedResponse])
-async def is_user_banlist(request: Request, banned_user_name: str):
+@router.get("/{banned_username}", response_model=Wrapper[UserBannedResponse])
+async def is_user_banlist(request: Request, banned_username: str):
     user_id = request.session.get("user_id")
     if not user_id:
         raise ApiException(401, 2500, "You must be logged in to see your banlist.")
 
-    if await Users.filter(username=banned_user_name, delete_date=None).exists():
+    if await Users.filter(username=banned_username, delete_date=None).exists():
         banned_user_id = (
-            await Users.filter(username=banned_user_name, delete_date=None).values(
+            await Users.filter(username=banned_username, delete_date=None).values(
                 "user_id"
             )
         )[0]["user_id"]
@@ -84,16 +84,16 @@ async def is_user_banlist(request: Request, banned_user_name: str):
     return wrap({"banned": banned})
 
 
-@router.put("/{banned_user_name}")
-async def add_to_banlist(request: Request, banned_user_name: str):
+@router.put("/{banned_username}")
+async def add_to_banlist(request: Request, banned_username: str):
     user_id = request.session.get("user_id")
 
     if not user_id:
         raise ApiException(401, 2500, "You must be logged in to add to banlist.")
 
-    if await Users.filter(username=banned_user_name, delete_date=None).exists():
+    if await Users.filter(username=banned_username, delete_date=None).exists():
         banned_user_id = (
-            await Users.filter(username=banned_user_name, delete_date=None).values(
+            await Users.filter(username=banned_username, delete_date=None).values(
                 "user_id"
             )
         )[0]["user_id"]
@@ -122,16 +122,16 @@ async def add_to_banlist(request: Request, banned_user_name: str):
     return wrap({})
 
 
-@router.delete("/{banned_user_name}")
-async def delete_from_banlist(request: Request, banned_user_name: str):
+@router.delete("/{banned_username}")
+async def delete_from_banlist(request: Request, banned_username: str):
     user_id = request.session.get("user_id")
 
     if not user_id:
         raise ApiException(401, 2500, "You must be logged in to delete from banlist.")
 
-    if await Users.filter(username=banned_user_name, delete_date=None).exists():
+    if await Users.filter(username=banned_username, delete_date=None).exists():
         banned_user_id = (
-            await Users.filter(username=banned_user_name, delete_date=None).values(
+            await Users.filter(username=banned_username, delete_date=None).values(
                 "user_id"
             )
         )[0]["user_id"]

@@ -180,7 +180,7 @@ async def get_user_banlist(username: str):
             UserBanlistResponse(
                 banlist_id=str(banlist_item.banlist_id),
                 banned_user_id=str(banlist_item.banned_user_id),
-                banned_user_name=banned_user["username"],
+                banned_username=banned_user["username"],
                 banned_user_image=banned_user["image"],
             )
         )
