@@ -115,6 +115,7 @@ def handle_static_routes(app: FastAPI) -> FastAPI:
         ),
         spa_paths=[
             "/search",
+            "/search/{whatever:path}",
             "/movie/{whatever:path}",
             "/user",
             "/user/{whatever:path}",
