@@ -27,7 +27,7 @@ async def check_session(request: Request) -> Wrapper[dict]:
         else:
             del request.session["username"]
             del request.session["user_id"]
-            raise ApiException(500, 2002, "This user no longer exist!")
+            raise ApiException(500, 2002, "This user no longer exists!")
     raise ApiException(500, 2001, "You are not logged in!")
 
 
