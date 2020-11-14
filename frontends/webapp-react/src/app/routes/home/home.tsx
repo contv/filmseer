@@ -85,23 +85,31 @@ const HomePage = (props: { className?: string }) => {
               dataType="slice"
               dataCallback={async () => {
                 setIsLoadingForYou(true);
-                let res = await api({
-                  path: "/movies/recommendation",
-                  method: "GET",
-                  params: {
-                    type: "foryou",
-                    size: total,
-                    per_page: total,
-                    page: 1,
-                    sort: "rating",
-                    desc: true,
-                  },
-                });
+                let res;
+                try {
+                  res = await api({
+                    path: "/movies/recommendation",
+                    method: "GET",
+                    params: {
+                      type: "foryou",
+                      size: total,
+                      per_page: total,
+                      page: 1,
+                      sort: "rating",
+                      desc: true,
+                    },
+                  });
+                } catch (e) {
+                  setIsLoadingForYou(false);
+                  setHasErrorForYou(true);
+                  return [];
+                }
                 setIsLoadingForYou(false);
                 if (res.code !== 0) {
                   setHasErrorForYou(true);
                   return [];
                 } else {
+                  setHasErrorForYou(false);
                   return res.data.movies;
                 }
               }}
@@ -118,7 +126,9 @@ const HomePage = (props: { className?: string }) => {
         <div className="HomePage__section-content">
           {isLoadingNew || hasErrorNew ? (
             isLoadingNew ? (
-              <div className="HomePage__loading-messages">Searching...</div>
+              <div className="HomePage__loading-messages">
+                Fetching suggestions...
+              </div>
             ) : (
               <div className="HomePage__loading-messages">
                 An error occurred, please try again.
@@ -162,23 +172,31 @@ const HomePage = (props: { className?: string }) => {
             dataType="slice"
             dataCallback={async () => {
               setIsLoadingNew(true);
-              let res = await api({
-                path: "/movies/recommendation",
-                method: "GET",
-                params: {
-                  type: "new",
-                  size: total,
-                  per_page: total,
-                  page: 1,
-                  sort: "rating",
-                  desc: true,
-                },
-              });
+              let res;
+              try {
+                res = await api({
+                  path: "/movies/recommendation",
+                  method: "GET",
+                  params: {
+                    type: "new",
+                    size: total,
+                    per_page: total,
+                    page: 1,
+                    sort: "rating",
+                    desc: true,
+                  },
+                });
+              } catch (e) {
+                setIsLoadingNew(false);
+                setHasErrorNew(true);
+                return [];
+              }
               setIsLoadingNew(false);
               if (res.code !== 0) {
                 setHasErrorNew(true);
                 return [];
               } else {
+                setHasErrorNew(false);
                 return res.data.movies;
               }
             }}
@@ -195,7 +213,9 @@ const HomePage = (props: { className?: string }) => {
           <div className="HomePage__section-content">
             {isLoadingPopular || hasErrorPopular ? (
               isLoadingPopular ? (
-                <div className="HomePage__loading-messages">Searching...</div>
+                <div className="HomePage__loading-messages">
+                  Fetching suggestions...
+                </div>
               ) : (
                 <div className="HomePage__loading-messages">
                   An error occurred, please try again.
@@ -239,23 +259,31 @@ const HomePage = (props: { className?: string }) => {
               dataType="slice"
               dataCallback={async () => {
                 setIsLoadingPopular(true);
-                let res = await api({
-                  path: "/movies/recommendation",
-                  method: "GET",
-                  params: {
-                    type: "popular",
-                    size: total,
-                    per_page: total,
-                    page: 1,
-                    sort: "rating",
-                    desc: true,
-                  },
-                });
+                let res;
+                try {
+                  res = await api({
+                    path: "/movies/recommendation",
+                    method: "GET",
+                    params: {
+                      type: "popular",
+                      size: total,
+                      per_page: total,
+                      page: 1,
+                      sort: "rating",
+                      desc: true,
+                    },
+                  });
+                } catch (e) {
+                  setIsLoadingPopular(false);
+                  setHasErrorPopular(true);
+                  return [];
+                }
                 setIsLoadingPopular(false);
                 if (res.code !== 0) {
                   setHasErrorPopular(true);
                   return [];
                 } else {
+                  setHasErrorPopular(false);
                   return res.data.movies;
                 }
               }}

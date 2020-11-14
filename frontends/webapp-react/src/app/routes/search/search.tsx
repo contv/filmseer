@@ -170,25 +170,33 @@ const SearchPage = (props: { className?: string }) => {
           dataType="callback"
           dataCallback={async (page) => {
             setIsSearching(true);
-            let res = await api({
-              path: "/movies/",
-              method: "GET",
-              params: {
-                keywords: searchString,
-                genres: genreFilter,
-                directors: directorFilter,
-                years: yearFilter,
-                per_page: perPage,
-                page: page,
-                sort: sortBy,
-                desc: descending,
-              },
-            });
+            let res;
+            try {
+              res = await api({
+                path: "/movies/",
+                method: "GET",
+                params: {
+                  keywords: searchString,
+                  genres: genreFilter,
+                  directors: directorFilter,
+                  years: yearFilter,
+                  per_page: perPage,
+                  page: page,
+                  sort: sortBy,
+                  desc: descending,
+                },
+              });
+            } catch (e) {
+              setIsSearching(false);
+              setHasError(true);
+              return [];
+            }
             setIsSearching(false);
             if (res.code !== 0) {
               setHasError(true);
               return [];
             } else {
+              setHasError(false);
               setFilters(res.data.filters);
               setTotalPages(res.data.total);
               return res.data.movies;
