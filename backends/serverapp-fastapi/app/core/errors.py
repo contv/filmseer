@@ -7,8 +7,8 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
-from starlette.types import Receive, Scope, Send
 from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY
+from starlette.types import Receive, Scope, Send
 
 from app.core.config import settings
 from app.utils.wrapper import ApiException, wrap
@@ -60,7 +60,11 @@ def handle_errors(app: FastAPI) -> FastAPI:
             content=jsonable_encoder(
                 wrap(
                     error=ApiException(
-                        HTTP_422_UNPROCESSABLE_ENTITY, 2000, errors[0].msg
+                        HTTP_422_UNPROCESSABLE_ENTITY,
+                        2000,
+                        errors[0].get("msg", "Unknown validation error")
+                        + ": "
+                        + " -> ".join(str(x) for x in errors[0].get("loc", [])),
                     )
                     if len(errors) > 0
                     else ApiException(
