@@ -1,22 +1,22 @@
-from typing import Optional, Union, List
 import base64
+from typing import List, Optional, Union
 
 from fastapi import APIRouter, Request
-from pydantic import BaseModel
 from humps import camelize
+from pydantic import BaseModel
 
 from app.models.common import ListResponse
+from app.models.db.banlists import Banlists
 from app.models.db.reviews import Reviews
 from app.models.db.users import Users
-from app.models.db.banlists import Banlists
 from app.models.db.wishlists import Wishlists
 from app.utils.password import hash, verify
 from app.utils.ratings import calc_average_rating
 from app.utils.wrapper import ApiException, Wrapper, wrap
 
+from .banlist import UserBanlistResponse
 from .review import ListReviewResponse, ReviewResponse
 from .wishlist import MovieWishlistResponse
-from .banlist import UserBanlistResponse
 
 router = APIRouter()
 override_prefix = None
@@ -26,17 +26,19 @@ override_prefix_all = None
 class Register(BaseModel):
     username: str
     password: str
-    
+
+
 class UpdateUser(BaseModel):
     username: Optional[str]
     current_password: Optional[str]
     new_password: Optional[str]
     description: Optional[str]
     image: Optional[bytes]
-    
+
     class Config:
         alias_generator = camelize
         allow_population_by_field_name = True
+
 
 class UserProfileResponse(BaseModel):
     id: str
@@ -224,14 +226,13 @@ async def get_user_profile(username: str):
 
     return wrap(response)
 
-@router.put(
-    "/", tags=["User"], response_model=Wrapper
-)
+
+@router.put("/", tags=["User"], response_model=Wrapper)
 async def modify_user(request: Request, form: UpdateUser):
     user_id = request.session.get("user_id")
     if not user_id:
         raise ApiException(500, 2001, "You are not logged in!")
-    
+
     user = await Users.get_or_none(user_id=user_id, delete_date=None)
     if not user:
         raise ApiException(500, 2200, "That user's profile was not found")
@@ -242,13 +243,13 @@ async def modify_user(request: Request, form: UpdateUser):
             raise ApiException(500, 2021, "This username already exists")
         user.username = form.username
         await user.save(update_fields=["username"])
-            
+
     if form.new_password:
         if not verify(user.password_hash, form.current_password):
             raise ApiException(500, 2010, "Incorrect username or password")
         user.password_hash = hash(form.new_password)
         await user.save(update_fields=["password_hash"])
-    
+
     if form.image:
         image_url = "storages/images/users/" + user_id + ".png"
         with open("../../" + image_url, "wb") as f:
@@ -258,7 +259,9 @@ async def modify_user(request: Request, form: UpdateUser):
 
     if form.description is not None:
         if len(form.description) > 140:
-            raise ApiException(500, 2102, "Your description must be 140 characters or less.")
+            raise ApiException(
+                500, 2102, "Your description must be 140 characters or less."
+            )
         else:
             if len(form.description) == 0:
                 user.description = None
