@@ -189,6 +189,7 @@ const SettingsPage = (props: { className?: string }) => {
 
   return (
     <div>
+      <Divider />
       <Drawer
         className="SettingsPage__drawer"
         variant="permanent"

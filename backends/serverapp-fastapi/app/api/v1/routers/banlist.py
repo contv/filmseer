@@ -5,6 +5,7 @@ from fastapi import APIRouter, Request
 from humps import camelize
 from pydantic import BaseModel
 from tortoise.exceptions import OperationalError
+from app.models.db.users import Users
 
 from app.models.common import ListResponse
 from app.models.db.banlists import Banlists
@@ -18,6 +19,8 @@ override_prefix_all = None
 class UserBanlistResponse(BaseModel):
     banlist_id: str
     banned_user_id: str
+    banned_username: str
+    banned_user_image: Optional[str]
 
     class Config:
         alias_generator = camelize
@@ -37,23 +40,40 @@ async def get_banlist(request: Request):
     if not user_id:
         raise ApiException(401, 2500, "You must be logged in to see your banlist.")
 
-    items = [
-        UserBanlistResponse(
-            banlist_id=str(banlist_item.banlist_id),
-            banned_user_id=str(banlist_item.banned_user_id),
+    items = []
+    for banlist_item in await Banlists.filter(user_id=user_id, delete_date=None):
+        banned_user = (
+            await Users.filter(
+                user_id=banlist_item.banned_user_id, delete_date=None
+            ).values("username", "image")
+        )[0]
+        items.append(
+            UserBanlistResponse(
+                banlist_id=str(banlist_item.banlist_id),
+                banned_user_id=str(banlist_item.banned_user_id),
+                banned_username=banned_user["username"],
+                banned_user_image=banned_user["image"],
+            )
         )
-        for banlist_item in await Banlists.filter(user_id=user_id, delete_date=None)
-    ]
 
     return wrap({"items": items})
 
 
-@router.get("/{banned_user_id}", response_model=Wrapper[UserBannedResponse])
-async def is_user_banlist(request: Request, banned_user_id: str):
+@router.get("/{banned_username}", response_model=Wrapper[UserBannedResponse])
+async def is_user_banlist(request: Request, banned_username: str):
     user_id = request.session.get("user_id")
-
     if not user_id:
-        raise ApiException(401, 2500, "You must be logged in to see your wishlist.")
+        raise ApiException(401, 2500, "You must be logged in to see your banlist.")
+
+    if await Users.filter(username=banned_username, delete_date=None).exists():
+        banned_user_id = (
+            await Users.filter(username=banned_username, delete_date=None).values(
+                "user_id"
+            )
+        )[0]["user_id"]
+    else:
+        raise ApiException(500, 2002, "This user no longer exist!")
+
     banned = (
         await Banlists.filter(
             banned_user_id=banned_user_id, user_id=user_id, delete_date=None
@@ -64,12 +84,21 @@ async def is_user_banlist(request: Request, banned_user_id: str):
     return wrap({"banned": banned})
 
 
-@router.put("/{banned_user_id}")
-async def add_to_banlist(request: Request, banned_user_id: str):
+@router.put("/{banned_username}")
+async def add_to_banlist(request: Request, banned_username: str):
     user_id = request.session.get("user_id")
 
     if not user_id:
-        raise ApiException(401, 2500, "You must be logged in to add to wishlist.")
+        raise ApiException(401, 2500, "You must be logged in to add to banlist.")
+
+    if await Users.filter(username=banned_username, delete_date=None).exists():
+        banned_user_id = (
+            await Users.filter(username=banned_username, delete_date=None).values(
+                "user_id"
+            )
+        )[0]["user_id"]
+    else:
+        raise ApiException(500, 2002, "This user no longer exist!")
 
     if user_id == banned_user_id:
         raise ApiException(401, 2801, "You cannot ban yourself.")
@@ -93,12 +122,22 @@ async def add_to_banlist(request: Request, banned_user_id: str):
     return wrap({})
 
 
-@router.delete("/{banned_user_id}")
-async def delete_from_banlist(request: Request, banned_user_id: str):
+@router.delete("/{banned_username}")
+async def delete_from_banlist(request: Request, banned_username: str):
     user_id = request.session.get("user_id")
 
     if not user_id:
         raise ApiException(401, 2500, "You must be logged in to delete from banlist.")
+
+    if await Users.filter(username=banned_username, delete_date=None).exists():
+        banned_user_id = (
+            await Users.filter(username=banned_username, delete_date=None).values(
+                "user_id"
+            )
+        )[0]["user_id"]
+    else:
+        raise ApiException(500, 2002, "This user no longer exist!")
+
     exists_in_banlist = await Banlists.get_or_none(
         banned_user_id=banned_user_id, user_id=user_id
     )
