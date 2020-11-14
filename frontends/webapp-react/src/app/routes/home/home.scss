@@ -15,7 +15,7 @@
 
   &__section-title {
     font-size: 30px;
-    margin: 0 auto 24px;
+    margin: 20px auto 24px;
     display: flex;
     flex-flow: row nowrap;
     width: 80%;
@@ -68,6 +68,7 @@
   }
 
   &__pagination {
+    margin: 20px;
     justify-content: center;
   }
 }
