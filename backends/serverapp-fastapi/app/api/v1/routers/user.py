@@ -4,6 +4,7 @@ from typing import List, Optional, Union
 from fastapi import APIRouter, Request
 from humps import camelize
 from pydantic import BaseModel
+from humps import camelize
 
 from app.models.common import ListResponse
 from app.models.db.banlists import Banlists
@@ -232,7 +233,6 @@ async def modify_user(request: Request, form: UpdateUser):
     user_id = request.session.get("user_id")
     if not user_id:
         raise ApiException(500, 2001, "You are not logged in!")
-
     user = await Users.get_or_none(user_id=user_id, delete_date=None)
     if not user:
         raise ApiException(500, 2200, "That user's profile was not found")
