@@ -47,10 +47,10 @@ type PaginationRef = {
   refresh: () => void;
 };
 
-const Pagination: React.ForwardRefRenderFunction<
+const Pagination = React.forwardRef<
   PaginationRef,
   PaginationProps & { className?: string }
-> = (props, ref) => {
+>((props, ref) => {
   const [current, setCurrent] = React.useState(props.current || 1);
   const [data, setData] = React.useState<object[]>([]);
   const prevPageNum = usePrevious(current);
@@ -264,7 +264,7 @@ const Pagination: React.ForwardRefRenderFunction<
   } else {
     throw Error("Undefined displayType");
   }
-};
+});
 
 // FIXME: No view() wrapping until RisingStack/react-easy-state#187 got addressed
-export default React.forwardRef(Pagination);
+export default Pagination;

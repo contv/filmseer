@@ -1,11 +1,12 @@
 import { view } from "@risingstack/react-easy-state";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useParams } from "react-router-dom";
 import Filter from "src/app/components/filter";
 import MovieItem from "src/app/components/movie-item/movie-item";
 import movieLogo from "src/app/components/movie-item/movie-logo.png";
+import Pagination from "src/app/components/pagination";
 import TileList from "src/app/components/tile-list";
-import { api } from "src/utils";
+import { api, useUpdateEffect } from "src/utils";
 import "./search.scss";
 
 type SearchItem = {
@@ -19,17 +20,27 @@ type SearchItem = {
   cumulativeRating: number;
 };
 
+type Handle<T> = T extends React.ForwardRefExoticComponent<
+  React.RefAttributes<infer T2>
+>
+  ? T2
+  : {
+      refresh: () => void;
+    } | null;
+
 const SearchPage = (props: { className?: string }) => {
   const { searchString } = useParams<{ searchString?: string }>();
-  const [movies, setMovies] = useState<SearchItem[]>([]);
-  const [isSearching, setIsSearching] = useState<Boolean>(true);
-  const [hasError, setHasError] = useState<Boolean>(false);
-  const [genreFilter, setGenreFilter] = useState<string>();
-  const [directorFilter, setDirectorFilter] = useState<string>();
-  const [yearFilter, setYearFilter] = useState<string>();
-  const [descending, setDescending] = useState<Boolean>(true);
-  const [filters, setFilters] = useState<Array<any>>();
-  const [sortBy, setSortBy] = useState<string>("relevance");
+  const [movies, setMovies] = React.useState<SearchItem[]>([]);
+  const [isSearching, setIsSearching] = React.useState<Boolean>(true);
+  const [hasError, setHasError] = React.useState<Boolean>(false);
+  const [genreFilter, setGenreFilter] = React.useState<string>();
+  const [directorFilter, setDirectorFilter] = React.useState<string>();
+  const [yearFilter, setYearFilter] = React.useState<string>();
+  const [descending, setDescending] = React.useState<Boolean>(true);
+  const [filters, setFilters] = React.useState<Array<any>>();
+  const [sortBy, setSortBy] = React.useState<string>("relevance");
+  const [totalPages, setTotalPages] = React.useState<number>(0);
+  let paginationHandle: Handle<typeof Pagination>;
 
   const updateYears = (event: any) => {
     setYearFilter(event.target.value);
@@ -56,30 +67,8 @@ const SearchPage = (props: { className?: string }) => {
     return () => {};
   };
 
-  useEffect(() => {
-    !isSearching && setIsSearching(true);
-    api({
-      path: "/movies/",
-      method: "GET",
-      params: {
-        keywords: searchString,
-        genres: genreFilter,
-        directors: directorFilter,
-        years: yearFilter,
-        per_page: 80,
-        page: 1,
-        sort: sortBy,
-        desc: descending,
-      },
-    }).then((res) => {
-      setIsSearching(false);
-      if (res.code !== 0) {
-        setHasError(true);
-      } else {
-        setMovies(res.data.movies as SearchItem[]);
-        setFilters(res.data.filters);
-      }
-    });
+  useUpdateEffect(() => {
+    paginationHandle && paginationHandle.refresh();
   }, [
     searchString,
     genreFilter,
@@ -88,14 +77,6 @@ const SearchPage = (props: { className?: string }) => {
     descending,
     yearFilter,
   ]);
-
-  if (isSearching) {
-    return <div>Searching...</div>;
-  }
-
-  if (hasError) {
-    return <div>An error occurred, please try again.</div>;
-  }
 
   return (
     <div className={`SearchPage ${(props.className || "").trim()}`}>
@@ -139,7 +120,13 @@ const SearchPage = (props: { className?: string }) => {
           </select>
         </div>
       )}
-      {movies ? (
+      {isSearching || hasError ? (
+        isSearching ? (
+          <div>Searching...</div>
+        ) : (
+          <div>An error occurred, please try again.</div>
+        )
+      ) : movies ? (
         <TileList
           className="SearchPage__list"
           itemClassName="SearchPage__item"
@@ -162,6 +149,49 @@ const SearchPage = (props: { className?: string }) => {
       ) : (
         <div>Sorry, we couldn't find any results.</div>
       )}
+      <div className="SearchPage__pagination-wrapper">
+        <Pagination
+          className={
+            `SearchPage__pagination` +
+            (isSearching || hasError ? "SearchPage__pagination--hidden" : "")
+          }
+          ref={(c) => {
+            paginationHandle = c;
+          }}
+          displayType="numbered"
+          dataType="callback"
+          dataCallback={async (page) => {
+            setIsSearching(true);
+            let res = await api({
+              path: "/movies/",
+              method: "GET",
+              params: {
+                keywords: searchString,
+                genres: genreFilter,
+                directors: directorFilter,
+                years: yearFilter,
+                per_page: 20,
+                page: page,
+                sort: sortBy,
+                desc: descending,
+              },
+            });
+            setIsSearching(false);
+            if (res.code !== 0) {
+              setHasError(true);
+              return [];
+            } else {
+              setFilters(res.data.filters);
+              setTotalPages(res.data.total);
+              return res.data.movies;
+            }
+          }}
+          renderCallback={(data) => {
+            setMovies(data as SearchItem[]);
+          }}
+          total={totalPages}
+        />
+      </div>
     </div>
   );
 };

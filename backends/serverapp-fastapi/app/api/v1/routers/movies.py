@@ -1,3 +1,4 @@
+import math
 import re
 from datetime import datetime
 from random import choices
@@ -8,7 +9,7 @@ from elasticsearch import RequestsHttpConnection, Urllib3HttpConnection
 from elasticsearch_dsl import Q, Search, connections
 from fastapi import APIRouter, Query, Request
 from humps import camelize
-from pydantic import BaseModel, conint
+from pydantic import BaseModel, conint, constr
 from tortoise.functions import Count
 
 from app.core.config import settings
@@ -134,25 +135,30 @@ async def terminate_search_cache_driver():
 async def search_movies(
     request: Request,
     keywords: str = "",
-    genres: Optional[List[str]] = Query([]),
-    years: Optional[List[str]] = Query([]),
-    directors: Optional[List[str]] = Query([]),
-    per_page: Optional[int] = None,
-    page: Optional[int] = 1,
-    sort: str = ("relevance", "rating", "name", "year")[0],
+    genres: Optional[List[constr(min_length=1)]] = None,
+    years: Optional[List[constr(regex=r"^\d{4}$")]] = None,
+    directors: Optional[List[str]] = None,
+    per_page: Optional[conint(gt=0, le=100)] = None,
+    page: Optional[conint(gt=0)] = 1,
+    sort: Optional[constr(regex=r"^relevance|rating|name|year$")] = (
+        "relevance",
+        "rating",
+        "name",
+        "year",
+    )[0],
     desc: Optional[bool] = True,
 ):
     return wrap(
         await get_movies(
             request=request,
             keywords=keywords,
-            genres=genres,
-            years=years,
-            directors=directors,
-            per_page=per_page,
-            page=page,
-            sort=sort,
-            desc=desc,
+            genres=genres or [],
+            years=years or [],
+            directors=directors or [],
+            per_page=per_page or 1,
+            page=page or 1,
+            sort=sort or ("relevance", "rating", "name", "year")[0],
+            desc=desc if desc is not None else True,
             cache_result=True,
         )
     )
@@ -160,19 +166,21 @@ async def search_movies(
 
 async def process_movie_payload(
     preprocessed: Dict,
-    year_filter: Optional[List[str]],
-    director_filter: Optional[List[str]],
-    genre_filter: Optional[List[str]],
-    per_page: Optional[int],
-    page: Optional[int],
-    sort: Optional[str],
-    desc: Optional[bool],
+    year_filter: List[str],
+    director_filter: List[str],
+    genre_filter: List[str],
+    per_page: int,
+    page: int,
+    sort: str,
+    desc: bool,
 ) -> Dict:
     """
     Given a preprocessed Elasticsearch response payload, apply filters, sorting and
     pagination, and returns an ordered array of SearchResponse objects each representing
     a movie tile
     """
+    # Calculate total
+    total_pages = math.ceil(len(preprocessed) / per_page)
     # Populate filter options based on total payload
     genre_set = set(
         genre["name"]
@@ -320,6 +328,7 @@ async def process_movie_payload(
     response = {
         "movies": postprocessed,
         "filters": [genre_selections, director_selections, year_selections],
+        "total": total_pages,
     }
 
     return response
@@ -329,15 +338,21 @@ async def get_movies(
     request: Request,
     movies: Optional[List[str]] = None,
     keywords: Optional[str] = None,
-    genres: Optional[List[str]] = Query([]),
-    years: Optional[List[str]] = Query([]),
-    directors: Optional[List[str]] = Query([]),
-    per_page: Optional[int] = None,
-    page: Optional[int] = 1,
+    genres: Optional[List[str]] = None,
+    years: Optional[List[str]] = None,
+    directors: Optional[List[str]] = None,
+    per_page: int = 1,
+    page: int = 1,
     sort: str = ("relevance", "rating", "name", "year")[0],
-    desc: Optional[bool] = True,
+    desc: bool = True,
     cache_result: bool = False,
 ) -> Dict:
+    if genres is None:
+        genres = []
+    if years is None:
+        years = []
+    if directors is None:
+        directors = []
     if cache_result and keywords is not None:
         global search_cache_driver
         if not search_cache_driver:
@@ -517,12 +532,17 @@ async def get_recommendation(
     size: conint(gt=0, le=50) = 20,
     movie_id: Optional[str] = None,
     recency: conint(gt=0, le=30) = 7,
-    genres: Optional[List[str]] = Query([]),
-    years: Optional[List[str]] = Query([]),
-    directors: Optional[List[str]] = Query([]),
-    per_page: Optional[int] = None,
-    page: Optional[int] = 1,
-    sort: str = ("relevance", "rating", "name", "year")[0],
+    genres: Optional[List[constr(min_length=1)]] = None,
+    years: Optional[List[constr(regex=r"^\d{4}$")]] = None,
+    directors: Optional[List[str]] = None,
+    per_page: Optional[conint(gt=0, le=100)] = None,
+    page: Optional[conint(gt=0)] = 1,
+    sort: Optional[constr(regex=r"^relevance|rating|name|year$")] = (
+        "relevance",
+        "rating",
+        "name",
+        "year",
+    )[0],
     desc: Optional[bool] = True,
 ):
     global recommendation_cahce_driver
@@ -604,13 +624,13 @@ async def get_recommendation(
     postprocessed = await get_movies(
         request=request,
         movies=movies,
-        genres=genres,
-        years=years,
-        directors=directors,
-        per_page=per_page,
-        page=page,
-        sort=sort,
-        desc=desc,
+        genres=genres or [],
+        years=years or [],
+        directors=directors or [],
+        per_page=per_page or 1,
+        page=page or 1,
+        sort=sort or ("relevance", "rating", "name", "year")[0],
+        desc=desc if desc is not None else True,
         cache_result=True,
     )
 
