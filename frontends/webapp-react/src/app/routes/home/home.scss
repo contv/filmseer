@@ -1,0 +1,73 @@
+.HomePage {
+  &__section {
+    width: 100%;
+    padding: 24px 0;
+    box-sizing: border-box;
+
+    &:nth-of-type(odd) {
+      background-color: var(--gray-6);
+    }
+
+    &:nth-of-type(even) {
+      background-color: #fff;
+    }
+  }
+
+  &__section-title {
+    font-size: 30px;
+    margin: 0 auto 24px;
+    display: flex;
+    flex-flow: row nowrap;
+    width: 80%;
+  }
+
+  &__loading-messages {
+    font-size: 24px;
+    padding: 30px;
+    font-weight: bold;
+    color: var(--gray-2);
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  &__item {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: stretch;
+    align-items: stretch;
+    height: 100%;
+    margin-bottom: 16px;
+
+    .MovieItem {
+      flex: 1;
+
+      &__card {
+        height: 100%;
+        display: flex;
+        flex-flow: column;
+        justify-content: space-between;
+        max-width: 150px !important;
+        margin: auto;
+      }
+
+      &__header {
+        height: 100%;
+        align-items: flex-start;
+      }
+    }
+  }
+
+  &__list {
+    width: 80%;
+    margin: 40px auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-gap: 24px;
+  }
+
+  &__pagination {
+    justify-content: center;
+  }
+}
