@@ -9,7 +9,7 @@ import TileList from "src/app/components/tile-list";
 import { api, useUpdateEffect } from "src/utils";
 import "./search.scss";
 
-type SearchItem = {
+export type SearchItem = {
   id: string;
   title: string;
   releaseYear: number;
@@ -47,9 +47,8 @@ const SearchPage = (props: { className?: string }) => {
   // const perPage = (
   //   CONTAINER_MAX_WIDTH + GRID_GAP
   // ) / (ITEM_MAX_WIDTH + GRID_GAP) * NUMBER_OF_ROWS
-  const perPage = Math.floor(
-    ((document.body.clientWidth * 0.8 + 24) / (150 + 24))
-  ) * 4;
+  const perPage =
+    Math.floor((document.body.clientWidth * 0.8 + 24) / (150 + 24)) * 4;
 
   const updateYears = (event: any) => {
     setYearFilter(event.target.value);
