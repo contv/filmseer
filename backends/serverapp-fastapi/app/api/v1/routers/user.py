@@ -169,15 +169,21 @@ async def get_user_banlist(username: str):
     if not user:
         raise ApiException(404, 2031, "That user doesn't exist.")
 
-    items = [
-        UserBanlistResponse(
-            banlist_id=str(banlist_item.banlist_id),
-            banned_user_id=str(banlist_item.banned_user_id),
+    items = []
+    for banlist_item in await Banlists.filter(user_id=user.user_id, delete_date=None):
+        banned_user = (
+            await Users.filter(
+                user_id=banlist_item.banned_user_id, delete_date=None
+            ).values("username", "image")
+        )[0]
+        items.append(
+            UserBanlistResponse(
+                banlist_id=str(banlist_item.banlist_id),
+                banned_user_id=str(banlist_item.banned_user_id),
+                banned_user_name=banned_user["username"],
+                banned_user_image=banned_user["image"],
+            )
         )
-        for banlist_item in await Banlists.filter(
-            user_id=user.user_id, delete_date=None
-        )
-    ]
 
     return wrap({"items": items})
 
