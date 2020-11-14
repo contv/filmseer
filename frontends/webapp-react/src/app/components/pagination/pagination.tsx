@@ -237,7 +237,7 @@ const Pagination = React.forwardRef<
   } else if (props.displayType === "dotted") {
     return (
       <div className={`Pagination ${(props.className || "").trim()}`}>
-        {range(1, total + 1).map((i) => {
+        {range(1, total + 1).map((i, index) => {
           return (
             <button
               className={
@@ -245,6 +245,7 @@ const Pagination = React.forwardRef<
                 (current === i ? " Pagination__dot--current" : "")
               }
               onClick={handlePaginatingFactory(i)}
+              key={`${index}`}
             ></button>
           );
         })}
