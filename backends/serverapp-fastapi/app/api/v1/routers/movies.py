@@ -532,9 +532,9 @@ async def get_recommendation(
     size: conint(gt=0, le=50) = 20,
     movie_id: Optional[str] = None,
     recency: conint(gt=0, le=30) = 7,
-    genres: Optional[List[constr(min_length=1)]] = None,
-    years: Optional[List[constr(regex=r"^\d{4}$")]] = None,
-    directors: Optional[List[str]] = None,
+    genres: Optional[List[str]] = Query(None),
+    years: Optional[List[constr(regex=r"^$|^\d{4}$")]] = Query(None),
+    directors: Optional[List[str]] = Query(None),
     per_page: Optional[conint(gt=0, le=100)] = None,
     page: Optional[conint(gt=0)] = 1,
     sort: Optional[constr(regex=r"^relevance|rating|name|year$")] = (
