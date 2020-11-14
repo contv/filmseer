@@ -575,7 +575,10 @@ async def get_recommendation(
             ).values_list("movie_id")
         )
         # Calculate unseen movies
-        movie_set = await load_movie_set()
+        try:
+            movie_set = await load_movie_set()
+        except TypeError:
+            raise ApiException(404, 3000, "Recommendation not available")
         unseen = movie_set.difference(movies_seen)
         # Get a random subset for variety
         unseen = choices(tuple(unseen), k=settings.RECOMMENDER_RANDOM_SAMPLESIZE)

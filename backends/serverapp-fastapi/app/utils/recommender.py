@@ -1,17 +1,17 @@
-import asyncio
 import pickle
 import random
 from typing import Set
 
-import asyncpg
-from surprise import SVD, KNNBaseline, Reader, dump
+from surprise import dump
 
 from app.core.config import settings
+
+movie_set = None
 
 # Import models and dicts globally
 try:
     _, movie_movie_recommender = dump.load(
-    settings.STORAGES_ROOT / "recommender/movie_movie_recommender"
+        settings.STORAGES_ROOT / "recommender/movie_movie_recommender"
     )
     _, user_movie_recommender = dump.load(
         settings.STORAGES_ROOT / "recommender/user_movie_recommender"
@@ -24,6 +24,7 @@ try:
         movie_set = pickle.load(file)
 except FileNotFoundError:
     pass
+
 
 async def predict_on_movie(movie_id: str, size: int = 10):
     global movie_movie_recommender
@@ -58,7 +59,7 @@ async def predict_on_movie(movie_id: str, size: int = 10):
     try:
         inner_id = raw_to_inner[movie_id]
     except KeyError:
-        # This movie hasn't been rated before; return a random movie's nearest neighbours
+        # The movie hasn't been rated before; return a random movie's nearest neighbours
         inner_id = random.choice(list(inner_to_raw))
 
     prediction = movie_movie_recommender.get_neighbors(inner_id, size)
