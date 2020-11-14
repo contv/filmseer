@@ -7,6 +7,10 @@ from surprise import dump
 from app.core.config import settings
 
 movie_set = None
+user_movie_recommender = None
+movie_movie_recommender = None
+raw_to_inner = None
+inner_to_raw = None
 
 # Import models and dicts globally
 try:
