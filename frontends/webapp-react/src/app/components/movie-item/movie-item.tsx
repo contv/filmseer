@@ -1,15 +1,14 @@
-import "./movie-item.scss";
-
 import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
 import CardHeader from "@material-ui/core/CardHeader";
 import CardMedia from "@material-ui/core/CardMedia";
-import GenreTile from "../genre-tile";
-import React from "react";
-import Stars from "../stars";
 import Typography from "@material-ui/core/Typography";
-import { useHistory } from "react-router-dom";
 import { view } from "@risingstack/react-easy-state";
+import React from "react";
+import { Link } from "react-router-dom";
+import GenreTile from "../genre-tile";
+import Stars from "../stars";
+import "./movie-item.scss";
 
 export type MovieItemProps = {
   movieId: string;
@@ -44,15 +43,10 @@ export const nFormatter = (num: number, digits: number) => {
 };
 
 const MovieItem = (props: MovieItemProps & { className?: string }) => {
-  let history = useHistory();
-  const avgRating: number = parseFloat(
-    (props.cumulativeRating / props.numRatings).toFixed(1)
-  );
+  const avgRating: number = props.numRatings
+    ? parseFloat((props.cumulativeRating / props.numRatings).toFixed(1))
+    : 0;
   const formattedNumRatings: string = nFormatter(props.numRatings, 0);
-
-  const handleClick = () => {
-    history.push("/movie/" + props.movieId);
-  };
 
   let genres = [];
   for (const genre of props.genres) {
@@ -60,8 +54,11 @@ const MovieItem = (props: MovieItemProps & { className?: string }) => {
   }
 
   return (
-    <div className={`MovieItem ${(props.className || "").trim()}`}>
-      <Card className="MovieItem__card" onClick={handleClick}>
+    <Link
+      className={`MovieItem ${(props.className || "").trim()}`}
+      to={"/movie/" + props.movieId}
+    >
+      <Card className="MovieItem__card">
         <CardMedia
           className="MovieItem__media"
           image={props.imageUrl}
@@ -75,19 +72,23 @@ const MovieItem = (props: MovieItemProps & { className?: string }) => {
           subheader={genres}
         ></CardHeader>
         <CardContent className="MovieItem__content">
-          <Stars
-            movieId={props.movieId}
-            rating={avgRating}
-            setRating={()=>{}}
-            size="small"
-            votable={false}
-          />
-          <Typography>
-            {avgRating}({formattedNumRatings})
-          </Typography>
+          {props.numRatings > 0 && (
+            <>
+              <Stars
+                movieId={props.movieId}
+                rating={avgRating}
+                setRating={() => {}}
+                size="small"
+                votable={false}
+              />
+              <Typography>
+                {avgRating}({formattedNumRatings})
+              </Typography>
+            </>
+          )}
         </CardContent>
       </Card>
-    </div>
+    </Link>
   );
 };
 
