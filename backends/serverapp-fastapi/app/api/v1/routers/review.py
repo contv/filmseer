@@ -97,8 +97,14 @@ async def search_user_review(
                 user_id=user_id, delete_date=None
             ).count(),
         )
-        for r in await Reviews.filter(
-            user_id=user_id, delete_date=None, description__icontains=keyword
+        for r in (
+            (
+                await Reviews.filter(
+                    user_id=user_id, delete_date=None, description__icontains=keyword
+                )
+            )
+            if keyword
+            else (await Reviews.filter(user_id=user_id, delete_date=None))
         )
         .order_by("-create_date")
         .offset((page - 1) * per_page)
@@ -199,7 +205,9 @@ async def delete_author_review(review_id: str, request: Request):
     return wrap({})
 
 
-@router.post("/review/{review_id}/helpful", tags=["review"], response_model=Wrapper[NumVote])
+@router.post(
+    "/review/{review_id}/helpful", tags=["review"], response_model=Wrapper[NumVote]
+)
 async def mark_review_helpful(review_id: str, request: Request):
     user_id = request.session.get("user_id")
     if not user_id:
@@ -221,7 +229,9 @@ async def mark_review_helpful(review_id: str, request: Request):
     return wrap({"count": num_helpful})
 
 
-@router.post("/review/{review_id}/funny", tags=["review"], response_model=Wrapper[NumVote])
+@router.post(
+    "/review/{review_id}/funny", tags=["review"], response_model=Wrapper[NumVote]
+)
 async def mark_review_funny(request: Request, review_id: str):
     user_id = request.session.get("user_id")
     if not user_id:
@@ -243,7 +253,9 @@ async def mark_review_funny(request: Request, review_id: str):
     return wrap({"count": num_funny})
 
 
-@router.post("/review/{review_id}/spoiler", tags=["review"], response_model=Wrapper[NumVote])
+@router.post(
+    "/review/{review_id}/spoiler", tags=["review"], response_model=Wrapper[NumVote]
+)
 async def mark_review_spoiler(request: Request, review_id: str):
     user_id = request.session.get("user_id")
     if not user_id:
@@ -265,7 +277,9 @@ async def mark_review_spoiler(request: Request, review_id: str):
     return wrap({"count": num_spoiler})
 
 
-@router.delete("/review/{review_id}/helpful", tags=["review"], response_model=Wrapper[NumVote])
+@router.delete(
+    "/review/{review_id}/helpful", tags=["review"], response_model=Wrapper[NumVote]
+)
 async def unmark_review_helpful(request: Request, review_id: str):
     user_id = request.session.get("user_id")
     if not user_id:
@@ -287,7 +301,9 @@ async def unmark_review_helpful(request: Request, review_id: str):
     return wrap({"count": num_helpful})
 
 
-@router.delete("/review/{review_id}/funny", tags=["review"], response_model=Wrapper[NumVote])
+@router.delete(
+    "/review/{review_id}/funny", tags=["review"], response_model=Wrapper[NumVote]
+)
 async def unmark_review_funny(request: Request, review_id: str):
     user_id = request.session.get("user_id")
     if not user_id:
@@ -309,7 +325,9 @@ async def unmark_review_funny(request: Request, review_id: str):
     return wrap({"count": num_funny})
 
 
-@router.delete("/review/{review_id}/spoiler", tags=["review"], response_model=Wrapper[NumVote])
+@router.delete(
+    "/review/{review_id}/spoiler", tags=["review"], response_model=Wrapper[NumVote]
+)
 async def unmark_review_spoiler(request: Request, review_id: str):
     user_id = request.session.get("user_id")
     if not user_id:
