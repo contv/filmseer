@@ -10,6 +10,7 @@ import {
 } from "react-router-dom";
 import { baseUrl } from "src/utils";
 import "./app.scss";
+import Notification from "./components/notification";
 import SearchBar from "./components/search-bar";
 import UserMenu from "./components/user-menu";
 import logo from "./logo.svg";
@@ -39,6 +40,7 @@ const App = () => {
     <StylesProvider injectFirst>
       <div className="App">
         <Router basename={new URL(baseUrl).pathname.replace(/\/+$/, "")}>
+          <Notification />
           <header className="App__header Header">
             <Link to="/" className="Header__logo">
               <img src={logo} alt="FilmSeer" className="Header__logo-image" />

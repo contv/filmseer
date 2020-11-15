@@ -49,12 +49,12 @@ const TabPopup = (props: TabPopupProps & { className?: string }) => {
             {Object.keys(props.tabs).map((key) => (
               <li
                 className={
-                  key === state[props.currentTabStateName]
+                  key === (state as {[key: string]: any})[props.currentTabStateName]
                     ? "Popup__tab Popup__tab--active"
                     : "Popup__tab"
                 }
                 onClick={() => {
-                  state[props.currentTabStateName] = key;
+                  (state as {[key: string]: any})[props.currentTabStateName] = key;
                 }}
                 key={key}
               >
@@ -63,9 +63,9 @@ const TabPopup = (props: TabPopupProps & { className?: string }) => {
             ))}
           </ul>
           <div className="Popup__content">
-            {state[props.currentTabStateName]
+            {(state as {[key: string]: any})[props.currentTabStateName]
               ? React.cloneElement(
-                  props.tabs[state[props.currentTabStateName]],
+                  props.tabs[(state as {[key: string]: any})[props.currentTabStateName]],
                   {
                     onClose: props.onClose,
                   }

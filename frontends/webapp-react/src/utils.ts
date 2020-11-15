@@ -1,4 +1,5 @@
 import React from "react";
+import state from "src/app/states";
 
 type RequestMethodType =
   | "GET"
@@ -265,6 +266,45 @@ const useUpdateEffect: typeof React.useEffect = function useUpdateEffect(
   }, dependencies); // eslint-disable-line react-hooks/exhaustive-deps
 };
 
+const notify = (
+  text: React.ReactNode,
+  level: "warning" | "error" | "info" = "info"
+) => {
+  for (let i = 0; i < state.notifications.length; i++) {
+    if (
+      state.notifications[i] &&
+      (state.notifications[i] || {}).text === text &&
+      (state.notifications[i] || {}).level === level &&
+      !(state.notifications[i] || {}).expired
+    ) {
+      // Prevent infinite re-rendering
+      return;
+    }
+  }
+  let notification = {
+    id: Date.now() * 1000 + Math.floor(Math.random() * 1000),
+    text: text,
+    time: Date.now(),
+    level: level,
+    timeoutHandler: 0,
+    expired: false,
+  };
+  notification.timeoutHandler = window.setTimeout(() => {
+    notification.expired = true;
+    window.setTimeout(() => {
+      for (let i = 0; i < state.notifications.length; i++) {
+        if (
+          state.notifications[i] &&
+          (state.notifications[i] || {}).id === notification.id
+        ) {
+          state.notifications[i] = null;
+        }
+      }
+    }, 2000);
+  }, 2000);
+  state.notifications.push(notification);
+};
+
 export {
   api,
   apiEffect,
@@ -273,4 +313,5 @@ export {
   useUpdateEffect,
   baseUrl,
   baseApiUrl,
+  notify,
 };

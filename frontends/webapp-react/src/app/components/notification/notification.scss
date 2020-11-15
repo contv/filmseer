@@ -1,0 +1,31 @@
+.Notification {
+  position: fixed;
+  left: 50%;
+  z-index: 10000;
+  transform: translateX(-50%);
+
+  &__item {
+    background: rgba(255, 255, 255, 0.4);
+    padding: 8px 20px;
+    margin: 10px;
+    box-shadow: 0 0 8px 0 rgba(0, 0, 0, 0.4);
+    border-radius: 4px;
+    font-size: 14px;
+    backdrop-filter: blur(8px) saturate(0.5);
+
+    &--error {
+      background-color: rgba(235, 87, 87, 0.4);
+      box-shadow: 0 0 8px 0 rgba(183, 60, 60, 0.4);
+    }
+
+    &--warning {
+      background-color: rgba(235, 200, 87, 0.4);
+      box-shadow: 0 0 8px 0 rgba(183, 156, 60, 0.4);
+    }
+
+    &--info {
+      background-color: rgba(87, 156, 235, 0.4);
+      box-shadow: 0 0 8px 0 rgba(60, 109, 183, 0.4);
+    }
+  }
+}
