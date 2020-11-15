@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import List, Optional
 
 from fastapi import FastAPI
-from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.routing import Match, Route
@@ -58,7 +57,7 @@ class AdvancedStaticFilesMiddleware:
 
             async def spa_app(scope, receive, send):
                 assert scope["type"] == "http"
-                response = FileResponse(Path(spa_entry_file).resolve())
+                response = FileResponse(str(Path(spa_entry_file).resolve()))
                 await response(scope, receive, send)
 
             self.spa_app: ASGIApp = spa_app
