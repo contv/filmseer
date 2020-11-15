@@ -120,6 +120,21 @@ const api = (
     );
   }
 
+  const bodyString =
+    body && Object.keys(body).length > 0 && body.constructor === Object
+      ? JSON.stringify(body)
+      : undefined;
+
+  const bodyByteLength = new TextEncoder().encode(bodyString || "").length;
+
+  let header: { [key: string]: any } = {
+    "Content-Type": "application/json",
+  };
+
+  if (body && Object.keys(body).length > 0 && body.constructor === Object) {
+    header["Content-Length"] = bodyByteLength.toString();
+  }
+
   return fetch(
     baseApiUrl.replace(/\/+$/, "") +
       path +
@@ -139,11 +154,9 @@ const api = (
       cache: "no-store",
       mode: "cors",
       credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: header,
       redirect: "follow",
-      keepalive: true,
+      keepalive: bodyByteLength < 60 * 1024,
       referrerPolicy: "no-referrer-when-downgrade",
       body:
         !body || (Object.keys(body).length === 0 && body.constructor === Object)
