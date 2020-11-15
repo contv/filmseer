@@ -40,8 +40,8 @@ const SearchPage = (props: { className?: string }) => {
   const [movies, setMovies] = React.useState<SearchItem[]>([]);
   const [isSearching, setIsSearching] = React.useState<Boolean>(true);
   const [hasError, setHasError] = React.useState<Boolean>(false);
-  const [genreFilter, setGenreFilter] = React.useState<string>();
-  const [directorFilter, setDirectorFilter] = React.useState<string>();
+  const [genreFilter, setGenreFilter] = React.useState<Array<string>>();
+  const [directorFilter, setDirectorFilter] = React.useState<Array<string>>();
   const [yearFilter, setYearFilter] = React.useState<Array<string>>();
   const [descending, setDescending] = React.useState<Boolean>(true);
   const [filters, setFilters] = React.useState<Array<any>>();
@@ -57,17 +57,16 @@ const SearchPage = (props: { className?: string }) => {
   const perPage =
     Math.floor((document.body.clientWidth * 0.8 + 24) / (150 + 24)) * 4;
 
-  const updateYears = (event: any) => {
-    console.log(event)
-    setYearFilter((event || { name: "" }).name || "");
+  const updateYears = (event: { key: string; name: string }[]) => {
+    setYearFilter(event.map(item => item.name));
   };
 
-  const updateDirector = (event: any) => {
-    setDirectorFilter((event || { name: "" }).name || "");
+  const updateDirector = (event: { key: string; name: string }[]) => {
+    setDirectorFilter(event.map(item => item.name));
   };
 
-  const updateGenre = (event: any) => {
-    setGenreFilter((event || { name: "" }).name || "");
+  const updateGenre = (event: { key: string; name: string }[]) => {
+    setGenreFilter(event.map(item => item.name));
   };
 
   const getParamUpdater = (key: string) => {
@@ -187,28 +186,18 @@ const SearchPage = (props: { className?: string }) => {
             const searchParams = new URLSearchParams("");
             searchParams.append("keywords", searchString || "");
             searchParams.append("field", searchField || "");
-            searchParams.append("genres", genreFilter || "");
             searchParams.append("per_page", perPage.toString() || "32");
             searchParams.append("page", page?.toString() || "1");
             searchParams.append("sort", sortBy || "" );
             searchParams.append("desc", descending.toString() || "True");
-            
-            
+            (yearFilter|| []).map(item => {searchParams.append("years", item)});
+            (genreFilter|| []).map(item => {searchParams.append("genres", item)});
+            (directorFilter|| []).map(item => {searchParams.append("directors", item)});
             try {
               res = await api({
                 path: "/movies/",
                 method: "GET",
-                params: {
-                  keywords: searchString,
-                  field: searchField,
-                  genres: genreFilter,
-                  directors: directorFilter,
-                  years: yearFilter,
-                  per_page: perPage,
-                  page: page,
-                  sort: sortBy,
-                  desc: descending,
-                },
+                params: searchParams,
               });
             } catch (e) {
               setIsSearching(false);

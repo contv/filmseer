@@ -19,7 +19,6 @@ const Filter = (
     <div className={`GenreTile ${(props.className || "").trim()}`}>
       <Autocomplete
         multiple
-        style = {{width: "180px"}}
         options={props.selections}
         getOptionLabel={(option) => option.name}
         renderInput={(params) => (
