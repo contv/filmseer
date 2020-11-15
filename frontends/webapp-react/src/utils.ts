@@ -1,5 +1,6 @@
 import React from "react";
 import state from "src/app/states";
+import { URLSearchParams } from "url";
 
 type RequestMethodType =
   | "GET"
@@ -15,7 +16,7 @@ type RequestMethodType =
 type ApiParamType = {
   path?: string;
   method?: RequestMethodType;
-  params?: { [key: string]: any };
+  params?: { [key: string]: any } | URLSearchParams;
   body?: { [key: string]: any };
 };
 
@@ -68,19 +69,18 @@ const baseApiUrl = (
 const api = (
   { path, method, params, body }: ApiParamType = { path: "/", method: "GET" }
 ) => {
-  if (params instanceof URLSearchParams) {
-    params = Object.fromEntries(params);
-  } else {
+  if (!(params instanceof URLSearchParams)) {
     params = Object.assign({}, params);
   }
   if (body instanceof URLSearchParams) {
-    params = Object.assign({}, params, Object.fromEntries(body));
+    params = body;
     body = {};
   }
-  if (typeof params === "object") {
+  if (typeof params === "object" && !(params instanceof URLSearchParams)) {
     Object.keys(params).forEach(
       (key) =>
         params &&
+        !(params instanceof URLSearchParams) &&
         (params[key] === undefined || params[key] === null) &&
         delete params[key]
     );
@@ -127,12 +127,14 @@ const api = (
       (!params
         ? ""
         : (path.includes("?") ? (path.endsWith("?") ? "" : "&") : "?") +
-          Object.entries(params)
-            .map(
-              ([key, val]) =>
-                `${encodeURIComponent(key)}=${encodeURIComponent(val)}`
-            )
-            .join("&")),
+          (params instanceof URLSearchParams
+            ? params.toString()
+            : Object.entries(params)
+                .map(
+                  ([key, val]) =>
+                    `${encodeURIComponent(key)}=${encodeURIComponent(val)}`
+                )
+                .join("&"))),
     {
       method: method,
       cache: "no-store",
