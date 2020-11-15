@@ -84,7 +84,7 @@ const SearchPage = (props: { className?: string }) => {
 
   useUpdateEffect(() => {
     paginationHandle && paginationHandle.refresh(1);
-  }, [searchString, genreFilter, directorFilter, yearFilter]);
+  }, [searchString, searchField, genreFilter, directorFilter, yearFilter]);
 
   return (
     <div className={`SearchPage ${(props.className || "").trim()}`}>
