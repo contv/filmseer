@@ -65,23 +65,12 @@ class AdvancedStaticFilesMiddleware:
         else:
             self.spa_app = None
 
-        if settings.GZIP_ENABLED:
-            self.static_app = GZipMiddleware(
-                app=ModifiedStaticFiles(
-                    directory=directory,
-                    packages=packages,
-                    html=html,
-                    check_dir=check_dir,
-                ),
-                minimum_size=settings.GZIP_MIN_SIZE,
-            )
-        else:
-            self.static_app = ModifiedStaticFiles(
-                directory=directory,
-                packages=packages,
-                html=html,
-                check_dir=check_dir,
-            )
+        self.static_app = ModifiedStaticFiles(
+            directory=directory,
+            packages=packages,
+            html=html,
+            check_dir=check_dir,
+        )
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
@@ -129,8 +118,10 @@ def handle_static_routes(app: FastAPI) -> FastAPI:
     )
 
     app.mount(
-        settings.API_URL_PATH + "/storages/images/",
-        StaticFiles(directory=settings.STORAGES_ROOT / "images"),
+        settings.API_URL_PATH + "/storages/images",
+        ModifiedStaticFiles(
+            directory=str(settings.STORAGES_ROOT / "images"), check_dir=True, html=False
+        ),
         name="images",
     )
 
