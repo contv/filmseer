@@ -182,8 +182,6 @@ async def process_movie_payload(
     pagination, and returns an ordered array of SearchResponse objects each representing
     a movie tile
     """
-    # Calculate total
-    total_pages = math.ceil(len(preprocessed) / per_page)
     # Populate filter options based on total payload
     genre_set = set(
         genre["name"]
@@ -269,6 +267,9 @@ async def process_movie_payload(
         postprocessed = sorted(
             postprocessed, key=lambda x: x["movie"]["release_date"], reverse=desc
         )
+
+    # Calculate total
+    total_pages = math.ceil(len(postprocessed) / per_page)
 
     # Pagination
     if per_page:

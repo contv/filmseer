@@ -27,7 +27,7 @@ type Handle<T> = T extends React.ForwardRefExoticComponent<
 >
   ? T2
   : {
-      refresh: () => void;
+      refresh: (page?: number) => void;
     } | null;
 
 const SearchPage = (props: { className?: string }) => {
@@ -80,15 +80,11 @@ const SearchPage = (props: { className?: string }) => {
 
   useUpdateEffect(() => {
     paginationHandle && paginationHandle.refresh();
-  }, [
-    searchString,
-    searchField,
-    genreFilter,
-    directorFilter,
-    sortBy,
-    descending,
-    yearFilter,
-  ]);
+  }, [sortBy, descending]);
+
+  useUpdateEffect(() => {
+    paginationHandle && paginationHandle.refresh(1);
+  }, [searchString, searchField, genreFilter, directorFilter, yearFilter]);
 
   return (
     <div className={`SearchPage ${(props.className || "").trim()}`}>
@@ -194,11 +190,13 @@ const SearchPage = (props: { className?: string }) => {
             } catch (e) {
               setIsSearching(false);
               setHasError(true);
+              setTotalPages(1);
               return [];
             }
             setIsSearching(false);
             if (res.code !== 0) {
               setHasError(true);
+              setTotalPages(1);
               return [];
             } else {
               setHasError(false);
