@@ -1,24 +1,23 @@
-import "./app.scss";
-
+import { StylesProvider } from "@material-ui/core/styles";
+import { view } from "@risingstack/react-easy-state";
+import React, { useState } from "react";
 import {
+  BrowserRouter as Router,
   Link,
   Redirect,
   Route,
-  BrowserRouter as Router,
   Switch,
 } from "react-router-dom";
-import React, { useState } from "react";
-
+import { baseUrl } from "src/utils";
+import "./app.scss";
+import SearchBar from "./components/search-bar";
+import UserMenu from "./components/user-menu";
+import logo from "./logo.svg";
 import HomePage from "./routes/home";
 import MovieDetailPage from "./routes/movie";
-import SearchBar from "./components/search-bar";
 import SearchPage from "./routes/search";
 import SettingsPage from "./routes/settings";
-import { StylesProvider } from "@material-ui/core/styles";
-import UserMenu from "./components/user-menu";
 import UserPage from "./routes/user";
-import logo from "./logo.svg";
-import { view } from "@risingstack/react-easy-state";
 
 const App = () => {
   const [searchTerm, setSearchTerm] = useState<string>();
@@ -36,11 +35,10 @@ const App = () => {
     setField(text);
   };
 
-
   return (
     <StylesProvider injectFirst>
       <div className="App">
-        <Router>
+        <Router basename={new URL(baseUrl).pathname.replace(/\/+$/, "")}>
           <header className="App__header Header">
             <Link to="/" className="Header__logo">
               <img src={logo} alt="FilmSeer" className="Header__logo-image" />
@@ -56,8 +54,12 @@ const App = () => {
             <UserMenu className="Header__user-menu" />
           </header>
           <article className="App__main Main">
-              {searchTerm && (<Redirect to={{ pathname: `/search/${field}/${searchTerm}`}}/>)}
-              {suggestionTerm && (<Redirect to={{ pathname: `/movie/${suggestionTerm}`}}/>)}
+            {searchTerm && (
+              <Redirect to={{ pathname: `/search/${field}/${searchTerm}` }} />
+            )}
+            {suggestionTerm && (
+              <Redirect to={{ pathname: `/movie/${suggestionTerm}` }} />
+            )}
             <Switch>
               <Route path="/search/:searchField?/:searchString?">
                 <SearchPage className="Main__search" />
@@ -74,7 +76,7 @@ const App = () => {
               <Route path="/">
                 <HomePage className="Main__home" />
               </Route>
-            </Switch> 
+            </Switch>
           </article>
         </Router>
       </div>
