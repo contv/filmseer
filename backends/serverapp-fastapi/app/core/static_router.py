@@ -128,6 +128,12 @@ def handle_static_routes(app: FastAPI) -> FastAPI:
         spa_entry_file=settings.SPA_ENTRY_FILE,
     )
 
+    app.mount(
+        settings.API_URL_PATH + "/storages/images/",
+        StaticFiles(directory=settings.STORAGES_ROOT / "images"),
+        name="images",
+    )
+
     return app
 
 
