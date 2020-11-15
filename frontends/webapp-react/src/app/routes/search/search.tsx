@@ -3,9 +3,13 @@ import "./search.scss";
 import { api, useUpdateEffect } from "src/utils";
 
 import Filter from "src/app/components/filter";
+import FormControl from "@material-ui/core/FormControl";
+import InputLabel from "@material-ui/core/InputLabel";
+import MenuItem from "@material-ui/core/MenuItem";
 import MovieItem from "src/app/components/movie-item/movie-item";
 import Pagination from "src/app/components/pagination";
 import React from "react";
+import Select from "@material-ui/core/Select";
 import TileList from "src/app/components/tile-list";
 import movieLogo from "src/app/components/movie-item/movie-logo.png";
 import { useParams } from "react-router-dom";
@@ -55,19 +59,15 @@ const SearchPage = (props: { className?: string }) => {
     Math.floor((document.body.clientWidth * 0.8 + 24) / (150 + 24)) * 4;
 
   const updateYears = (event: any) => {
-    const a=_.map(event, 'key')
-    const b=a as string[];
-    console.log(b)
-    console.log(typeof(b))
-    setYearFilter(b);
+    setYearFilter((event || { name: "" }).name || "");
   };
 
   const updateDirector = (event: any) => {
-    setDirectorFilter(event.target.value);
+    setDirectorFilter((event || { name: "" }).name || "");
   };
 
   const updateGenre = (event: any) => {
-    setGenreFilter(event.target.value);
+    setGenreFilter((event || { name: "" }).name || "");
   };
 
   const getParamUpdater = (key: string) => {
@@ -93,46 +93,54 @@ const SearchPage = (props: { className?: string }) => {
 
   return (
     <div className={`SearchPage ${(props.className || "").trim()}`}>
+      
+      <div className="SearchPage__top">
       <h3>Search results for "{searchString}"</h3>
-      {filters && (
-        <div className="SearchPage__filters">
-          {filters.map((filter) => (
-            <Filter
-              key={filter.key}
-              filterKey={filter.key}
-              name={filter.name}
-              type={filter.type}
-              selections={filter.selections}
-              updateSearchParams={getParamUpdater(filter.key)}
-            />
-          ))}
-        </div>
-      )}
-      {filters && (
-        <div className="SearchPage__sort">
-          <label htmlFor="sort">Sort by</label>
-          <select
-            name="sort"
-            onChange={(event) => setSortBy(event.target.value)}
-            value={sortBy}
-          >
-            <option value="relevance">Relevance</option>
-            <option value="rating">Rating</option>
-            <option value="name">Name</option>
-            <option value="year">Year</option>
-          </select>
-          <select
-            name="order"
-            onChange={(event) =>
-              setDescending(event.target.value === "descending")
-            }
-            value={descending ? "descending" : "ascending"}
-          >
-            <option value="descending">Descending</option>
-            <option value="ascending">Ascending</option>
-          </select>
-        </div>
-      )}
+        {filters && (
+          <div className="SearchPage__filters">
+            {filters.map((filter) => (
+              <Filter
+                key={filter.key}
+                filterKey={filter.key}
+                name={filter.name}
+                type={filter.type}
+                selections={filter.selections}
+                updateSearchParams={getParamUpdater(filter.key)}
+              />
+            ))}
+          </div>
+        )}
+        {filters && (
+          <div className="SearchPage__sort">
+            <FormControl style={{ marginRight: "20px" }}>
+              <InputLabel>Sort by</InputLabel>
+              <Select
+                value={sortBy}
+                onChange={(event) => setSortBy(event.target.value as string)}
+              >
+                <MenuItem value="relevance">Relevance</MenuItem>
+                <MenuItem value="rating">Rating</MenuItem>
+                <MenuItem value="name">Name</MenuItem>
+                <MenuItem value="year">Year</MenuItem>
+              </Select>
+            </FormControl>
+
+            <FormControl>
+              <InputLabel>Order</InputLabel>
+              <Select
+                value={descending ? "descending" : "ascending"}
+                onChange={(event) =>
+                  setDescending((event.target.value as string) === "descending")
+                }
+              >
+                <MenuItem value="descending">Descending</MenuItem>
+                <MenuItem value="ascending">Ascending</MenuItem>
+              </Select>
+            </FormControl>
+          </div>
+        )}
+      </div>
+
       {isSearching || hasError ? (
         isSearching ? (
           <div>Searching...</div>
@@ -190,7 +198,7 @@ const SearchPage = (props: { className?: string }) => {
                   page: page,
                   sort: sortBy,
                   desc: descending,
-                }
+                },
               });
             } catch (e) {
               setIsSearching(false);
