@@ -98,7 +98,7 @@ return (
         />
       </div>
       <div onClick={showPopupIfNotLoggedIn}>
-        <a style={{textDecoration: "none"}} onClick={props.snapToReviews}>
+        <a style={{textDecoration: "none"}} onClick={state.loggedIn && props.snapToReviews}>
         <ChatBubble/>
         <Typography variant="body2" display="inline">
           Post a review
