@@ -69,10 +69,10 @@ const baseApiUrl = (
 const api = (
   { path, method, params, body }: ApiParamType = { path: "/", method: "GET" }
 ) => {
-  if (!(params instanceof URLSearchParams)) {
+  if (typeof params === "object" && !(params instanceof URLSearchParams)) {
     params = Object.assign({}, params);
   }
-  if (body instanceof URLSearchParams) {
+  if (typeof body === "object" && body instanceof URLSearchParams) {
     params = body;
     body = {};
   }
