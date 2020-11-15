@@ -26,7 +26,6 @@ const App = () => {
   const [field, setField] = useState<string>();
   const performSearch = (text: string) => {
     setSearchTerm(encodeURI(text));
-    console.log(text)
   };
 
   const performSelectSuggestion = (text: string) => {
@@ -58,6 +57,7 @@ const App = () => {
           </header>
           <article className="App__main Main">
               {searchTerm && (<Redirect to={{ pathname: `/search/${field}/${searchTerm}`}}/>)}
+              {!searchTerm && (<Redirect to={{ pathname: `/search/${field}/`}}/>)}
               {suggestionTerm && (<Redirect to={{ pathname: `/movie/${suggestionTerm}`}}/>)}
             <Switch>
               <Route path="/search/:searchField?/:searchString?/">
