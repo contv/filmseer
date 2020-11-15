@@ -38,12 +38,13 @@ const SearchPage = (props: { className?: string }) => {
   const [hasError, setHasError] = React.useState<Boolean>(false);
   const [genreFilter, setGenreFilter] = React.useState<string>();
   const [directorFilter, setDirectorFilter] = React.useState<string>();
-  const [yearFilter, setYearFilter] = React.useState<string>();
+  const [yearFilter, setYearFilter] = React.useState<Array<string>>();
   const [descending, setDescending] = React.useState<Boolean>(true);
   const [filters, setFilters] = React.useState<Array<any>>();
   const [sortBy, setSortBy] = React.useState<string>("relevance");
   const [totalPages, setTotalPages] = React.useState<number>(0);
   let paginationHandle: Handle<typeof Pagination>;
+  const searchParams = new URLSearchParams("");
 
   // This is an UGLY approach, but a CSS reader is even worse
   // UPDATE THIS WHEN YOU MODIFY SCSS
@@ -54,7 +55,11 @@ const SearchPage = (props: { className?: string }) => {
     Math.floor((document.body.clientWidth * 0.8 + 24) / (150 + 24)) * 4;
 
   const updateYears = (event: any) => {
-    setYearFilter(event.target.value);
+    const a=_.map(event, 'key')
+    const b=a as string[];
+    console.log(b)
+    console.log(typeof(b))
+    setYearFilter(b);
   };
 
   const updateDirector = (event: any) => {
@@ -185,7 +190,7 @@ const SearchPage = (props: { className?: string }) => {
                   page: page,
                   sort: sortBy,
                   desc: descending,
-                },
+                }
               });
             } catch (e) {
               setIsSearching(false);
