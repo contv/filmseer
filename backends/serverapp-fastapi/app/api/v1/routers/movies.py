@@ -401,7 +401,7 @@ async def get_movies(
         fields = [
             "title^10",
             "description",
-            "genres.name",
+            "genres.name.keyword",
             "positions.people.name",
             "positions.char_name",
         ]
@@ -514,7 +514,7 @@ async def get_suggestion(
         fields = [
             "title^10",
             "description",
-            "genres.name",
+            "genres.name.keyword",
             "positions.people.name",
             "positions.char_name",
         ]
