@@ -93,7 +93,7 @@ const SearchPage = (props: { className?: string }) => {
   return (
     <div className={`SearchPage ${(props.className || "").trim()}`}>
       
-      <div className="SearchPage__top">
+      <div className="SearchPage__filter-and-sort">
       <h3>Search results for "{searchString}"</h3>
         {filters && (
           <div className="SearchPage__filters">
