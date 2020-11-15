@@ -57,7 +57,6 @@ const App = () => {
           </header>
           <article className="App__main Main">
               {searchTerm && (<Redirect to={{ pathname: `/search/${field}/${searchTerm}`}}/>)}
-              {!searchTerm && (<Redirect to={{ pathname: `/search/${field}/`}}/>)}
               {suggestionTerm && (<Redirect to={{ pathname: `/movie/${suggestionTerm}`}}/>)}
             <Switch>
               <Route path="/search/:searchField?/:searchString?/">
