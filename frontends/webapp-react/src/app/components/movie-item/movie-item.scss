@@ -25,13 +25,23 @@
 
   &__content.MuiCardContent {
     &-root {
-      display: flex;
-      padding: 0 8px 0 8px;
+      padding: 0 8px;
 
       &:last-child {
         padding-bottom: 4px;
       }
     }
+  }
+
+  &__rating {
+    display: flex;
+    flex-flow: row nowrap;
+    overflow: hidden;
+  }
+
+  &__note {
+    font-size: 12px;
+    margin: 2px 0 4px;
   }
 
   .MuiTypography {
