@@ -59,7 +59,7 @@ const App = () => {
               {searchTerm && (<Redirect to={{ pathname: `/search/${field}/${searchTerm}`}}/>)}
               {suggestionTerm && (<Redirect to={{ pathname: `/movie/${suggestionTerm}`}}/>)}
             <Switch>
-              <Route path="/search/:searchField?/:searchString?/">
+              <Route path="/search/:searchField?/:searchString?">
                 <SearchPage className="Main__search" />
               </Route>
               <Route path="/user/:username?">
