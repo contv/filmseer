@@ -20,6 +20,12 @@
     width: 100%;
   }
 
+  &__field {
+    background-color: var(--gray-6);
+    box-sizing: border-box;
+  }
+
+
   &__container {
     position: relative;
   }

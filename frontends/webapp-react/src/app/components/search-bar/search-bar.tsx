@@ -3,8 +3,11 @@ import "./search-bar.scss";
 import AutoSuggest from "react-autosuggest";
 import AutosuggestHighlightMatch from "autosuggest-highlight/match";
 import AutosuggestHighlightParse from "autosuggest-highlight/parse";
+import FormControl from "@material-ui/core/FormControl";
+import MenuItem from "@material-ui/core/MenuItem";
 import React from "react";
 import { Search } from "react-feather";
+import Select from "@material-ui/core/Select";
 import { api } from "src/utils";
 import { debounce } from "lodash";
 import { view } from "@risingstack/react-easy-state";
@@ -15,6 +18,7 @@ type SearchBarProps = {
   width?: number;
   onSearch: (text: string) => void;
   onSelectSuggestion: (movieId: string) => void;
+  onField: (text: string) => void;
   debounceTime?: number;
   sizeSuggestion?: number;
 };
@@ -29,7 +33,7 @@ type SuggestionItem = {
 const SearchBar = (props: SearchBarProps & { className?: string }) => {
   const [value, setValue] = React.useState("");
   const [suggestions, setSuggestions] = React.useState<SuggestionItem[]>([]);
-
+  const [field, setField] = React.useState<string>("all");
   const getSuggestionValue = (suggestion: SuggestionItem) => {
     return suggestion.title;
   };
@@ -87,13 +91,14 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
     []
   );
 
-  function fetchSuggestions(value: string) {
+  function fetchSuggestions(value: string, field: string) {
     api({
       path: `/movies/search-hint`,
       method: "GET",
       params: {
         keyword: value,
         limit: props.sizeSuggestion || 8,
+        field: field || "all",
       },
     }).then((res) => {
       if (res.code !== 0) {
@@ -106,6 +111,7 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
 
   function handleClick() {
     props.onSearch(value);
+    props.onField(field);
   }
 
   function handleEnter(event: React.KeyboardEvent<any>) {
@@ -124,13 +130,29 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
           "1fr " + (props.height ? props.height + "px" : "2em"),
       }}
     >
+      <div className="SearchBar__field">
+      <FormControl variant="outlined">
+        <Select
+          name="searchBy"
+          onChange={(event) => setField(event.target.value as string)}
+          value={field}
+          style={{height: props.height}}
+        >
+          <MenuItem value="all">All</MenuItem>
+          <MenuItem value="title">Title</MenuItem>
+          <MenuItem value="description">Description</MenuItem>
+          <MenuItem value="people">People</MenuItem>
+          <MenuItem value="genres">Genres</MenuItem>
+        </Select>
+      </FormControl>
+      </div>
       <div className="SearchBar__outer">
         <AutoSuggest
           suggestions={suggestions}
           theme={theme}
           onSuggestionsClearRequested={() => setSuggestions([])}
           onSuggestionsFetchRequested={({ value }) =>
-            debouncedFetchSuggestions(value)
+            debouncedFetchSuggestions(value, field)
           }
           onSuggestionSelected={(_, { suggestion, suggestionValue }) => {
             setValue(suggestionValue);

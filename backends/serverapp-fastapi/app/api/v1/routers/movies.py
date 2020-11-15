@@ -25,7 +25,7 @@ override_prefix = None
 override_prefix_all = None
 
 search_cache_driver = None
-recommendation_cahce_driver = None
+recommendation_cache_driver = None
 elasticsearch = None
 
 
@@ -85,10 +85,10 @@ async def init_search_cache_driver():
 
 
 @router.on_event("startup")
-async def init_recommendation_cahce_driver():
-    global recommendation_cahce_driver
-    if not recommendation_cahce_driver:
-        recommendation_cahce_driver = RedisDictStorageDriver(
+async def init_recommendation_cache_driver():
+    global recommendation_cache_driver
+    if not recommendation_cache_driver:
+        recommendation_cache_driver = RedisDictStorageDriver(
             key_prefix="recommendations:",
             key_filter=r"[^a-zA-Z0-9_-]+",
             ttl=settings.REDIS_SEARCH_TTL,
@@ -97,8 +97,8 @@ async def init_recommendation_cahce_driver():
             redis_pool_min=settings.REDIS_POOL_MIN,
             redis_pool_max=settings.REDIS_POOL_MAX,
         )
-        await recommendation_cahce_driver.initialize_driver()
-    return recommendation_cahce_driver
+        await recommendation_cache_driver.initialize_driver()
+    return recommendation_cache_driver
 
 
 @router.on_event("startup")
@@ -121,8 +121,8 @@ def connect_elasticsearch():
 
 @router.on_event("shutdown")
 async def terminate_recommendation_cache_driver():
-    global recommendation_cahce_driver
-    await recommendation_cahce_driver.terminate_driver()
+    global recommendation_cache_driver
+    await recommendation_cache_driver.terminate_driver()
 
 
 @router.on_event("shutdown")
@@ -147,7 +147,9 @@ async def search_movies(
         "year",
     )[0],
     desc: Optional[bool] = True,
+    field: Optional[str] = "all",
 ):
+
     return wrap(
         await get_movies(
             request=request,
@@ -160,6 +162,7 @@ async def search_movies(
             sort=sort or ("relevance", "rating", "name", "year")[0],
             desc=desc if desc is not None else True,
             cache_result=True,
+            field=field or "all",
         )
     )
 
@@ -347,7 +350,9 @@ async def get_movies(
     sort: str = ("relevance", "rating", "name", "year")[0],
     desc: bool = True,
     cache_result: bool = False,
+    field: str = "all",
 ) -> Dict:
+
     if genres is None:
         genres = []
     if years is None:
@@ -360,7 +365,12 @@ async def get_movies(
             search_cache_driver = await init_search_cache_driver()
 
         # Lookup existing search in session
-        searches = request.session.get("searches", {})
+
+        session_name = "searches"
+        if field != "all":
+            session_name = field + "_searches"
+
+        searches = request.session.get(session_name, {})
         try:
             search_id = searches[keywords]
         except KeyError:
@@ -368,7 +378,7 @@ async def get_movies(
             if len(searches.keys()) >= settings.REDIS_SEARCHES_MAX:
                 searches.pop(list(searches)[0])
             searches[keywords] = search_id
-            request.session["searches"] = searches
+            request.session[session_name] = searches
 
         # Attempt to retrieve stored movie payload from Redis
         payload, _ = await search_cache_driver.get(search_id)
@@ -385,6 +395,25 @@ async def get_movies(
     years_in_keywords: List[str] = (
         re.findall(r"(\d{4})", keywords) if keywords is not None else []
     )
+
+    fields = []
+    if field == "all":
+        fields = [
+            "title^10",
+            "description",
+            "genres.name",
+            "positions.people.name",
+            "positions.char_name",
+        ]
+    if field == "title":
+        fields = ["title"]
+    elif field == "description":
+        fields = ["description"]
+    elif field == "genres":
+        fields = ["genres.name"]
+    elif field == "people":
+        fields = ["positions.people.name"]
+
     queries = [
         Q(
             "bool",
@@ -392,13 +421,7 @@ async def get_movies(
                 Q(
                     "multi_match",
                     query=keywords,
-                    fields=[
-                        "title^10",
-                        "description",
-                        "genres.name",
-                        "positions.people",
-                        "positions.char_name",
-                    ],
+                    fields=fields,
                 )
             ]
             if keywords is not None
@@ -479,10 +502,30 @@ async def get_movies(
 @router.get(
     "/search-hint", tags=["Movies"], response_model=Wrapper[ListMovieSuggestion]
 )
-async def get_suggestion(keyword: str = "", limit: Optional[int] = 8):
+async def get_suggestion(
+    keyword: str = "", limit: Optional[int] = 8, field: Optional[str] = "all"
+):
     global elasticsearch
     if not elasticsearch:
         elasticsearch = connect_elasticsearch()
+
+    fields = []
+    if field == "all":
+        fields = [
+            "title^10",
+            "description",
+            "genres.name",
+            "positions.people.name",
+            "positions.char_name",
+        ]
+    if field == "title":
+        fields = ["title"]
+    elif field == "description":
+        fields = ["description"]
+    elif field == "genres":
+        fields = ["genres.name"]
+    elif field == "people":
+        fields = ["positions.people.name"]
 
     queries = [
         Q(
@@ -491,13 +534,7 @@ async def get_suggestion(keyword: str = "", limit: Optional[int] = 8):
                 Q(
                     "multi_match",
                     query=keyword,
-                    fields=[
-                        "title^10",
-                        "description",
-                        "genres.name",
-                        "positions.people",
-                        "positions.char_name",
-                    ],
+                    fields=fields,
                 )
             ],
         )
@@ -560,9 +597,9 @@ async def get_recommendation(
         directors = []
     directors = list(filter(None, directors))
 
-    global recommendation_cahce_driver
-    if not recommendation_cahce_driver:
-        recommendation_cahce_driver = await init_recommendation_cahce_driver()
+    global recommendation_cache_driver
+    if not recommendation_cache_driver:
+        recommendation_cache_driver = await init_recommendation_cache_driver()
 
     if type == "foryou":
         user_id = request.session.get("user_id")
@@ -595,18 +632,18 @@ async def get_recommendation(
         try:
             search_id = searches[movie_id]
         except KeyError:
-            search_id = await recommendation_cahce_driver.create()
+            search_id = await recommendation_cache_driver.create()
             if len(searches.keys()) >= settings.REDIS_SEARCHES_MAX:
                 searches.pop(list(searches)[0])
             searches[movie_id] = search_id
         # Attempt to retrieve stored movie payload from Redis
-        movies, _ = await recommendation_cahce_driver.get(search_id)
+        movies, _ = await recommendation_cache_driver.get(search_id)
         if movies:
             movies = movies["movies"]
         else:
             try:
                 movies = await predict_on_movie(movie_id, size)
-                await recommendation_cahce_driver.update(search_id, {"movies": movies})
+                await recommendation_cache_driver.update(search_id, {"movies": movies})
             except ValueError:
                 raise ApiException(404, 3001, "Movie has not been rated before")
             except TypeError:
@@ -651,5 +688,5 @@ async def get_recommendation(
         desc=desc if desc is not None else True,
         cache_result=False,
     )
-
+    
     return wrap(postprocessed)

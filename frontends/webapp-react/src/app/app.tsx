@@ -23,13 +23,17 @@ import { view } from "@risingstack/react-easy-state";
 const App = () => {
   const [searchTerm, setSearchTerm] = useState<string>();
   const [suggestionTerm, setSuggestionTerm] = useState<string>();
-
+  const [field, setField] = useState<string>();
   const performSearch = (text: string) => {
     setSearchTerm(encodeURI(text));
   };
 
   const performSelectSuggestion = (text: string) => {
     setSuggestionTerm(encodeURI(text));
+  };
+
+  const performSetField = (text: string) => {
+    setField(text);
   };
 
 
@@ -45,16 +49,17 @@ const App = () => {
               type="header"
               onSearch={(text) => performSearch(text)}
               onSelectSuggestion={(text) => performSelectSuggestion(text)}
+              onField={(text) => performSetField(text)}
               className="Header__search-bar"
               height={48}
             ></SearchBar>
             <UserMenu className="Header__user-menu" />
           </header>
           <article className="App__main Main">
-              {searchTerm && (<Redirect to={{ pathname: `/search/${searchTerm}`}}/>)}
+              {searchTerm && (<Redirect to={{ pathname: `/search/${field}/${searchTerm}`}}/>)}
               {suggestionTerm && (<Redirect to={{ pathname: `/movie/${suggestionTerm}`}}/>)}
             <Switch>
-              <Route path="/search/:searchString?">
+              <Route path="/search/:searchField?/:searchString?">
                 <SearchPage className="Main__search" />
               </Route>
               <Route path="/user/:username?">

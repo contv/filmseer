@@ -47,6 +47,10 @@ async def create_session(login: Login, request: Request) -> Wrapper[dict]:
         request.session["username"] = str(user.username)
         request.session["user_id"] = str(user.user_id)
         request.session["searches"] = {}
+        request.session["title_searches"] = {}
+        request.session["description_searches"] = {}
+        request.session["genres_searches"] = {}
+        request.session["people_searches"] = {}
         request.session["recommendations"] = {}
         return wrap({})
     raise ApiException(500, 2010, "Incorrect username or password")
