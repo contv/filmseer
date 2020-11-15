@@ -136,11 +136,11 @@ async def search_movies(
     request: Request,
     keywords: str = "",
     genres: Optional[List[str]] = Query(None),
-    years: Optional[List[constr(regex=r"^$|^\d{4}$")]] = Query(None),
+    years: Optional[List[constr(regex=r"^$|^\d{4}$")]] = Query(None),  # noqa: F722
     directors: Optional[List[str]] = Query(None),
     per_page: Optional[conint(gt=0, le=100)] = None,
     page: Optional[conint(gt=0)] = 1,
-    sort: Optional[constr(regex=r"^relevance|rating|name|year$")] = (
+    sort: Optional[constr(regex=r"^(?:relevance|rating|name|year)$")] = (  # noqa: F722
         "relevance",
         "rating",
         "name",
@@ -401,7 +401,7 @@ async def get_movies(
                 )
             ]
             if keywords is not None
-            else None,
+            else [],
             should=[
                 Q(
                     {
@@ -427,7 +427,9 @@ async def get_movies(
                 if movies is not None
                 else []
             ),
-            minimum_should_match=1 if movies is not None or years_in_keywords else 0,
+            minimum_should_match=(
+                1 if ((movies is not None) or years_in_keywords) else 0
+            ),
         )
     ]
 
@@ -463,7 +465,7 @@ async def get_movies(
         for hit in response
     }
 
-    if cache_result:
+    if cache_result and keywords is not None:
         # Save response in Redis
         await search_cache_driver.update(search_id, preprocessed)
 
@@ -528,16 +530,18 @@ async def get_suggestion(keyword: str = "", limit: Optional[int] = 8):
 @router.get("/recommendation", tags=["Movies"], response_model=Wrapper[Dict])
 async def get_recommendation(
     request: Request,
-    type: str,  # "foryou", "detail", "new", "popular"
+    type: constr(
+        regex=r"^(?:foryou|detail|new|popular)$"  # noqa: F722
+    ),  # "foryou", "detail", "new", "popular"
     size: conint(gt=0, le=50) = 20,
     movie_id: Optional[str] = None,
     recency: conint(gt=0, le=30) = 7,
     genres: Optional[List[str]] = Query(None),
-    years: Optional[List[constr(regex=r"^$|^\d{4}$")]] = Query(None),
+    years: Optional[List[constr(regex=r"^$|^\d{4}$")]] = Query(None),  # noqa: F722
     directors: Optional[List[str]] = Query(None),
     per_page: Optional[conint(gt=0, le=100)] = None,
     page: Optional[conint(gt=0)] = 1,
-    sort: Optional[constr(regex=r"^relevance|rating|name|year$")] = (
+    sort: Optional[constr(regex=r"^(?:relevance|rating|name|year)$")] = (  # noqa: F722
         "relevance",
         "rating",
         "name",
@@ -545,6 +549,16 @@ async def get_recommendation(
     )[0],
     desc: Optional[bool] = True,
 ):
+    if not genres:
+        genres = []
+    genres = list(filter(None, genres))
+    if not years:
+        years = []
+    years = list(filter(None, years))
+    if not directors:
+        directors = []
+    directors = list(filter(None, directors))
+
     global recommendation_cahce_driver
     if not recommendation_cahce_driver:
         recommendation_cahce_driver = await init_recommendation_cahce_driver()
@@ -561,7 +575,10 @@ async def get_recommendation(
             ).values_list("movie_id")
         )
         # Calculate unseen movies
-        movie_set = await load_movie_set()
+        try:
+            movie_set = await load_movie_set()
+        except TypeError:
+            raise ApiException(404, 3000, "Recommendation not available")
         unseen = movie_set.difference(movies_seen)
         # Get a random subset for variety
         unseen = choices(tuple(unseen), k=settings.RECOMMENDER_RANDOM_SAMPLESIZE)
@@ -624,14 +641,14 @@ async def get_recommendation(
     postprocessed = await get_movies(
         request=request,
         movies=movies,
-        genres=genres or [],
-        years=years or [],
-        directors=directors or [],
+        genres=genres,
+        years=years,
+        directors=directors,
         per_page=per_page or 1,
         page=page or 1,
         sort=sort or ("relevance", "rating", "name", "year")[0],
         desc=desc if desc is not None else True,
-        cache_result=True,
+        cache_result=False,
     )
 
     return wrap(postprocessed)

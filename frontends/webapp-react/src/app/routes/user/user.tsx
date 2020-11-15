@@ -184,11 +184,9 @@ const UserPage = (props: { className?: string }) => {
                 path: username ? `/user/${username}/wishlist` : "/wishlist",
                 method: "GET",
               });
-              console.log("response length", response.data.items.length);
               return response.data.items as WishlistItem[];
             }}
             renderCallback={(data) => {
-              console.log("length", data.length);
               setWishlist(data as WishlistItem[]);
             }}
           />
