@@ -1,6 +1,6 @@
 import "./movie-interact.scss";
 
-import React, { ReactElement, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import BookmarkIcon from "@material-ui/icons/Bookmark";
 import { ChatBubble } from "@material-ui/icons";
