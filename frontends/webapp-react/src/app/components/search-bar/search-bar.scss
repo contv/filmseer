@@ -1,5 +1,5 @@
 .SearchBar {
-  display: flex;
+  display: grid;
 
   &__button {
     font-size: 1em;
@@ -23,8 +23,14 @@
   &__field {
     background-color: var(--gray-6);
     box-sizing: border-box;
-  }
 
+    .MuiFormControl-root {
+      display: flex;
+      justify-content: stretch;
+      align-items: stretch;
+      height: 100%;
+    }
+  }
 
   &__container {
     position: relative;
