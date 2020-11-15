@@ -1,6 +1,6 @@
 import "./movie-interact.scss";
 
-import React, { useEffect, useState } from "react";
+import React, { ReactElement, useEffect, useState } from "react";
 
 import BookmarkIcon from "@material-ui/icons/Bookmark";
 import { ChatBubble } from "@material-ui/icons";
@@ -19,7 +19,7 @@ type MovieInteractProps = {
   setUserRating: (newValue: number) => void;
 };
 
-const MovieInteract = (props: MovieInteractProps) => {;
+const MovieInteract = (props: MovieInteractProps & {snapToReviews : any}) => {;
   const [isWishlisted, setIsWishlisted] = useState<Boolean>(false);
   const [popupVisible, setPopupVisible] = React.useState(false);
 
@@ -98,7 +98,7 @@ return (
         />
       </div>
       <div onClick={showPopupIfNotLoggedIn}>
-        <a href="#ReviewSection" style={{textDecoration: "none"}}>
+        <a style={{textDecoration: "none"}} onClick={props.snapToReviews}>
         <ChatBubble/>
         <Typography variant="body2" display="inline">
           Post a review
