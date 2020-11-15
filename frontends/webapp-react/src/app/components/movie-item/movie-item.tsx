@@ -19,6 +19,7 @@ export type MovieItemProps = {
   cumulativeRating: number;
   numRatings: number;
   numReviews: number;
+  note?: React.ReactNode;
 };
 
 // Convert a number into a formatted string with k or M suffix applied
@@ -73,7 +74,7 @@ const MovieItem = (props: MovieItemProps & { className?: string }) => {
         ></CardHeader>
         <CardContent className="MovieItem__content">
           {props.numRatings > 0 && (
-            <>
+            <div className="MovieItem__rating">
               <Stars
                 movieId={props.movieId}
                 rating={avgRating}
@@ -84,8 +85,9 @@ const MovieItem = (props: MovieItemProps & { className?: string }) => {
               <Typography>
                 {avgRating}({formattedNumRatings})
               </Typography>
-            </>
+            </div>
           )}
+          {props.note && <div className="MovieItem__note">{props.note}</div>}
         </CardContent>
       </Card>
     </Link>

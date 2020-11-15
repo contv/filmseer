@@ -89,7 +89,7 @@ const Pagination = React.forwardRef<
   };
 
   const refreshData = (page?: number) => {
-    if (!!page) {
+    if (!!page && page !== current) {
       setCurrent(page);
       if (props.dataType === "slice" && props.dataCallback) {
         Promise.resolve(props.dataCallback()).then((data) => {
