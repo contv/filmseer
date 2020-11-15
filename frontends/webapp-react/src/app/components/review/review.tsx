@@ -1,10 +1,9 @@
-import "./review.scss";
-
-import { Link } from "react-router-dom";
 import { Rating } from "@material-ui/lab";
-import React from "react";
-import ReviewFlags from "src/app/components/review-flags";
 import { view } from "@risingstack/react-easy-state";
+import React from "react";
+import { Link } from "react-router-dom";
+import ReviewFlags from "src/app/components/review-flags";
+import "./review.scss";
 
 export type ReviewProps = {
   reviewId: string;
