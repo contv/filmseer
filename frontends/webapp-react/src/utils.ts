@@ -56,6 +56,14 @@ class ApiError extends Error {
   }
 }
 
+const baseUrl = (
+  ((document.getElementsByTagName("base")[0] || {}).href || "") + "/"
+).replace(/(?<=\/)\/+$/, "");
+
+const baseApiUrl = (
+  ((process.env || {}).REACT_APP_API_BASEURL || baseUrl + "api/v1") + "/"
+).replace(/(?<=\/)\/+$/, "");
+
 const api = (
   { path, method, params, body }: ApiParamType = { path: "/", method: "GET" }
 ) => {
@@ -113,7 +121,7 @@ const api = (
   }
 
   return fetch(
-    ((process.env || {}).REACT_APP_API_BASEURL || "/api/v1") +
+    baseApiUrl.replace(/\/+$/, "") +
       path +
       (!params
         ? ""
@@ -257,4 +265,12 @@ const useUpdateEffect: typeof React.useEffect = function useUpdateEffect(
   }, dependencies); // eslint-disable-line react-hooks/exhaustive-deps
 };
 
-export { api, apiEffect, ApiError, usePrevious, useUpdateEffect };
+export {
+  api,
+  apiEffect,
+  ApiError,
+  usePrevious,
+  useUpdateEffect,
+  baseUrl,
+  baseApiUrl,
+};
