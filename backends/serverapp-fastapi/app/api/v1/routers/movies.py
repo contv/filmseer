@@ -587,6 +587,8 @@ async def get_recommendation(
     )[0],
     desc: Optional[bool] = True,
 ):
+    cached_popular = False
+    
     if not genres:
         genres = []
     genres = list(filter(None, genres))
@@ -605,25 +607,40 @@ async def get_recommendation(
         user_id = request.session.get("user_id")
         if not user_id:
             raise ApiException(500, 2001, "You are not logged in!")
-        # Grab seen movies
-        movies_seen = set(
-            str(item[0])
-            for item in await Ratings.filter(
-                user_id=user_id, delete_date=None
-            ).values_list("movie_id")
-        )
-        # Calculate unseen movies
+        # Check if foryou has been generated recently
+        searches = request.session["recommendations"]
         try:
-            movie_set = await load_movie_set()
-        except TypeError:
-            raise ApiException(404, 3000, "Recommendation not available")
-        unseen = movie_set.difference(movies_seen)
-        # Get a random subset for variety
-        unseen = choices(tuple(unseen), k=settings.RECOMMENDER_RANDOM_SAMPLESIZE)
-        try:
-            movies = await predict_on_user(user_id, unseen, size)
-        except TypeError:
-            raise ApiException(404, 2090, "Recommendation not available")
+            search_id = searches["foryou"]
+        except KeyError:
+            search_id = await recommendation_cache_driver.create()
+            if len(searches.keys()) >= settings.REDIS_SEARCHES_MAX:
+                searches.pop(list(searches)[0])
+            searches["foryou"] = search_id
+        # Attempt to retrieve stored movie payload from Redis
+        movies, _ = await recommendation_cache_driver.get(search_id)
+        if movies:
+            movies = movies["movies"]
+        else:
+            # Grab seen movies
+            movies_seen = set(
+                str(item[0])
+                for item in await Ratings.filter(
+                    user_id=user_id, delete_date=None
+                ).values_list("movie_id")
+            )
+            # Calculate unseen movies
+            try:
+                movie_set = await load_movie_set()
+            except TypeError:
+                raise ApiException(404, 3000, "Recommendation not available")
+            unseen = movie_set.difference(movies_seen)
+            # Get a random subset for variety
+            unseen = choices(tuple(unseen), k=settings.RECOMMENDER_RANDOM_SAMPLESIZE)
+            try:
+                movies = await predict_on_user(user_id, unseen, size)
+                await recommendation_cache_driver.update(search_id, {"movies": movies})
+            except TypeError:
+                raise ApiException(404, 2090, "Recommendation not available")
     elif type == "detail":
         if not movie_id:
             raise ApiException(404, 2060, "That movie doesn't exist.")
@@ -648,45 +665,66 @@ async def get_recommendation(
                 raise ApiException(404, 2074, "Movie has not been rated before")
             except TypeError:
                 raise ApiException(404, 2090, "Recommendation not available")
-    elif type == "popular":
-        cutoff_date = datetime.now() - relativedelta(days=recency)
-        movies = (
-            await Ratings.filter(create_date__gte=cutoff_date, delete_date=None)
-            .annotate(movie_id_count=Count("movie_id"))
-            .group_by("movie_id")
-            .order_by("-movie_id_count")
-            .limit(size)
-            .values_list("movie_id", "movie_id_count")
-        )
-        movies = [movie[0] for movie in movies]
-    elif type == "new":
-        cutoff_date = datetime.now() - relativedelta(days=recency)
-        movies = (
-            await Movies.filter(
-                release_date__gte=cutoff_date,
-                release_date__lte=datetime.now(),
-                delete_date=None,
+    elif type == "popular":       
+        # Try to retrieve a cached popular recommendation
+        movies, _ = await recommendation_cache_driver.get("popular")
+        if movies:
+            cached_popular = True
+        else:
+            cutoff_date = datetime.now() - relativedelta(days=recency)
+            movies = (
+                await Ratings.filter(create_date__gte=cutoff_date, delete_date=None)
+                .annotate(movie_id_count=Count("movie_id"))
+                .group_by("movie_id")
+                .order_by("-movie_id_count")
+                .limit(size)
+                .values_list("movie_id", "movie_id_count")
             )
-            .order_by("-release_date")
-            .limit(size)
-            .values_list("movie_id")
-        )
-        movies = [movie[0] for movie in movies]
+            movies = [str(movie[0]) for movie in movies]
+    elif type == "new":     
+        movies, _ = await recommendation_cache_driver.get("new")
+        if movies:
+            movies = movies["movies"]
+        else:
+            cutoff_date = datetime.now() - relativedelta(days=recency)
+            movies = (
+                await Movies.filter(
+                    release_date__gte=cutoff_date,
+                    release_date__lte=datetime.now(),
+                    delete_date=None,
+                )
+                .order_by("-release_date")
+                .limit(size)
+                .values_list("movie_id")
+            )
+            movies = [str(movie[0]) for movie in movies]
+            await recommendation_cache_driver.update("new", {"movies": movies})
     else:
         raise ApiException(404, 2091, "Invalid recommendation type")
 
     # Postprocess to apply filters, sorting and pagination
-    postprocessed = await get_movies(
-        request=request,
-        movies=movies,
-        genres=genres,
-        years=years,
-        directors=directors,
-        per_page=per_page or 1,
-        page=page or 1,
-        sort=sort or ("relevance", "rating", "name", "year")[0],
-        desc=desc if desc is not None else True,
-        cache_result=False,
-    )
-    
+    if cached_popular:
+        movies["movies"] = [SearchResponse.parse_obj(movie) for movie in movies["movies"]]
+        movies["filters"] = [FilterResponse.parse_obj(filter) for filter in movies["filters"]]
+        postprocessed = movies
+    else:
+        postprocessed = await get_movies(
+            request=request,
+            movies=movies,
+            genres=genres,
+            years=years,
+            directors=directors,
+            per_page=per_page or 1,
+            page=page or 1,
+            sort=sort or ("relevance", "rating", "name", "year")[0],
+            desc=desc if desc is not None else True,
+            cache_result=False
+        )
+        # Cache postprocessed payload for Popular, which is only visible to logged out users (no banlist required)
+        if type == "popular":
+            postprocessed_to_save = postprocessed.copy()
+            postprocessed_to_save["movies"] = [movie.dict() for movie in postprocessed_to_save["movies"]]
+            postprocessed_to_save["filters"] = [filter.dict() for filter in postprocessed_to_save["filters"]]
+            await recommendation_cache_driver.update("popular", postprocessed_to_save)
+        
     return wrap(postprocessed)
