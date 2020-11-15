@@ -1,6 +1,5 @@
 import React from "react";
 import state from "src/app/states";
-import { URLSearchParams } from "url";
 
 type RequestMethodType =
   | "GET"
