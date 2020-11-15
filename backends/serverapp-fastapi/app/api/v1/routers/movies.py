@@ -573,7 +573,7 @@ async def get_recommendation(
     ),  # "foryou", "detail", "new", "popular"
     size: conint(gt=0, le=50) = 20,
     movie_id: Optional[str] = None,
-    recency: conint(gt=0, le=30) = 7,
+    recency: conint(gt=0, le=30) = 90,
     genres: Optional[List[str]] = Query(None),
     years: Optional[List[constr(regex=r"^$|^\d{4}$")]] = Query(None),  # noqa: F722
     directors: Optional[List[str]] = Query(None),
