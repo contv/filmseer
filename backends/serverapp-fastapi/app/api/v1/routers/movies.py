@@ -587,6 +587,8 @@ async def get_recommendation(
     )[0],
     desc: Optional[bool] = True,
 ):
+    cached_popular = False
+    
     if not genres:
         genres = []
     genres = list(filter(None, genres))
@@ -663,11 +665,11 @@ async def get_recommendation(
                 raise ApiException(404, 2074, "Movie has not been rated before")
             except TypeError:
                 raise ApiException(404, 2090, "Recommendation not available")
-    elif type == "popular":
+    elif type == "popular":       
         # Try to retrieve a cached popular recommendation
         movies, _ = await recommendation_cache_driver.get("popular")
         if movies:
-            movies = movies["movies"]
+            cached_popular = True
         else:
             cutoff_date = datetime.now() - relativedelta(days=recency)
             movies = (
@@ -679,8 +681,7 @@ async def get_recommendation(
                 .values_list("movie_id", "movie_id_count")
             )
             movies = [str(movie[0]) for movie in movies]
-            await recommendation_cache_driver.update("popular", {"movies": movies})
-    elif type == "new":
+    elif type == "new":     
         movies, _ = await recommendation_cache_driver.get("new")
         if movies:
             movies = movies["movies"]
@@ -702,17 +703,28 @@ async def get_recommendation(
         raise ApiException(404, 2091, "Invalid recommendation type")
 
     # Postprocess to apply filters, sorting and pagination
-    postprocessed = await get_movies(
-        request=request,
-        movies=movies,
-        genres=genres,
-        years=years,
-        directors=directors,
-        per_page=per_page or 1,
-        page=page or 1,
-        sort=sort or ("relevance", "rating", "name", "year")[0],
-        desc=desc if desc is not None else True,
-        cache_result=False,
-    )
-
+    if cached_popular:
+        movies["movies"] = [SearchResponse.parse_obj(movie) for movie in movies["movies"]]
+        movies["filters"] = [FilterResponse.parse_obj(filter) for filter in movies["filters"]]
+        postprocessed = movies
+    else:
+        postprocessed = await get_movies(
+            request=request,
+            movies=movies,
+            genres=genres,
+            years=years,
+            directors=directors,
+            per_page=per_page or 1,
+            page=page or 1,
+            sort=sort or ("relevance", "rating", "name", "year")[0],
+            desc=desc if desc is not None else True,
+            cache_result=False
+        )
+        # Cache postprocessed payload for Popular, which is only visible to logged out users (no banlist required)
+        if type == "popular":
+            postprocessed_to_save = postprocessed.copy()
+            postprocessed_to_save["movies"] = [movie.dict() for movie in postprocessed_to_save["movies"]]
+            postprocessed_to_save["filters"] = [filter.dict() for filter in postprocessed_to_save["filters"]]
+            await recommendation_cache_driver.update("popular", postprocessed_to_save)
+        
     return wrap(postprocessed)
