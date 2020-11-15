@@ -51,7 +51,7 @@ const MovieItem = (props: MovieItemProps & { className?: string }) => {
 
   let genres = [];
   for (const genre of props.genres) {
-    genres.push(<GenreTile key={genre.id} {...genre} />);
+    genres.push(<GenreTile className="MovieItem__genre" key={genre.id} {...genre} />);
   }
 
   return (

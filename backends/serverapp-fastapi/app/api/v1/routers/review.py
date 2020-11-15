@@ -97,15 +97,7 @@ async def search_user_review(
                 user_id=user_id, delete_date=None
             ).count(),
         )
-        for r in (
-            (
-                await Reviews.filter(
-                    user_id=user_id, delete_date=None, description__icontains=keyword
-                )
-            )
-            if keyword
-            else (await Reviews.filter(user_id=user_id, delete_date=None))
-        )
+        for r in await Reviews.filter(user_id=user_id, delete_date=None)
         .order_by("-create_date")
         .offset((page - 1) * per_page)
         .limit(per_page)

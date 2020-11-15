@@ -1,16 +1,16 @@
-import "./search-bar.scss";
-
-import AutoSuggest from "react-autosuggest";
-import AutosuggestHighlightMatch from "autosuggest-highlight/match";
-import AutosuggestHighlightParse from "autosuggest-highlight/parse";
 import FormControl from "@material-ui/core/FormControl";
 import MenuItem from "@material-ui/core/MenuItem";
-import React from "react";
-import { Search } from "react-feather";
 import Select from "@material-ui/core/Select";
-import { api } from "src/utils";
-import { debounce } from "lodash";
 import { view } from "@risingstack/react-easy-state";
+import AutosuggestHighlightMatch from "autosuggest-highlight/match";
+import AutosuggestHighlightParse from "autosuggest-highlight/parse";
+import { debounce } from "lodash";
+import React from "react";
+import AutoSuggest from "react-autosuggest";
+import { Search } from "react-feather";
+import { useParams } from "react-router-dom";
+import { api } from "src/utils";
+import "./search-bar.scss";
 
 type SearchBarProps = {
   type: string;
@@ -31,9 +31,11 @@ type SuggestionItem = {
 };
 
 const SearchBar = (props: SearchBarProps & { className?: string }) => {
-  const [value, setValue] = React.useState("");
+  const { searchString } = useParams<{ searchString?: string }>();
+  const { searchField } = useParams<{ searchField?: string }>();
+  const [value, setValue] = React.useState(searchString || "");
   const [suggestions, setSuggestions] = React.useState<SuggestionItem[]>([]);
-  const [field, setField] = React.useState<string>("all");
+  const [field, setField] = React.useState<string>(searchField || "all");
   const getSuggestionValue = (suggestion: SuggestionItem) => {
     return suggestion.title;
   };
@@ -86,12 +88,7 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
     );
   };
 
-  const debouncedFetchSuggestions = React.useCallback(
-    debounce(fetchSuggestions, props.debounceTime || 150),
-    []
-  );
-
-  function fetchSuggestions(value: string, field: string) {
+  const fetchSuggestions = (value: string, field: string) => {
     api({
       path: `/movies/search-hint`,
       method: "GET",
@@ -107,18 +104,22 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
         setSuggestions(res.data.items);
       }
     });
-  }
+  };
 
-  function handleClick() {
+  const debouncedFetchSuggestions = React.useCallback(
+    debounce(fetchSuggestions, props.debounceTime || 150),
+    []
+  );
+  const handleClick = () => {
     props.onSearch(value);
     props.onField(field);
-  }
+  };
 
-  function handleEnter(event: React.KeyboardEvent<any>) {
+  const handleEnter = (event: React.KeyboardEvent<any>) => {
     if (event.key === "Enter") {
       handleClick();
     }
-  }
+  };
 
   return (
     <div
@@ -127,24 +128,25 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
         width: props.width,
         height: props.height,
         gridTemplateColumns:
-          "1fr " + (props.height ? props.height + "px" : "2em"),
+          "130px 1fr " + (props.height ? props.height + "px" : "2em"),
+        gridTemplateRows: props.height + "px",
       }}
     >
       <div className="SearchBar__field">
-      <FormControl variant="outlined">
-        <Select
-          name="searchBy"
-          onChange={(event) => setField(event.target.value as string)}
-          value={field}
-          style={{height: props.height}}
-        >
-          <MenuItem value="all">All</MenuItem>
-          <MenuItem value="title">Title</MenuItem>
-          <MenuItem value="description">Description</MenuItem>
-          <MenuItem value="people">People</MenuItem>
-          <MenuItem value="genres">Genres</MenuItem>
-        </Select>
-      </FormControl>
+        <FormControl variant="outlined">
+          <Select
+            name="searchBy"
+            onChange={(event) => setField(event.target.value as string)}
+            value={field}
+            style={{ height: "100%" }}
+          >
+            <MenuItem value="all">All</MenuItem>
+            <MenuItem value="title">Title</MenuItem>
+            <MenuItem value="description">Description</MenuItem>
+            <MenuItem value="people">People</MenuItem>
+            <MenuItem value="genres">Genres</MenuItem>
+          </Select>
+        </FormControl>
       </div>
       <div className="SearchBar__outer">
         <AutoSuggest

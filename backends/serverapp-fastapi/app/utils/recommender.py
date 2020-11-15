@@ -96,7 +96,7 @@ async def get_top_n(predictions, n=10):
 
     # Then sort the predictions and retrieve the top k
     top_n = sorted(top_n, key=lambda x: x[1], reverse=True)
-    return [movie[0] for movie in top_n[0:n]]
+    return [str(movie[0]) for movie in top_n[0:n]]
 
 
 async def load_movie_set():

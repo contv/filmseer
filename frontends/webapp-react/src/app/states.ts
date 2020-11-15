@@ -1,6 +1,17 @@
 import { store } from "@risingstack/react-easy-state";
+import { ReactNode } from "react";
 
-const state: {[key: string]: any} = {
+const notifications: ({
+  id: number;
+  text: ReactNode;
+  time: number;
+  level: "warning" | "error" | "info";
+  className?: string;
+  timeoutHandler?: number;
+  expired?: boolean;
+} | null)[] = [];
+
+const state = {
   _loggedIn:
     (localStorage.getItem("loggedIn") || "").toLowerCase().trim() === "true",
   get loggedIn(): boolean {
@@ -11,6 +22,7 @@ const state: {[key: string]: any} = {
     state._loggedIn = !!value;
   },
   userMenuPopupTab: "login",
+  notifications: notifications,
 };
 
 export default store(state);
