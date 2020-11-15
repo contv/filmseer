@@ -1,10 +1,9 @@
 import base64
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 from fastapi import APIRouter, Request
 from humps import camelize
 from pydantic import BaseModel
-from humps import camelize
 
 from app.models.common import ListResponse
 from app.models.db.banlists import Banlists
