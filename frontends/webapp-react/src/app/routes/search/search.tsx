@@ -48,7 +48,6 @@ const SearchPage = (props: { className?: string }) => {
   const [sortBy, setSortBy] = React.useState<string>("relevance");
   const [totalPages, setTotalPages] = React.useState<number>(0);
   let paginationHandle: Handle<typeof Pagination>;
-  const searchParams = new URLSearchParams("");
 
   // This is an UGLY approach, but a CSS reader is even worse
   // UPDATE THIS WHEN YOU MODIFY SCSS
@@ -59,6 +58,7 @@ const SearchPage = (props: { className?: string }) => {
     Math.floor((document.body.clientWidth * 0.8 + 24) / (150 + 24)) * 4;
 
   const updateYears = (event: any) => {
+    console.log(event)
     setYearFilter((event || { name: "" }).name || "");
   };
 
@@ -184,6 +184,16 @@ const SearchPage = (props: { className?: string }) => {
           dataCallback={async (page) => {
             setIsSearching(true);
             let res;
+            const searchParams = new URLSearchParams("");
+            searchParams.append("keywords", searchString || "");
+            searchParams.append("field", searchField || "");
+            searchParams.append("genres", genreFilter || "");
+            searchParams.append("per_page", perPage.toString() || "32");
+            searchParams.append("page", page?.toString() || "1");
+            searchParams.append("sort", sortBy || "" );
+            searchParams.append("desc", descending.toString() || "True");
+            
+            
             try {
               res = await api({
                 path: "/movies/",
