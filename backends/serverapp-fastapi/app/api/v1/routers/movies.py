@@ -25,7 +25,7 @@ override_prefix = None
 override_prefix_all = None
 
 search_cache_driver = None
-recommendation_cahce_driver = None
+recommendation_cache_driver = None
 elasticsearch = None
 
 
@@ -85,10 +85,10 @@ async def init_search_cache_driver():
 
 
 @router.on_event("startup")
-async def init_recommendation_cahce_driver():
-    global recommendation_cahce_driver
-    if not recommendation_cahce_driver:
-        recommendation_cahce_driver = RedisDictStorageDriver(
+async def init_recommendation_cache_driver():
+    global recommendation_cache_driver
+    if not recommendation_cache_driver:
+        recommendation_cache_driver = RedisDictStorageDriver(
             key_prefix="recommendations:",
             key_filter=r"[^a-zA-Z0-9_-]+",
             ttl=settings.REDIS_SEARCH_TTL,
@@ -97,8 +97,8 @@ async def init_recommendation_cahce_driver():
             redis_pool_min=settings.REDIS_POOL_MIN,
             redis_pool_max=settings.REDIS_POOL_MAX,
         )
-        await recommendation_cahce_driver.initialize_driver()
-    return recommendation_cahce_driver
+        await recommendation_cache_driver.initialize_driver()
+    return recommendation_cache_driver
 
 
 @router.on_event("startup")
@@ -121,8 +121,8 @@ def connect_elasticsearch():
 
 @router.on_event("shutdown")
 async def terminate_recommendation_cache_driver():
-    global recommendation_cahce_driver
-    await recommendation_cahce_driver.terminate_driver()
+    global recommendation_cache_driver
+    await recommendation_cache_driver.terminate_driver()
 
 
 @router.on_event("shutdown")
@@ -596,9 +596,9 @@ async def get_recommendation(
         directors = []
     directors = list(filter(None, directors))
 
-    global recommendation_cahce_driver
-    if not recommendation_cahce_driver:
-        recommendation_cahce_driver = await init_recommendation_cahce_driver()
+    global recommendation_cache_driver
+    if not recommendation_cache_driver:
+        recommendation_cache_driver = await init_recommendation_cache_driver()
 
     if type == "foryou":
         user_id = request.session.get("user_id")
@@ -631,18 +631,18 @@ async def get_recommendation(
         try:
             search_id = searches[movie_id]
         except KeyError:
-            search_id = await recommendation_cahce_driver.create()
+            search_id = await recommendation_cache_driver.create()
             if len(searches.keys()) >= settings.REDIS_SEARCHES_MAX:
                 searches.pop(list(searches)[0])
             searches[movie_id] = search_id
         # Attempt to retrieve stored movie payload from Redis
-        movies, _ = await recommendation_cahce_driver.get(search_id)
+        movies, _ = await recommendation_cache_driver.get(search_id)
         if movies:
             movies = movies["movies"]
         else:
             try:
                 movies = await predict_on_movie(movie_id, size)
-                await recommendation_cahce_driver.update(search_id, {"movies": movies})
+                await recommendation_cache_driver.update(search_id, {"movies": movies})
             except ValueError:
                 raise ApiException(404, 3001, "Movie has not been rated before")
             except TypeError:
