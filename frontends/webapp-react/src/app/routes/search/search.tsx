@@ -1,13 +1,15 @@
-import { view } from "@risingstack/react-easy-state";
-import React from "react";
-import { useParams } from "react-router-dom";
+import "./search.scss";
+
+import { api, useUpdateEffect } from "src/utils";
+
 import Filter from "src/app/components/filter";
 import MovieItem from "src/app/components/movie-item/movie-item";
-import movieLogo from "src/app/components/movie-item/movie-logo.png";
 import Pagination from "src/app/components/pagination";
+import React from "react";
 import TileList from "src/app/components/tile-list";
-import { api, useUpdateEffect } from "src/utils";
-import "./search.scss";
+import movieLogo from "src/app/components/movie-item/movie-logo.png";
+import { useParams } from "react-router-dom";
+import { view } from "@risingstack/react-easy-state";
 
 export type SearchItem = {
   id: string;
@@ -30,6 +32,7 @@ type Handle<T> = T extends React.ForwardRefExoticComponent<
 
 const SearchPage = (props: { className?: string }) => {
   const { searchString } = useParams<{ searchString?: string }>();
+  const { searchField } = useParams<{ searchField?: string }>();
   const [movies, setMovies] = React.useState<SearchItem[]>([]);
   const [isSearching, setIsSearching] = React.useState<Boolean>(true);
   const [hasError, setHasError] = React.useState<Boolean>(false);
@@ -79,6 +82,7 @@ const SearchPage = (props: { className?: string }) => {
     paginationHandle && paginationHandle.refresh();
   }, [
     searchString,
+    searchField,
     genreFilter,
     directorFilter,
     sortBy,
@@ -177,6 +181,7 @@ const SearchPage = (props: { className?: string }) => {
                 method: "GET",
                 params: {
                   keywords: searchString,
+                  field: searchField,
                   genres: genreFilter,
                   directors: directorFilter,
                   years: yearFilter,
