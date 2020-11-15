@@ -13,6 +13,7 @@ import VerticalList from "src/app/components/vertical-list";
 import { useParams } from "react-router-dom";
 import userIcon from "src/app/components/user-menu/user-icon.svg";
 import { view } from "@risingstack/react-easy-state";
+import { baseApiUrl } from "src/utils";
 
 export type User = {
   id: string;
@@ -60,9 +61,9 @@ const UserPage = (props: { className?: string }) => {
 
   if (!user) {
     if (existing) {
-      return <div>Loading...</div>;
+      return <div className="UserPage__loading-message">Loading...</div>;
     } else {
-      return <div>No such user</div>;
+      return <div className="UserPage__loading-message">No such user</div>;
     }
   }
 
@@ -76,7 +77,7 @@ const UserPage = (props: { className?: string }) => {
             </div>
           )}
           <img
-            src={user.image || userIcon}
+            src={user.image ? (baseApiUrl + user.image) : userIcon}
             alt="Avatar"
             className="UserPage__avatar-image"
           />
