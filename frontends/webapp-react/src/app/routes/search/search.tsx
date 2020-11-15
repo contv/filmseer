@@ -58,15 +58,15 @@ const SearchPage = (props: { className?: string }) => {
     Math.floor((document.body.clientWidth * 0.8 + 24) / (150 + 24)) * 4;
 
   const updateYears = (event: { key: string; name: string }[]) => {
-    setYearFilter(event.map(item => item.name));
+    setYearFilter(event.map((item) => item.name));
   };
 
   const updateDirector = (event: { key: string; name: string }[]) => {
-    setDirectorFilter(event.map(item => item.name));
+    setDirectorFilter(event.map((item) => item.name));
   };
 
   const updateGenre = (event: { key: string; name: string }[]) => {
-    setGenreFilter(event.map(item => item.name));
+    setGenreFilter(event.map((item) => item.name));
   };
 
   const getParamUpdater = (key: string) => {
@@ -92,9 +92,8 @@ const SearchPage = (props: { className?: string }) => {
 
   return (
     <div className={`SearchPage ${(props.className || "").trim()}`}>
-      
       <div className="SearchPage__filter-and-sort">
-      <h3>Search results for "{searchString}"</h3>
+        <h3>Search results for "{searchString}"</h3>
         {filters && (
           <div className="SearchPage__filters">
             {filters.map((filter) => (
@@ -111,7 +110,7 @@ const SearchPage = (props: { className?: string }) => {
         )}
         {filters && (
           <div className="SearchPage__sort">
-            <FormControl style={{ marginRight: "20px" }}>
+            <FormControl style={{ marginRight: "20px", width: "120px" }}>
               <InputLabel>Sort by</InputLabel>
               <Select
                 value={sortBy}
@@ -124,7 +123,7 @@ const SearchPage = (props: { className?: string }) => {
               </Select>
             </FormControl>
 
-            <FormControl>
+            <FormControl style={{ width: "120px" }}>
               <InputLabel>Order</InputLabel>
               <Select
                 value={descending ? "descending" : "ascending"}
@@ -188,11 +187,17 @@ const SearchPage = (props: { className?: string }) => {
             searchParams.append("field", searchField || "");
             searchParams.append("per_page", perPage.toString() || "32");
             searchParams.append("page", page?.toString() || "1");
-            searchParams.append("sort", sortBy || "" );
+            searchParams.append("sort", sortBy || "");
             searchParams.append("desc", descending.toString() || "True");
-            (yearFilter|| []).map(item => {searchParams.append("years", item)});
-            (genreFilter|| []).map(item => {searchParams.append("genres", item)});
-            (directorFilter|| []).map(item => {searchParams.append("directors", item)});
+            (yearFilter || []).map((item) => {
+              searchParams.append("years", item);
+            });
+            (genreFilter || []).map((item) => {
+              searchParams.append("genres", item);
+            });
+            (directorFilter || []).map((item) => {
+              searchParams.append("directors", item);
+            });
             try {
               res = await api({
                 path: "/movies/",
