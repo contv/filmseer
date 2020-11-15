@@ -44,7 +44,7 @@ type PaginationProps = {
 };
 
 type PaginationRef = {
-  refresh: () => void;
+  refresh: (page?: number) => void;
 };
 
 const Pagination = React.forwardRef<
@@ -88,30 +88,48 @@ const Pagination = React.forwardRef<
     }
   };
 
-  const refreshData = () => {
-    if (props.dataType === "slice" && props.dataCallback) {
-      Promise.resolve(props.dataCallback()).then((data) => {
-        setData(data);
-        props.renderCallback(
-          data.slice(
-            props.displayType === "loadmore" ? 0 : current - 1,
-            current * (props.perPage || 1)
-          )
-        );
-        if (pageInput.current !== null) {
-          pageInput.current.value = current.toString();
-        }
-      });
-    } else if (props.dataType === "callback" && props.dataCallback) {
-      Promise.resolve(props.dataCallback(current)).then(handleCallbackData);
+  const refreshData = (page?: number) => {
+    if (!!page) {
+      setCurrent(page);
+      if (props.dataType === "slice" && props.dataCallback) {
+        Promise.resolve(props.dataCallback()).then((data) => {
+          setData(data);
+          props.renderCallback(
+            data.slice(
+              props.displayType === "loadmore" ? 0 : page - 1,
+              page * (props.perPage || 1)
+            )
+          );
+          if (pageInput.current !== null) {
+            pageInput.current.value = page.toString();
+          }
+        });
+      }
+    } else {
+      if (props.dataType === "slice" && props.dataCallback) {
+        Promise.resolve(props.dataCallback()).then((data) => {
+          setData(data);
+          props.renderCallback(
+            data.slice(
+              props.displayType === "loadmore" ? 0 : current - 1,
+              current * (props.perPage || 1)
+            )
+          );
+          if (pageInput.current !== null) {
+            pageInput.current.value = current.toString();
+          }
+        });
+      } else if (props.dataType === "callback" && props.dataCallback) {
+        Promise.resolve(props.dataCallback(current)).then(handleCallbackData);
+      }
     }
   };
 
   React.useImperativeHandle(
     ref,
     () => ({
-      refresh: () => {
-        refreshData();
+      refresh: (page?: number) => {
+        refreshData(page);
       },
     }),
     [refreshData]
