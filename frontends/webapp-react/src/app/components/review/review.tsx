@@ -73,7 +73,7 @@ const Review = (props: ReviewProps & { className?: string }) => {
             <details>
               <summary>
                 {authorSpoiler
-                  ? "This review has spoiler"
+                  ? "May contain spoilers"
                   : props.numSpoiler +
                     " people think this review contains spoiler"}
               </summary>
