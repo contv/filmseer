@@ -1,19 +1,17 @@
 import { view } from "@risingstack/react-easy-state";
 import React from "react";
 import { Settings } from "react-feather";
+import { Link } from "react-router-dom";
 import Login from "src/app/popups/login";
 import TabPopup from "src/app/popups/popup-tabs";
 import Register from "src/app/popups/register";
 import state from "src/app/states";
 import { api, apiEffect } from "src/utils";
 import user from "./user-icon.svg";
-import { useHistory } from "react-router-dom";
 import "./user-menu.scss";
 
-const UserMenu = (props: {className?: string}) => {
+const UserMenu = (props: { className?: string }) => {
   const [popupVisible, setPopupVisible] = React.useState(false);
-
-  let history = useHistory()
 
   React.useEffect(
     apiEffect(
@@ -43,12 +41,12 @@ const UserMenu = (props: {className?: string}) => {
   if (state.loggedIn) {
     return (
       <div className={`UserMenu ${(props.className || "").trim()}`}>
-        <button className="UserMenu__icon">
+        <Link to="/user" className="UserMenu__icon">
           <img src={user} alt="Profile" className="UserMenu__profile-icon" />
-        </button>
-        <button className="UserMenu__icon" onClick={()=>{history.push("/settings")}}>
+        </Link>
+        <Link to="/settings" className="UserMenu__icon">
           <Settings className="UserMenu__profile-icon" />
-        </button>
+        </Link>
         <button className="UserMenu__button" onClick={doLogout}>
           Sign out
         </button>
@@ -57,12 +55,12 @@ const UserMenu = (props: {className?: string}) => {
   } else {
     return (
       <div className={`UserMenu ${(props.className || "").trim()}`}>
-      <button className="UserMenu__icon">
-        <img src={user} alt="Profile" className="UserMenu__profile-icon" />
-      </button>
-      <button className="UserMenu__icon">
-        <Settings className="UserMenu__profile-icon" size={1000} />
-      </button>
+        <button className="UserMenu__icon">
+          <img src={user} alt="Profile" className="UserMenu__profile-icon" />
+        </button>
+        <button className="UserMenu__icon">
+          <Settings className="UserMenu__profile-icon" size={1000} />
+        </button>
         <button
           className="UserMenu__button"
           onClick={() => {
