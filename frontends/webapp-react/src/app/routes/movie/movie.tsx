@@ -1,6 +1,6 @@
 import Typography from "@material-ui/core/Typography";
 import { view } from "@risingstack/react-easy-state";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import GenreTile from "src/app/components/genre-tile";
 import MovieInteract from "src/app/components/movie-interact";
@@ -115,6 +115,11 @@ const MovieDetailPage = (props: { className?: string }) => {
   const [recommended, setRecommended] = useState<Array<MovieItemProps>>();
   const [hasError, setHasError] = useState<Boolean>(false);
   const [userRating, setUserRating] = useState<number>(0);
+  const reviewSection: any = useRef();
+
+  const snapToReviews = () => reviewSection.current.scrollIntoView();
+  
+
 
   useEffect(() => {
     if (state.loggedIn) {
@@ -215,6 +220,7 @@ const MovieDetailPage = (props: { className?: string }) => {
               movieId={movieId}
               userRating={userRating}
               setUserRating={setUserRating}
+              snapToReviews={snapToReviews}
             />
           </div>
         </MovieSection>
@@ -263,7 +269,7 @@ const MovieDetailPage = (props: { className?: string }) => {
           </MovieSection>
         )}
         <MovieSection heading="Reviews">
-          <div id="ReviewSection"></div>
+          <div id="ReviewSection" ref={reviewSection}></div>
           {authorReview && authorReview.length > 0 && (
             <ReviewEditor
               reviewId={authorReview[0].reviewId}
