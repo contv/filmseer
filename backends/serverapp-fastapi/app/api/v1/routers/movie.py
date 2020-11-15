@@ -75,10 +75,10 @@ async def get_average_rating(movie_id: str, request: Request) -> Wrapper[dict]:
             .first()
         )
     except OperationalError:
-        raise ApiException(401, 2501, "You cannot do that.")
+        raise ApiException(401, 2070, "There was a problem fetching that movie's ratings.")
 
     if movie is None:
-        raise ApiException(404, 2100, "That movie doesn't exist")
+        raise ApiException(404, 2060, "That movie doesn't exist.")
 
     # TODO remove ratings from blocked users
     return wrap(
@@ -98,7 +98,7 @@ async def get_movie(movie_id: str, request: Request):
     try:
         movie = await Movies.filter(movie_id=movie_id, delete_date=None).first()
     except OperationalError:
-        raise ApiException(401, 2501, "You cannot do that.")
+        raise ApiException(401, 2501, "An exception occurred")
 
     if movie is None:
         raise ApiException(404, 2100, "That movie doesn't exist")
@@ -246,15 +246,15 @@ async def create_update_user_review(
     try:
         movie = await Movies.filter(movie_id=movie_id, delete_date=None).first()
     except OperationalError:
-        raise ApiException(401, 2501, "You cannot do that.")
+        raise ApiException(401, 2080, "You cannot post a review for that movie.")
 
     if movie is None:
-        raise ApiException(404, 2100, "That movie doesn't exist")
+        raise ApiException(404, 2060, "That movie doesn't exist")
 
     user_id = request.session.get("user_id")
     if not user_id:
         raise ApiException(
-            401, 2607, "You must be logged in to submit/update/delete a review"
+            401, 2001, "You are not logged in!"
         )
 
     try:
@@ -289,7 +289,7 @@ async def create_update_user_review(
             ).count()
             await Movies.filter(movie_id=movie_id).update(num_reviews=num_reviews)
     except OperationalError:
-        raise ApiException(500, 2501, "An exception occurred")
+        raise ApiException(500, 2080, "An exception occurred")
 
     return wrap({"create_date": create_date})
 
@@ -299,7 +299,7 @@ async def delete_user_review(movie_id: str, request: Request):
     user_id = request.session.get("user_id")
     if not user_id:
         raise ApiException(
-            401, 2607, "You must be logged in to submit/update/delete a review"
+            401, 2001, "You are not logged in!"
         )
     try:
         async with in_transaction():
@@ -341,7 +341,7 @@ async def rate_movie(request: Request, movie_id: str, rating: float):
     if not user_id:
         raise ApiException(500, 2001, "You are not logged in!")
     if not 0 <= rating <= 5.0 or rating % 0.5 != 0.0:
-        raise ApiException(500, 2101, "Invalid rating")
+        raise ApiException(500, 2073, "Invalid rating.")
 
     try:
         async with in_transaction():
@@ -364,9 +364,9 @@ async def rate_movie(request: Request, movie_id: str, rating: float):
             current_rating = await Ratings.get(user_id=user_id, movie_id=movie_id)
             await update_review_rating(user_id, movie_id, current_rating)
     except OperationalError:
-        raise ApiException(500, 2102, "Could not rate movie")
+        raise ApiException(500, 2072, "Could not rate movie.")
     except IntegrityError:
-        raise ApiException(500, 2104, "Could not update fields")
+        raise ApiException(500, 2072, "Could not rate movie.")
 
     return wrap({"id": str(current_rating.rating_id), "rating": current_rating.rating})
 
@@ -434,9 +434,9 @@ async def delete_rating(request: Request, movie_id: str) -> Wrapper[dict]:
                 await update_cumulative_rating(movie_id, -rating)
                 await update_review_rating(user_id, movie_id)
     except OperationalError:
-        raise ApiException(500, 2103, "Could not find or delete rating")
+        raise ApiException(500, 2071, "Could not find or delete rating")
     except IntegrityError:
-        raise ApiException(500, 2104, "Could not update fields")
+        raise ApiException(500, 2071, "Could not find or delete rating")
 
     return wrap({"id": str(rating_id), "rating": rating})
 
@@ -457,7 +457,7 @@ async def get_current_user_rating(request: Request, movie_id: str):
         return wrap(
             code=200,
             message="No rating exists for this user",
-            exceptions=[ApiException(500, 2103, "Could not find or delete rating")],
+            exceptions=[ApiException(500, 2071, "Could not find or delete rating")],
         )
 
     response = RatingResponse(id=str(rating.rating_id), rating=rating.rating)

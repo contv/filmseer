@@ -127,11 +127,11 @@ async def update_author_review(review_id: str, review: ReviewRequest, request: R
 
     review_user_id = review[0]["user_id"]
     if not review_user_id:
-        raise ApiException(404, 2610, "Invalid review id.")
+        raise ApiException(404, 2081, "Invalid review id.")
 
     if session_user_id != review_user_id:
         raise ApiException(
-            401, 2609, "You must be the author to update/delete the review."
+            401, 2082, "You must be the author to update/delete the review."
         )
 
     review_movie_id = review[0]["movie_id"]
@@ -204,7 +204,7 @@ async def mark_review_helpful(review_id: str, request: Request):
     user_id = request.session.get("user_id")
     if not user_id:
         raise ApiException(
-            401, 2600, "You must be logged in to mark the review as helpful."
+            401, 2001, "You are not logged in!"
         )
     try:
         async with in_transaction():
@@ -226,7 +226,7 @@ async def mark_review_funny(request: Request, review_id: str):
     user_id = request.session.get("user_id")
     if not user_id:
         raise ApiException(
-            401, 2601, "You must be logged in to mark the review as funny."
+            401, 2001, "You are not logged in!"
         )
     try:
         async with in_transaction():
@@ -248,7 +248,7 @@ async def mark_review_spoiler(request: Request, review_id: str):
     user_id = request.session.get("user_id")
     if not user_id:
         raise ApiException(
-            401, 2602, "You must be logged in to mark the review as spoiler."
+            401, 2001, "You are not logged in!"
         )
     try:
         async with in_transaction():
@@ -270,7 +270,7 @@ async def unmark_review_helpful(request: Request, review_id: str):
     user_id = request.session.get("user_id")
     if not user_id:
         raise ApiException(
-            401, 2603, "You must be logged in to unmark the review as helpful."
+            401, 2001, "You are not logged in!"
         )
     try:
         async with in_transaction():
@@ -292,7 +292,7 @@ async def unmark_review_funny(request: Request, review_id: str):
     user_id = request.session.get("user_id")
     if not user_id:
         raise ApiException(
-            401, 2604, "You must be logged in to unmark the review as funny."
+            401, 2001, "You are not logged in!"
         )
     try:
         async with in_transaction():
@@ -314,7 +314,7 @@ async def unmark_review_spoiler(request: Request, review_id: str):
     user_id = request.session.get("user_id")
     if not user_id:
         raise ApiException(
-            401, 2605, "You must be logged in to unmark the review as spoiler."
+            401, 2001, "You are not logged in!"
         )
     try:
         async with in_transaction():

@@ -568,10 +568,10 @@ async def get_recommendation(
         try:
             movies = await predict_on_user(user_id, unseen, size)
         except TypeError:
-            raise ApiException(404, 3000, "Recommendation not available")
+            raise ApiException(404, 2090, "Recommendation not available")
     elif type == "detail":
         if not movie_id:
-            raise ApiException(404, 3002, "You must provide a valid movie")
+            raise ApiException(404, 2060, "That movie doesn't exist.")
         # Check if movie has had recommendations calculated on it within same session
         searches = request.session["recommendations"]
         try:
@@ -590,9 +590,9 @@ async def get_recommendation(
                 movies = await predict_on_movie(movie_id, size)
                 await recommendation_cahce_driver.update(search_id, {"movies": movies})
             except ValueError:
-                raise ApiException(404, 3001, "Movie has not been rated before")
+                raise ApiException(404, 2074, "Movie has not been rated before")
             except TypeError:
-                raise ApiException(404, 3000, "Recommendation not available")
+                raise ApiException(404, 2090, "Recommendation not available")
     elif type == "popular":
         cutoff_date = datetime.now() - relativedelta(days=recency)
         movies = (
@@ -618,7 +618,7 @@ async def get_recommendation(
         )
         movies = [movie[0] for movie in movies]
     else:
-        raise ApiException(404, 3003, "Invalid recommendation type")
+        raise ApiException(404, 2091, "Invalid recommendation type")
 
     # Postprocess to apply filters, sorting and pagination
     postprocessed = await get_movies(

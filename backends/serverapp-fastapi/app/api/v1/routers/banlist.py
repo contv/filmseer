@@ -38,7 +38,7 @@ async def get_banlist(request: Request):
     user_id = request.session.get("user_id")
 
     if not user_id:
-        raise ApiException(401, 2500, "You must be logged in to see your banlist.")
+        raise ApiException(401, 2001, "You are not logged in!")
 
     items = []
     for banlist_item in await Banlists.filter(user_id=user_id, delete_date=None):
@@ -63,7 +63,7 @@ async def get_banlist(request: Request):
 async def is_user_banlist(request: Request, banned_username: str):
     user_id = request.session.get("user_id")
     if not user_id:
-        raise ApiException(401, 2500, "You must be logged in to see your banlist.")
+        raise ApiException(401, 2001, "You are not logged in!")
 
     if await Users.filter(username=banned_username, delete_date=None).exists():
         banned_user_id = (
@@ -72,7 +72,7 @@ async def is_user_banlist(request: Request, banned_username: str):
             )
         )[0]["user_id"]
     else:
-        raise ApiException(500, 2002, "This user no longer exist!")
+        raise ApiException(500, 2002, "This user no longer exists!")
 
     banned = (
         await Banlists.filter(
@@ -89,7 +89,7 @@ async def add_to_banlist(request: Request, banned_username: str):
     user_id = request.session.get("user_id")
 
     if not user_id:
-        raise ApiException(401, 2500, "You must be logged in to add to banlist.")
+        raise ApiException(401, 2001, "You are not logged in!")
 
     if await Users.filter(username=banned_username, delete_date=None).exists():
         banned_user_id = (
@@ -98,10 +98,10 @@ async def add_to_banlist(request: Request, banned_username: str):
             )
         )[0]["user_id"]
     else:
-        raise ApiException(500, 2002, "This user no longer exist!")
+        raise ApiException(500, 2002, "This user no longer exists!")
 
     if user_id == banned_user_id:
-        raise ApiException(401, 2801, "You cannot ban yourself.")
+        raise ApiException(401, 2040, "You cannot ban yourself.")
 
     exists_in_banlist = await Banlists.get_or_none(
         banned_user_id=banned_user_id, user_id=user_id
@@ -112,12 +112,12 @@ async def add_to_banlist(request: Request, banned_username: str):
             exists_in_banlist.delete_date = None
             await exists_in_banlist.save()
         except OperationalError:
-            raise ApiException(401, 2501, "You cannot do that.")
+            raise ApiException(401, 2041, "You cannot ban that person.")
     else:
         try:
             await Banlists(banned_user_id=banned_user_id, user_id=user_id).save()
         except OperationalError:
-            raise ApiException(401, 2501, "You cannot do that.")
+            raise ApiException(401, 2041, "You cannot ban that person.")
 
     return wrap({})
 
@@ -127,7 +127,7 @@ async def delete_from_banlist(request: Request, banned_username: str):
     user_id = request.session.get("user_id")
 
     if not user_id:
-        raise ApiException(401, 2500, "You must be logged in to delete from banlist.")
+        raise ApiException(401, 2001, "You are not logged in!")
 
     if await Users.filter(username=banned_username, delete_date=None).exists():
         banned_user_id = (
@@ -136,7 +136,7 @@ async def delete_from_banlist(request: Request, banned_username: str):
             )
         )[0]["user_id"]
     else:
-        raise ApiException(500, 2002, "This user no longer exist!")
+        raise ApiException(500, 2002, "This user no longer exists!")
 
     exists_in_banlist = await Banlists.get_or_none(
         banned_user_id=banned_user_id, user_id=user_id
@@ -147,8 +147,8 @@ async def delete_from_banlist(request: Request, banned_username: str):
             exists_in_banlist.delete_date = datetime.now()
             await exists_in_banlist.save()
         except OperationalError:
-            raise ApiException(401, 2501, "You cannot do that.")
+            raise ApiException(401, 2042, "You cannot unban that person.")
     else:
-        raise ApiException(401, 2800, "You haven't added this user to banlist yet.")
+        raise ApiException(401, 2043, "You haven't added this user to your banlist yet.")
 
     return wrap({})

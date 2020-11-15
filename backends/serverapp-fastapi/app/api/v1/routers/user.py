@@ -52,7 +52,7 @@ class UserProfileResponse(BaseModel):
 async def create_user(register: Register, request: Request) -> Wrapper[dict]:
     user = await Users.filter(username=register.username, delete_date=None).first()
     if user:
-        raise ApiException(500, 2021, "This username already exists")
+        raise ApiException(500, 2020, "This username already exists")
     # TODO: Validation
     await Users(
         username=register.username, password_hash=hash(register.password)
@@ -128,7 +128,7 @@ async def get_user_wishlist(username: str):
     user = await Users.filter(username=username, delete_date=None).first()
 
     if not user:
-        raise ApiException(404, 2031, "That user doesn't exist.")
+        raise ApiException(404, 2021, "That user's profile was not found.")
 
     items = []
     for wishlist_item in await Wishlists.filter(
@@ -202,7 +202,7 @@ async def get_current_user(request: Request):
 
     user = await Users.get_or_none(user_id=user_id, delete_date=None)
     if not user:
-        raise ApiException(500, 2200, "That user's profile page was not found")
+        raise ApiException(500, 2021, "That user's profile was not found")
 
     response = UserProfileResponse(
         id=str(user.user_id),
@@ -222,7 +222,7 @@ async def get_current_user(request: Request):
 async def get_user_profile(username: str):
     user = await Users.get_or_none(username=username, delete_date=None)
     if not user:
-        raise ApiException(500, 2200, "That user's profile page was not found")
+        raise ApiException(500, 2021, "That user's profile was not found")
 
     response = UserProfileResponse(
         id=str(user.user_id),
@@ -241,12 +241,12 @@ async def modify_user(request: Request, form: UpdateUser):
         raise ApiException(500, 2001, "You are not logged in!")
     user = await Users.get_or_none(user_id=user_id, delete_date=None)
     if not user:
-        raise ApiException(500, 2200, "That user's profile was not found")
+        raise ApiException(500, 2021, "That user's profile was not found")
 
     if form.username:
         existing_username = await Users.get_or_none(username__iexact=form.username)
         if existing_username and str(existing_username.user_id) != str(user_id):
-            raise ApiException(500, 2021, "This username already exists")
+            raise ApiException(500, 2020, "This username already exists")
         user.username = form.username
         await user.save(update_fields=["username"])
 
@@ -266,7 +266,7 @@ async def modify_user(request: Request, form: UpdateUser):
     if form.description is not None:
         if len(form.description) > 140:
             raise ApiException(
-                500, 2102, "Your description must be 140 characters or less."
+                500, 2022, "Your description must be 140 characters or less."
             )
         else:
             if len(form.description) == 0:
