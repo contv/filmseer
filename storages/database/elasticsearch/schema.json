@@ -70,7 +70,12 @@
                   "transform":{
                      "mapping":{
                         "name":{
-                           "type":"keyword"
+                           "type":"text",
+                           "fields": {
+                              "keyword": {
+                                 "type": "keyword"
+                              }
+                           }
                         }
                      }
                   },
