@@ -1,4 +1,6 @@
 .SearchPage {
+  display: flex;
+  flex-direction: column;
   &__item {
     display: flex;
     flex-flow: column nowrap;
@@ -28,9 +30,36 @@
 
   &__list {
     width: 80%;
-    margin: 40px auto;
+    margin: 10px auto;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     grid-gap: 24px;
   }
+
+  &__filters {
+    float: left;
+    margin-bottom: 20px;
+
+  }
+
+  &__sort {
+    float: right;
+    margin-bottom: 20px;
+    margin-right: 20px;
+  }
+
+  &__filter-and-sort {
+    width: 80%;
+    margin: auto;
+    vertical-align: center;
+  }
+
+  &__pagination-wrapper {
+    vertical-align: center;
+    display: flex;
+    margin-bottom: 20px;
+    margin-top: 10px;
+    justify-content: center;
+  }
+
 }

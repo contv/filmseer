@@ -3,9 +3,13 @@ import "./search.scss";
 import { api, useUpdateEffect } from "src/utils";
 
 import Filter from "src/app/components/filter";
+import FormControl from "@material-ui/core/FormControl";
+import InputLabel from "@material-ui/core/InputLabel";
+import MenuItem from "@material-ui/core/MenuItem";
 import MovieItem from "src/app/components/movie-item/movie-item";
 import Pagination from "src/app/components/pagination";
 import React from "react";
+import Select from "@material-ui/core/Select";
 import TileList from "src/app/components/tile-list";
 import movieLogo from "src/app/components/movie-item/movie-logo.png";
 import { useParams } from "react-router-dom";
@@ -36,9 +40,9 @@ const SearchPage = (props: { className?: string }) => {
   const [movies, setMovies] = React.useState<SearchItem[]>([]);
   const [isSearching, setIsSearching] = React.useState<Boolean>(true);
   const [hasError, setHasError] = React.useState<Boolean>(false);
-  const [genreFilter, setGenreFilter] = React.useState<string>();
-  const [directorFilter, setDirectorFilter] = React.useState<string>();
-  const [yearFilter, setYearFilter] = React.useState<string>();
+  const [genreFilter, setGenreFilter] = React.useState<Array<string>>();
+  const [directorFilter, setDirectorFilter] = React.useState<Array<string>>();
+  const [yearFilter, setYearFilter] = React.useState<Array<string>>();
   const [descending, setDescending] = React.useState<Boolean>(true);
   const [filters, setFilters] = React.useState<Array<any>>();
   const [sortBy, setSortBy] = React.useState<string>("relevance");
@@ -53,16 +57,16 @@ const SearchPage = (props: { className?: string }) => {
   const perPage =
     Math.floor((document.body.clientWidth * 0.8 + 24) / (150 + 24)) * 4;
 
-  const updateYears = (event: any) => {
-    setYearFilter(event.target.value);
+  const updateYears = (event: { key: string; name: string }[]) => {
+    setYearFilter(event.map((item) => item.name));
   };
 
-  const updateDirector = (event: any) => {
-    setDirectorFilter(event.target.value);
+  const updateDirector = (event: { key: string; name: string }[]) => {
+    setDirectorFilter(event.map((item) => item.name));
   };
 
-  const updateGenre = (event: any) => {
-    setGenreFilter(event.target.value);
+  const updateGenre = (event: { key: string; name: string }[]) => {
+    setGenreFilter(event.map((item) => item.name));
   };
 
   const getParamUpdater = (key: string) => {
@@ -88,46 +92,53 @@ const SearchPage = (props: { className?: string }) => {
 
   return (
     <div className={`SearchPage ${(props.className || "").trim()}`}>
-      <h3>Search results for "{searchString}"</h3>
-      {filters && (
-        <div className="SearchPage__filters">
-          {filters.map((filter) => (
-            <Filter
-              key={filter.key}
-              filterKey={filter.key}
-              name={filter.name}
-              type={filter.type}
-              selections={filter.selections}
-              updateSearchParams={getParamUpdater(filter.key)}
-            />
-          ))}
-        </div>
-      )}
-      {filters && (
-        <div className="SearchPage__sort">
-          <label htmlFor="sort">Sort by</label>
-          <select
-            name="sort"
-            onChange={(event) => setSortBy(event.target.value)}
-            value={sortBy}
-          >
-            <option value="relevance">Relevance</option>
-            <option value="rating">Rating</option>
-            <option value="name">Name</option>
-            <option value="year">Year</option>
-          </select>
-          <select
-            name="order"
-            onChange={(event) =>
-              setDescending(event.target.value === "descending")
-            }
-            value={descending ? "descending" : "ascending"}
-          >
-            <option value="descending">Descending</option>
-            <option value="ascending">Ascending</option>
-          </select>
-        </div>
-      )}
+      <div className="SearchPage__filter-and-sort">
+        <h3>Search results for "{searchString}"</h3>
+        {filters && (
+          <div className="SearchPage__filters">
+            {filters.map((filter) => (
+              <Filter
+                key={filter.key}
+                filterKey={filter.key}
+                name={filter.name}
+                type={filter.type}
+                selections={filter.selections}
+                updateSearchParams={getParamUpdater(filter.key)}
+              />
+            ))}
+          </div>
+        )}
+        {filters && (
+          <div className="SearchPage__sort">
+            <FormControl style={{ marginRight: "20px", width: "120px" }}>
+              <InputLabel>Sort by</InputLabel>
+              <Select
+                value={sortBy}
+                onChange={(event) => setSortBy(event.target.value as string)}
+              >
+                <MenuItem value="relevance">Relevance</MenuItem>
+                <MenuItem value="rating">Rating</MenuItem>
+                <MenuItem value="name">Name</MenuItem>
+                <MenuItem value="year">Year</MenuItem>
+              </Select>
+            </FormControl>
+
+            <FormControl style={{ width: "120px" }}>
+              <InputLabel>Order</InputLabel>
+              <Select
+                value={descending ? "descending" : "ascending"}
+                onChange={(event) =>
+                  setDescending((event.target.value as string) === "descending")
+                }
+              >
+                <MenuItem value="descending">Descending</MenuItem>
+                <MenuItem value="ascending">Ascending</MenuItem>
+              </Select>
+            </FormControl>
+          </div>
+        )}
+      </div>
+
       {isSearching || hasError ? (
         isSearching ? (
           <div>Searching...</div>
@@ -171,21 +182,27 @@ const SearchPage = (props: { className?: string }) => {
           dataCallback={async (page) => {
             setIsSearching(true);
             let res;
+            const searchParams = new URLSearchParams("");
+            searchParams.append("keywords", searchString || "");
+            searchParams.append("field", searchField || "");
+            searchParams.append("per_page", perPage.toString() || "32");
+            searchParams.append("page", page?.toString() || "1");
+            searchParams.append("sort", sortBy || "");
+            searchParams.append("desc", descending.toString() || "True");
+            (yearFilter || []).map((item) => {
+              searchParams.append("years", item);
+            });
+            (genreFilter || []).map((item) => {
+              searchParams.append("genres", item);
+            });
+            (directorFilter || []).map((item) => {
+              searchParams.append("directors", item);
+            });
             try {
               res = await api({
                 path: "/movies/",
                 method: "GET",
-                params: {
-                  keywords: searchString,
-                  field: searchField,
-                  genres: genreFilter,
-                  directors: directorFilter,
-                  years: yearFilter,
-                  per_page: perPage,
-                  page: page,
-                  sort: sortBy,
-                  desc: descending,
-                },
+                params: searchParams,
               });
             } catch (e) {
               setIsSearching(false);
