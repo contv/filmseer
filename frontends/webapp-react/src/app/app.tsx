@@ -43,14 +43,33 @@ const App = () => {
             <Link to="/" className="Header__logo">
               <img src={logo} alt="FilmSeer" className="Header__logo-image" />
             </Link>
-            <SearchBar
-              type="header"
-              onSearch={(text) => performSearch(text)}
-              onSelectSuggestion={(text) => performSelectSuggestion(text)}
-              onField={(text) => performSetField(text)}
-              className="Header__search-bar"
-              height={48}
-            ></SearchBar>
+            <Switch>
+              <Route
+                path="/search/:searchField?/:searchString?"
+                render={() => (
+                  <SearchBar
+                    type="header"
+                    onSearch={(text) => performSearch(text)}
+                    onSelectSuggestion={(text) => performSelectSuggestion(text)}
+                    onField={(text) => performSetField(text)}
+                    className="Header__search-bar"
+                    height={48}
+                  ></SearchBar>
+                )}
+              />
+              <Route
+                render={() => (
+                  <SearchBar
+                    type="header"
+                    onSearch={(text) => performSearch(text)}
+                    onSelectSuggestion={(text) => performSelectSuggestion(text)}
+                    onField={(text) => performSetField(text)}
+                    className="Header__search-bar"
+                    height={48}
+                  ></SearchBar>
+                )}
+              />
+            </Switch>
             <UserMenu className="Header__user-menu" />
           </header>
           <article className="App__main Main">

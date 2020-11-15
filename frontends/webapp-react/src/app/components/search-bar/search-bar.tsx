@@ -11,6 +11,7 @@ import Select from "@material-ui/core/Select";
 import { api } from "src/utils";
 import { debounce } from "lodash";
 import { view } from "@risingstack/react-easy-state";
+import { useParams } from "react-router-dom";
 
 type SearchBarProps = {
   type: string;
@@ -31,9 +32,11 @@ type SuggestionItem = {
 };
 
 const SearchBar = (props: SearchBarProps & { className?: string }) => {
-  const [value, setValue] = React.useState("");
+  const { searchString } = useParams<{ searchString?: string }>();
+  const { searchField } = useParams<{ searchField?: string }>();
+  const [value, setValue] = React.useState(searchString || "");
   const [suggestions, setSuggestions] = React.useState<SuggestionItem[]>([]);
-  const [field, setField] = React.useState<string>("all");
+  const [field, setField] = React.useState<string>(searchField || "all");
   const getSuggestionValue = (suggestion: SuggestionItem) => {
     return suggestion.title;
   };
@@ -86,12 +89,7 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
     );
   };
 
-  const debouncedFetchSuggestions = React.useCallback(
-    debounce(fetchSuggestions, props.debounceTime || 150),
-    []
-  );
-
-  function fetchSuggestions(value: string, field: string) {
+  const fetchSuggestions = (value: string, field: string) => {
     api({
       path: `/movies/search-hint`,
       method: "GET",
@@ -109,12 +107,16 @@ const SearchBar = (props: SearchBarProps & { className?: string }) => {
     });
   }
 
-  function handleClick() {
+  const debouncedFetchSuggestions = React.useCallback(
+    debounce(fetchSuggestions, props.debounceTime || 150),
+    []
+  );
+  const handleClick = () => {
     props.onSearch(value);
     props.onField(field);
   }
 
-  function handleEnter(event: React.KeyboardEvent<any>) {
+  const handleEnter = (event: React.KeyboardEvent<any>) => {
     if (event.key === "Enter") {
       handleClick();
     }
