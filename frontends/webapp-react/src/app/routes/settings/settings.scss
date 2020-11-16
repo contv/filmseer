@@ -1,4 +1,8 @@
 .SettingsPage {
+  &__div {
+    height: 750px;
+  }
+
   &__drawer {
     width: 240px;
     flex-shrink: 0;
@@ -7,6 +11,7 @@
   &__drawerPaper {
     width: 240px;
     top: auto;
+    position: absolute;
   }
 
   &__toolbar {

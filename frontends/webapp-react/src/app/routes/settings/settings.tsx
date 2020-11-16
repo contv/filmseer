@@ -188,7 +188,7 @@ const SettingsPage = (props: { className?: string }) => {
   }
 
   return (
-    <div>
+    <div className="SettingsPage__div">
       <Divider />
       <Drawer
         className="SettingsPage__drawer"
