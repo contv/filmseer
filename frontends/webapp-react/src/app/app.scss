@@ -94,6 +94,8 @@ input[type="button"] {
 
 .Footer {
   background-color: var(--gray-5);
+  box-shadow: 0 50vh 0 50vh var(--gray-5);
+
   &__author{
     font-family: 'Courier New', Courier, monospace;
   }
