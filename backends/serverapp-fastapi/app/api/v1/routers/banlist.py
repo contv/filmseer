@@ -15,7 +15,12 @@ router = APIRouter()
 override_prefix = None
 override_prefix_all = None
 
+"""
+This API controller handles all routes under the prefix /banlist. It handles
+banlist management.
+"""
 
+# response model includes user banning and banned user data
 class UserBanlistResponse(BaseModel):
     banlist_id: str
     banned_user_id: str
@@ -30,7 +35,7 @@ class UserBanlistResponse(BaseModel):
 class UserBannedResponse(BaseModel):
     banned: bool
 
-
+# gets all users on your banlist
 @router.get(
     "/", tags=["banlist"], response_model=Wrapper[ListResponse[UserBanlistResponse]]
 )
@@ -41,6 +46,8 @@ async def get_banlist(request: Request):
         raise ApiException(401, 2001, "You are not logged in!")
 
     items = []
+    
+    # returns every valid banlist user on your banlist
     for banlist_item in await Banlists.filter(user_id=user_id, delete_date=None):
         banned_user = (
             await Users.filter(
@@ -59,6 +66,7 @@ async def get_banlist(request: Request):
     return wrap({"items": items})
 
 
+# checks whether the user is in your banlist
 @router.get("/{banned_username}", response_model=Wrapper[UserBannedResponse])
 async def is_user_banlist(request: Request, banned_username: str):
     user_id = request.session.get("user_id")
@@ -83,7 +91,7 @@ async def is_user_banlist(request: Request, banned_username: str):
 
     return wrap({"banned": banned})
 
-
+# adds a user to your banlist
 @router.put("/{banned_username}")
 async def add_to_banlist(request: Request, banned_username: str):
     user_id = request.session.get("user_id")
@@ -91,6 +99,7 @@ async def add_to_banlist(request: Request, banned_username: str):
     if not user_id:
         raise ApiException(401, 2001, "You are not logged in!")
 
+    #adds to banlist if it doesn't already exist, or if it is a valid user to ban
     if await Users.filter(username=banned_username, delete_date=None).exists():
         banned_user_id = (
             await Users.filter(username=banned_username, delete_date=None).values(
@@ -128,7 +137,8 @@ async def delete_from_banlist(request: Request, banned_username: str):
 
     if not user_id:
         raise ApiException(401, 2001, "You are not logged in!")
-
+    
+    # removes from banlist if it doesn't already exist, or if it is a valid user to ban
     if await Users.filter(username=banned_username, delete_date=None).exists():
         banned_user_id = (
             await Users.filter(username=banned_username, delete_date=None).values(

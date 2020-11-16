@@ -5,6 +5,10 @@ from pydantic.generics import GenericModel
 
 DataT = TypeVar("DataT", bound=Union[BaseModel, Dict[str, Any]])
 
+"""
+Abstraction layer to all API responses. Wraps responses allowing for consistent API format
+as documented in API specification in the report appendix.
+"""
 
 class ExceptionModel(BaseModel):
     code: int = 1000

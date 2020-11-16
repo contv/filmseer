@@ -1,3 +1,7 @@
+"""
+Contains the API endpoints relating to Search and Recommendations
+"""
+
 import math
 import re
 from datetime import datetime
@@ -30,6 +34,8 @@ elasticsearch = None
 
 
 class FilterResponse(BaseModel):
+    """Response object used to populate filters on page"""
+
     type: str
     name: str
     key: str
@@ -37,6 +43,8 @@ class FilterResponse(BaseModel):
 
 
 class SearchResponse(BaseModel):
+    """Represents a movie object for populating movie tiles on page"""
+
     id: str
     title: str
     release_year: str
@@ -53,6 +61,8 @@ class SearchResponse(BaseModel):
 
 
 class MovieSuggestion(BaseModel):
+    """Represents a suggestion line in the search bar as user is typing"""
+
     id: str
     title: str
     release_date: str
@@ -69,6 +79,7 @@ class ListMovieSuggestion(BaseModel):
 
 @router.on_event("startup")
 async def init_search_cache_driver():
+    """Initialise Redis connection for storing search history on startup."""
     global search_cache_driver
     if not search_cache_driver:
         search_cache_driver = RedisDictStorageDriver(
@@ -86,6 +97,7 @@ async def init_search_cache_driver():
 
 @router.on_event("startup")
 async def init_recommendation_cache_driver():
+    """Initialise Redis connection for storing recommendation history on startup."""
     global recommendation_cache_driver
     if not recommendation_cache_driver:
         recommendation_cache_driver = RedisDictStorageDriver(
@@ -103,6 +115,7 @@ async def init_recommendation_cache_driver():
 
 @router.on_event("startup")
 def connect_elasticsearch():
+    """Initialise Elasticsearch connection on startup."""
     global elasticsearch
     if not elasticsearch:
         elasticsearch = connections.create_connection(
@@ -121,12 +134,14 @@ def connect_elasticsearch():
 
 @router.on_event("shutdown")
 async def terminate_recommendation_cache_driver():
+    """Terminate recommendation history Redis driver"""
     global recommendation_cache_driver
     await recommendation_cache_driver.terminate_driver()
 
 
 @router.on_event("shutdown")
 async def terminate_search_cache_driver():
+    """Terminate search history Redis driver"""
     global search_cache_driver
     await search_cache_driver.terminate_driver()
 
@@ -149,6 +164,10 @@ async def search_movies(
     desc: Optional[bool] = True,
     field: Optional[str] = "all",
 ):
+    """
+    Main entrypoint for keyword search for movies using Elasticsearch.
+    See docstring for get_movies().
+    """
 
     return wrap(
         await get_movies(
@@ -180,7 +199,7 @@ async def process_movie_payload(
     """
     Given a preprocessed Elasticsearch response payload, apply filters, sorting and
     pagination, and returns an ordered array of SearchResponse objects each representing
-    a movie tile
+    a movie tile.
     """
     # Populate filter options based on total payload
     genre_set = set(
@@ -352,6 +371,34 @@ async def get_movies(
     cache_result: bool = False,
     field: str = "all",
 ) -> Dict:
+    """Performs Elasticsearch query to obtain movie payload.
+
+    Used by both Search and Recommendations. Elasticsearch query will use the keyword
+    term to search, and any movie ids provided in movies will be looked up and added
+    to the movie payload.
+
+    Args:
+        movies: a list of strings representing each movie_id to be retrieved
+        keywords: a string representing the user's search term as entered into the search bar.
+        genres: a list of strings representing desired genres to match.
+        years: a list of strings representing desired years to match.
+        directors: a list of strings representing desired director names to match.
+        per_page: int specifying how many results to return per page.
+        page: int specifying the desired page to retrieve based on per_page.
+        sort: string indicating sort field. Possible values are relevance, rating, name and year.
+        desc: boolean specifying sort order. Default is descending order.
+        cache_result: bool whether the Redis should be used to store resulting movie ids in memory.
+        field: string indicating the user's chosen search type in the search bar.
+
+    Returns:
+        A dict response object structured as follows:
+            response = {
+                "movies": postprocessed,
+                "filters": [genre_selections, director_selections, year_selections],
+                "total": total_pages,
+            }
+        where postprocessed is a SearchResponse object, and filters is a list of FilterResponse objects.
+    """
 
     if genres is None:
         genres = []
@@ -365,7 +412,6 @@ async def get_movies(
             search_cache_driver = await init_search_cache_driver()
 
         # Lookup existing search in session
-
         session_name = "searches"
         if field != "all":
             session_name = field + "_searches"
@@ -381,6 +427,7 @@ async def get_movies(
             request.session[session_name] = searches
 
         # Attempt to retrieve stored movie payload from Redis
+        # If found, return the result without querying Elasticsearch
         payload, _ = await search_cache_driver.get(search_id)
         if payload:
             return await process_movie_payload(
@@ -396,6 +443,7 @@ async def get_movies(
         re.findall(r"(\d{4})", keywords) if keywords is not None else []
     )
 
+    # Support different search types selected via search bar
     fields = []
     if field == "all":
         fields = [
@@ -414,6 +462,7 @@ async def get_movies(
     elif field == "people":
         fields = ["positions.people.name"]
 
+    # Match on fields and consider numbers in keyword as years if present
     queries = [
         Q(
             "bool",
@@ -464,6 +513,7 @@ async def get_movies(
     for q in queries:
         search = search.query(q)
 
+    # Get user's banlist and provide this to Elasticsearch
     list_ban = ""
     user_id = request.session.get("user_id")
     if user_id is not None:
@@ -478,6 +528,7 @@ async def get_movies(
             "script": {"id": "calculate_rating_field", "params": {"listban": list_ban}}
         }
     )
+
     # Execute search
     search = search.source(
         ["movie_id", "image", "title", "genres", "release_date", "positions"]
@@ -496,6 +547,7 @@ async def get_movies(
     postprocessed = await process_movie_payload(
         preprocessed, years, directors, genres, per_page, page, sort, desc
     )
+
     return postprocessed
 
 
@@ -505,6 +557,17 @@ async def get_movies(
 async def get_suggestion(
     keyword: str = "", limit: Optional[int] = 8, field: Optional[str] = "all"
 ):
+    """Enables suggestions based on the user's currently entered search string
+
+    Args:
+        keyword: string representing what the user has currently entered
+        limit: int representing the maximum number of suggestions to return
+        field: a string indicating the type of search query to be performed
+
+    Returns:
+        a dict with key "items" containing an array of MovieSuggestion objects
+    """
+
     global elasticsearch
     if not elasticsearch:
         elasticsearch = connect_elasticsearch()
@@ -573,7 +636,7 @@ async def get_recommendation(
     ),  # "foryou", "detail", "new", "popular"
     size: conint(gt=0, le=50) = 20,
     movie_id: Optional[str] = None,
-    recency: conint(gt=0, le=90) = 90,
+    recency: conint(gt=0, le=30) = 7,
     genres: Optional[List[str]] = Query(None),
     years: Optional[List[constr(regex=r"^$|^\d{4}$")]] = Query(None),  # noqa: F722
     directors: Optional[List[str]] = Query(None),
@@ -587,8 +650,34 @@ async def get_recommendation(
     )[0],
     desc: Optional[bool] = True,
 ):
+    """Retrieves movie recommendations to populate the What's New, Popular, For You and
+    Movie Detail panels
+
+    Args:
+        type: a string representing the type of recommendation.
+        size: int representing how many movies to return.
+        movie_id: string representing movie id of the movie to find similar movies. Only required when type = "detail".
+        recency: int representing how many days back in time to consider. Only required when type = "new" or "popular".
+        genres: a list of strings representing desired genres to match.
+        years: a list of strings representing desired years to match.
+        directors: a list of strings representing desired director names to match.
+        per_page: int specifying how many results to return per page.
+        page: int specifying the desired page to retrieve based on per_page.
+        sort: string indicating sort field. Possible values are relevance, rating, name and year.
+        desc: boolean specifying sort order. Default is descending order.
+
+    Returns:
+        A dict response object structured as follows:
+        response = {
+            "movies": postprocessed,
+            "filters": [genre_selections, director_selections, year_selections],
+            "total": total_pages,
+        }
+        where postprocessed is a SearchResponse object, and filters is a list of FilterResponse objects.
+    """
+
     cached_popular = False
-    
+
     if not genres:
         genres = []
     genres = list(filter(None, genres))
@@ -603,6 +692,7 @@ async def get_recommendation(
     if not recommendation_cache_driver:
         recommendation_cache_driver = await init_recommendation_cache_driver()
 
+    # For You type recommendations
     if type == "foryou":
         user_id = request.session.get("user_id")
         if not user_id:
@@ -641,6 +731,7 @@ async def get_recommendation(
                 await recommendation_cache_driver.update(search_id, {"movies": movies})
             except TypeError:
                 raise ApiException(404, 2090, "Recommendation not available")
+    # Movie detail recommendations
     elif type == "detail":
         if not movie_id:
             raise ApiException(404, 2060, "That movie doesn't exist.")
@@ -665,7 +756,8 @@ async def get_recommendation(
                 raise ApiException(404, 2074, "Movie has not been rated before")
             except TypeError:
                 raise ApiException(404, 2090, "Recommendation not available")
-    elif type == "popular":       
+    # Popular type recommendations
+    elif type == "popular":
         # Try to retrieve a cached popular recommendation
         movies, _ = await recommendation_cache_driver.get("popular")
         if movies:
@@ -681,7 +773,8 @@ async def get_recommendation(
                 .values_list("movie_id", "movie_id_count")
             )
             movies = [str(movie[0]) for movie in movies]
-    elif type == "new":     
+    # New type recommendations
+    elif type == "new":
         movies, _ = await recommendation_cache_driver.get("new")
         if movies:
             movies = movies["movies"]
@@ -704,8 +797,13 @@ async def get_recommendation(
 
     # Postprocess to apply filters, sorting and pagination
     if cached_popular:
-        movies["movies"] = [SearchResponse.parse_obj(movie) for movie in movies["movies"]]
-        movies["filters"] = [FilterResponse.parse_obj(filter) for filter in movies["filters"]]
+        # Parse movie payload retrieved from Redis into correct return structure
+        movies["movies"] = [
+            SearchResponse.parse_obj(movie) for movie in movies["movies"]
+        ]
+        movies["filters"] = [
+            FilterResponse.parse_obj(filter) for filter in movies["filters"]
+        ]
         postprocessed = movies
     else:
         postprocessed = await get_movies(
@@ -718,13 +816,18 @@ async def get_recommendation(
             page=page or 1,
             sort=sort or ("relevance", "rating", "name", "year")[0],
             desc=desc if desc is not None else True,
-            cache_result=False
+            cache_result=False,
         )
         # Cache postprocessed payload for Popular, which is only visible to logged out users (no banlist required)
         if type == "popular":
+            # Convert movie payload as necessary to save into Redis
             postprocessed_to_save = postprocessed.copy()
-            postprocessed_to_save["movies"] = [movie.dict() for movie in postprocessed_to_save["movies"]]
-            postprocessed_to_save["filters"] = [filter.dict() for filter in postprocessed_to_save["filters"]]
+            postprocessed_to_save["movies"] = [
+                movie.dict() for movie in postprocessed_to_save["movies"]
+            ]
+            postprocessed_to_save["filters"] = [
+                filter.dict() for filter in postprocessed_to_save["filters"]
+            ]
             await recommendation_cache_driver.update("popular", postprocessed_to_save)
-        
+
     return wrap(postprocessed)

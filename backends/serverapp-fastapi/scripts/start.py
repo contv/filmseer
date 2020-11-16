@@ -12,6 +12,9 @@ from sshtunnel import SSHTunnelForwarder
 
 _mp = importlib.import_module("multiprocessing")
 
+"""
+startup script
+"""
 
 def start():
     os.chdir(Path(__file__).resolve().parent.parent)

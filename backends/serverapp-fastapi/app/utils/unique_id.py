@@ -7,6 +7,9 @@ from typing import Optional, Union
 
 from app.core.config import settings
 
+"""
+This module enables generation 128-bit uuids and related encoding/decoding helpers.
+"""
 
 def _randint(a: int, b: int) -> int:
     try:

@@ -91,3 +91,20 @@ input[type="button"] {
     place-self: center;
   }
 }
+
+.Footer {
+  background-color: var(--gray-5);
+  &__author{
+    font-family: 'Courier New', Courier, monospace;
+  }
+
+  &__authors{
+    padding-left: 160px;
+  }
+
+  &__logo-image{
+    width: 500px;
+    float: right;
+    margin-right: 160px;
+  }
+}

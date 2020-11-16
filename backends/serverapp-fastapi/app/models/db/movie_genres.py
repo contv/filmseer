@@ -8,6 +8,11 @@ def _new_uuid():
     return to_uuid(id())
 
 
+"""
+This Model represents the linking table to relate movies
+to its genres.
+"""
+
 class MovieGenres(Model):
     moviegenre_id = fields.UUIDField(pk=True)
     movie = fields.ForeignKeyField("models.Movies")

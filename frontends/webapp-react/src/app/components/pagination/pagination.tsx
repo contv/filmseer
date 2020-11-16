@@ -45,6 +45,9 @@ type PaginationProps = {
 
 type PaginationRef = {
   refresh: (page?: number) => void;
+  getPageNumber: () => number;
+  countItemsOnPage: () => number;
+  countTotalPages: () => number;
 };
 
 const Pagination = React.forwardRef<
@@ -131,8 +134,32 @@ const Pagination = React.forwardRef<
       refresh: (page?: number) => {
         refreshData(page);
       },
+      getPageNumber: () => {
+        return current;
+      },
+      countItemsOnPage: () => {
+        if (props.dataType === "callback") {
+          return data.length;
+        } else {
+          return data.slice(
+            props.displayType === "loadmore" ? 0 : current - 1,
+            current * (props.perPage || 1)
+          ).length;
+        }
+      },
+      countTotalPages: () => {
+        return total;
+      },
     }),
-    [refreshData]
+    [
+      refreshData,
+      current,
+      data,
+      total,
+      props.dataType,
+      props.displayType,
+      props.perPage,
+    ]
   );
 
   React.useEffect(() => {
@@ -284,6 +311,14 @@ const Pagination = React.forwardRef<
     throw Error("Undefined displayType");
   }
 });
+
+type Handle<T> = T extends React.ForwardRefExoticComponent<
+  React.RefAttributes<infer T2>
+>
+  ? T2
+  : PaginationRef | null;
+
+export type PaginationHandle = Handle<typeof Pagination>;
 
 // FIXME: No view() wrapping until RisingStack/react-easy-state#187 got addressed
 export default Pagination;
