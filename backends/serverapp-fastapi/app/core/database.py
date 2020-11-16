@@ -3,6 +3,10 @@ from fastapi import FastAPI
 
 from app.core.config import settings
 
+"""
+This module is a session driver for our database, initialising and closing
+database connections on app startup and shutdown respectively.
+"""
 
 def handle_database(app: FastAPI) -> FastAPI:
     @app.on_event("startup")

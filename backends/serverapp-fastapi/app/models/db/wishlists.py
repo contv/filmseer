@@ -6,6 +6,11 @@ from app.utils.unique_id import id, to_uuid
 
 def _new_uuid():
     return to_uuid(id())
+    
+
+"""
+This model represents the wishlist of a user, storing wishlisted movies.
+"""
 
 
 class Wishlists(Model):

@@ -18,20 +18,26 @@ router = APIRouter()
 override_prefix = ""
 override_prefix_all = None
 
+"""
+This API controller handles all routes under the prefix /review. It returns 
+and handles review related data such as text, spoiler flagging, and review 
+metadata such as funny and helpful votes.
+"""
 
 class NumVote(BaseModel):
     count: int
 
-
+# basic review request involves just the text and whether it
+# has been flagged by the author as containing a spoiler
 class ReviewRequest(BaseModel):
     description: str
     contains_spoiler: bool
 
-
 class ReviewCreateDate(BaseModel):
     create_date: datetime
 
-
+# the detailed review response that contains all review
+# related data
 class ReviewResponse(BaseModel):
     review_id: str
     user_id: str
@@ -55,18 +61,12 @@ class ReviewResponse(BaseModel):
 class ListReviewResponse(BaseModel):
     items: List[ReviewResponse]
 
-
-# TODO LATER: This API is in the next sprint (follow) and should be in follow route
-
-# GET /followed/reviews
-# This lists all recent reviews from followed users.
-#
-
-
+#gets all reviews for that user, with pagination included
 @router.get("/reviews", tags=["review"], response_model=Wrapper[ListReviewResponse])
 async def search_user_review(
     request: Request, keyword: Optional[str] = "", page: int = 0, per_page: int = 0
 ):
+    #validate pagination parameters
     if per_page >= 42:
         raise ApiException(400, 2700, "Please limit the numer of items per page")
     if (per_page < 0) or (page < 0):
@@ -75,6 +75,8 @@ async def search_user_review(
     if not user_id:
         raise ApiException(401, 2001, "You are not logged in")
 
+    # gets all reviews ordered by created date, including
+    # all relevant data and metadata 
     reviews = [
         ReviewResponse(
             review_id=str(r.review_id),
@@ -108,7 +110,7 @@ async def search_user_review(
 
     return wrap({"items": reviews})
 
-
+# modifies a particular review by its author.
 @router.put("/review/{review_id}", tags=["review"])
 async def update_author_review(review_id: str, review: ReviewRequest, request: Request):
     session_user_id = request.session.get("user_id")
@@ -127,6 +129,7 @@ async def update_author_review(review_id: str, review: ReviewRequest, request: R
     if not review_user_id:
         raise ApiException(404, 2081, "Invalid review id.")
 
+    #must be your review to update
     if session_user_id != review_user_id:
         raise ApiException(
             401, 2082, "You must be the author to update/delete the review."
@@ -134,8 +137,8 @@ async def update_author_review(review_id: str, review: ReviewRequest, request: R
 
     review_movie_id = review[0]["movie_id"]
 
+    #attempts to update review in db
     try:
-        # should we update create_date?
         await Reviews.filter(review_id=review_id).update(
             delete_date=None,
             description=review.description,
@@ -151,7 +154,7 @@ async def update_author_review(review_id: str, review: ReviewRequest, request: R
 
     return wrap({})
 
-
+# delets a given review
 @router.delete("/review/{review_id}", tags=["review"])
 async def delete_author_review(review_id: str, request: Request):
     session_user_id = request.session.get("user_id")
@@ -169,12 +172,14 @@ async def delete_author_review(review_id: str, request: Request):
     review_user_id = review[0]["user_id"]
     if not review_user_id:
         raise ApiException(404, 2610, "Invalid review id.")
-
+    
+    # must be your own review to delete it
     if session_user_id != review_user_id:
         raise ApiException(
             401, 2609, "You must be the author to update/delete the review."
         )
     review_movie_id = review[0]["movie_id"]
+    # deletes and updates all associated review data
     try:
         await Reviews.filter(review_id=review_id).update(
             delete_date=datetime.now(),
@@ -190,13 +195,14 @@ async def delete_author_review(review_id: str, request: Request):
         num_reviews = await Reviews.filter(
             movie_id=review_movie_id, delete_date=None
         ).count()
+        # updates data for movie.
         await Movies.filter(movie_id=review_movie_id).update(num_reviews=num_reviews)
     except OperationalError:
         raise ApiException(500, 2501, "An exception occurred")
 
     return wrap({})
 
-
+# adds a helpful vote to a review
 @router.post(
     "/review/{review_id}/helpful", tags=["review"], response_model=Wrapper[NumVote]
 )
@@ -207,6 +213,7 @@ async def mark_review_helpful(review_id: str, request: Request):
             401, 2001, "You are not logged in!"
         )
     try:
+        # after adding helpful votes, update review helpful count
         async with in_transaction():
             await HelpfulVotes.get_or_create(review_id=review_id, user_id=user_id)
             await HelpfulVotes.filter(review_id=review_id, user_id=user_id).update(
@@ -220,7 +227,7 @@ async def mark_review_helpful(review_id: str, request: Request):
         raise ApiException(500, 2501, "An exception occurred")
     return wrap({"count": num_helpful})
 
-
+# adds a funny vote to a review
 @router.post(
     "/review/{review_id}/funny", tags=["review"], response_model=Wrapper[NumVote]
 )
@@ -239,12 +246,13 @@ async def mark_review_funny(request: Request, review_id: str):
             num_funny = await FunnyVotes.filter(
                 review_id=review_id, delete_date=None
             ).count()
+            # after adding funny votes, update review funny count
             await Reviews.filter(review_id=review_id).update(num_funny=num_funny)
     except OperationalError:
         raise ApiException(500, 2501, "An exception occurred")
     return wrap({"count": num_funny})
 
-
+# adds a spoiler vote for a review
 @router.post(
     "/review/{review_id}/spoiler", tags=["review"], response_model=Wrapper[NumVote]
 )
@@ -263,12 +271,13 @@ async def mark_review_spoiler(request: Request, review_id: str):
             num_spoiler = await SpoilerVotes.filter(
                 review_id=review_id, delete_date=None
             ).count()
+            # after adding spoiler votes, update review spoiler count
             await Reviews.filter(review_id=review_id).update(num_spoiler=num_spoiler)
     except OperationalError:
         raise ApiException(500, 2501, "An exception occurred")
     return wrap({"count": num_spoiler})
 
-
+# deletes helpful vote for review
 @router.delete(
     "/review/{review_id}/helpful", tags=["review"], response_model=Wrapper[NumVote]
 )
@@ -287,12 +296,14 @@ async def unmark_review_helpful(request: Request, review_id: str):
             num_helpful = await HelpfulVotes.filter(
                 review_id=review_id, delete_date=None
             ).count()
+            # after deleting helpful votes, update review helpful count
             await Reviews.filter(review_id=review_id).update(num_helpful=num_helpful)
     except OperationalError:
         raise ApiException(500, 2501, "An exception occurred")
     return wrap({"count": num_helpful})
 
 
+# deletes funny vote for review
 @router.delete(
     "/review/{review_id}/funny", tags=["review"], response_model=Wrapper[NumVote]
 )
@@ -311,12 +322,14 @@ async def unmark_review_funny(request: Request, review_id: str):
             num_funny = await FunnyVotes.filter(
                 review_id=review_id, delete_date=None
             ).count()
+            # after deleting funny votes, updates review funny count
             await Reviews.filter(review_id=review_id).update(num_funny=num_funny)
     except OperationalError:
         raise ApiException(500, 2501, "An exception occurred")
     return wrap({"count": num_funny})
 
 
+# deletes spoiler vote for review
 @router.delete(
     "/review/{review_id}/spoiler", tags=["review"], response_model=Wrapper[NumVote]
 )
@@ -335,6 +348,7 @@ async def unmark_review_spoiler(request: Request, review_id: str):
             num_spoiler = await SpoilerVotes.filter(
                 review_id=review_id, delete_date=None
             ).count()
+            # after deleting spoiler votes, updates review spoiler count
             await Reviews.filter(review_id=review_id).update(num_spoiler=num_spoiler)
     except OperationalError:
         raise ApiException(500, 2501, "An exception occurred")

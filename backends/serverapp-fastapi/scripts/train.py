@@ -7,6 +7,9 @@ from surprise import SVD, Dataset, KNNBaseline, Reader, dump
 
 from app.core.config import settings
 
+"""
+model training script to serialise models for recommendation enginge.
+"""
 
 async def get_rating_data():
     conn = await asyncpg.connect(

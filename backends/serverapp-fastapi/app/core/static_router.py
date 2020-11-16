@@ -11,6 +11,13 @@ from app.core.config import settings
 from app.core.errors import status_code_handler
 
 
+"""
+This module handles static routing. This allows static
+javascript assets to be routed so that the correct app entry
+point is chosen given a specific url. This module includes middleware
+processed before requests in the API controllers
+"""
+
 class ModifiedStaticFiles(StaticFiles):
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         """
@@ -110,8 +117,7 @@ def handle_static_routes(app: FastAPI) -> FastAPI:
             "/settings",
             "/settings/security",
             "/settings/reviews",
-            "/settings/movies",
-            "/settings/reports",
+            "/settings/movies"
         ],
         spa_entry_file=settings.SPA_ENTRY_FILE,
     )

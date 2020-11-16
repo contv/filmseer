@@ -4,6 +4,12 @@ import argon2
 
 from app.core.config import settings
 
+"""
+This module is responsible for password hashing, provides helpful utilities
+for this functionality.
+"""
+
+
 _hasher = argon2.PasswordHasher(
     time_cost=settings.HASH_ITERATION,
     memory_cost=settings.HASH_RAM_USAGE,
