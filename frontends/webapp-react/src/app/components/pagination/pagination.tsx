@@ -131,6 +131,22 @@ const Pagination = React.forwardRef<
       refresh: (page?: number) => {
         refreshData(page);
       },
+      getPageNumber: () => {
+        return current;
+      },
+      countItemsOnPage: () => {
+        if (props.dataType === "callback") {
+          return data.length;
+        } else {
+          return data.slice(
+            props.displayType === "loadmore" ? 0 : current - 1,
+            current * (props.perPage || 1)
+          ).length;
+        }
+      },
+      countTotalPages: () => {
+        return total;
+      },
     }),
     [refreshData]
   );
