@@ -233,6 +233,40 @@ async def process_movie_payload(
         year: {"key": year, "name": year, "count": 0} for year in year_set
     }
 
+    # Populate filter counts using all results
+    for movie_id in preprocessed:
+        movie = preprocessed[movie_id]
+        if movie["movie"]["genres"]:
+            for genre in movie["movie"]["genres"]:
+                genre_selections[genre["name"]]["count"] += 1
+        if movie["movie"]["positions"]:
+            for position in movie["movie"]["positions"]:
+                if position["position"] == "director":
+                    director_selections[position["people"]["name"]]["count"] += 1
+        if movie["movie"]["release_date"]:
+            year_selections[movie["movie"]["release_date"][0:4]]["count"] += 1
+
+    genre_selections = FilterResponse(
+        type="list",
+        name="Genre",
+        key="genre",
+        selections=sorted(list(genre_selections.values()), key=lambda x: x["name"]),
+    )
+
+    director_selections = FilterResponse(
+        type="list",
+        name="Directors",
+        key="director",
+        selections=sorted(list(director_selections.values()), key=lambda x: x["name"]),
+    )
+
+    year_selections = FilterResponse(
+        type="slide",
+        name="Year",
+        key="year",
+        selections=sorted(list(year_selections.values()), key=lambda x: x["name"]),
+    )
+
     # Filter
     postprocessed = []
     for movie_id in preprocessed:
@@ -299,39 +333,6 @@ async def process_movie_payload(
         if end < 0 or end > len(postprocessed):
             end = len(postprocessed)
         postprocessed = postprocessed[start:end]
-
-    # Populate filter counts using filtered results only
-    for movie in postprocessed:
-        if movie["movie"]["genres"]:
-            for genre in movie["movie"]["genres"]:
-                genre_selections[genre["name"]]["count"] += 1
-        if movie["movie"]["positions"]:
-            for position in movie["movie"]["positions"]:
-                if position["position"] == "director":
-                    director_selections[position["people"]["name"]]["count"] += 1
-        if movie["movie"]["release_date"]:
-            year_selections[movie["movie"]["release_date"][0:4]]["count"] += 1
-
-    genre_selections = FilterResponse(
-        type="list",
-        name="Genre",
-        key="genre",
-        selections=sorted(list(genre_selections.values()), key=lambda x: x["name"]),
-    )
-
-    director_selections = FilterResponse(
-        type="list",
-        name="Directors",
-        key="director",
-        selections=sorted(list(director_selections.values()), key=lambda x: x["name"]),
-    )
-
-    year_selections = FilterResponse(
-        type="slide",
-        name="Year",
-        key="year",
-        selections=sorted(list(year_selections.values()), key=lambda x: x["name"]),
-    )
 
     # Convert to SearchResponse objects
     for i in range(len(postprocessed)):
