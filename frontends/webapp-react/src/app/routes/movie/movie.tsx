@@ -19,8 +19,8 @@ import { ReviewProps } from "src/app/components/review/review";
 import { SearchItem } from "src/app/routes/search/search";
 import Select from "@material-ui/core/Select";
 import Stars from "src/app/components/stars";
-import TileList from "src/app/components/tile-list";
 import TableList from "src/app/components/table-list";
+import TileList from "src/app/components/tile-list";
 import Trailer from "src/app/components/trailer";
 import Typography from "@material-ui/core/Typography";
 import { User } from "src/app/routes/user/user";
@@ -58,6 +58,7 @@ type Movie = {
   genres?: Array<string>;
 };
 const total = 16;
+const reviewsPerPage = 4;
 const itemPerRow = Math.floor(
   (document.body.clientWidth * 0.8 + 24) / (150 + 24) / 2
 );
@@ -90,6 +91,8 @@ const MovieDetailPage = (props: { className?: string }) => {
   const [hasErrorRecommened, setHasErrorRecommended] = React.useState<boolean>(
     false
   );
+
+
   const getParamUpdater = (key: string) => {
     if (key === "genre") {
       return updateGenre;
@@ -119,8 +122,10 @@ const MovieDetailPage = (props: { className?: string }) => {
   };
 
   const snapToReviews = () => reviewSection.current.scrollIntoView();
-  let paginationHandle: Handle<typeof Pagination>;
-
+  let paginationHandle_recommend: Handle<typeof Pagination>;
+  let paginationHandle_review: Handle<typeof Pagination>;
+  
+  
   useEffect(() => {
     if (state.loggedIn) {
       api({ path: `/user`, method: "GET" }).then((res) => {
@@ -149,14 +154,6 @@ const MovieDetailPage = (props: { className?: string }) => {
         setHasError(false);
       }
     });
-    api({ path: `/movie/${movieId}/reviews`, method: "GET" }).then((res) => {
-      if (res.code !== 0) {
-        setHasError(true);
-      } else {
-        setReviews(res.data.items as Array<ReviewProps>);
-        setHasError(false);
-      }
-    });
     api({
       path: `/movie/${movieId}/reviews`,
       method: "GET",
@@ -172,12 +169,17 @@ const MovieDetailPage = (props: { className?: string }) => {
   }, [movieId]);
 
   useUpdateEffect(() => {
-    paginationHandle && paginationHandle.refresh(1);
+    paginationHandle_recommend && paginationHandle_recommend.refresh(1);
   }, [sortBy, descending]);
 
   useUpdateEffect(() => {
-    paginationHandle && paginationHandle.refresh();
+    paginationHandle_recommend && paginationHandle_recommend.refresh();
   }, [movieId, genreFilter, directorFilter, yearFilter]);
+
+  useUpdateEffect(() => {
+    paginationHandle_review && paginationHandle_review.refresh();
+  }, [movieId]);
+
 
   if (movieDetails) {
     const formattedNumRatings: string = nFormatter(movieDetails.numVotes, 0);
@@ -244,44 +246,44 @@ const MovieDetailPage = (props: { className?: string }) => {
         )}
         {movieDetails.crew && (
           <MovieSection heading="Cast and Crew">
-          <TableList
-            className="Movie__cast-table"
-            header={{
-              "image": "Image",
-              "name": "Name",
-              "position": "Position",
-            }}
-            headerClassName={{
-              "image": "Movie__cast-avatar",
-              "name": "Movie__cast-name",
-              "position": "Movie__cast-position",
-            }}
-            columnSizes={{
-              "image": "1fr",
-              "name": "1fr",
-              "position": "1fr",
-            }}
-            showHeader={false}
-            rowsData={
-              movieDetails.crew.map((castMember) => {
+            <TableList
+              className="Movie__cast-table"
+              header={{
+                image: "Image",
+                name: "Name",
+                position: "Position",
+              }}
+              headerClassName={{
+                image: "Movie__cast-avatar",
+                name: "Movie__cast-name",
+                position: "Movie__cast-position",
+              }}
+              columnSizes={{
+                image: "1fr",
+                name: "1fr",
+                position: "1fr",
+              }}
+              showHeader={false}
+              rowsData={movieDetails.crew.map((castMember) => {
                 return {
-                  "image": castMember.image || avatar,
-                  "name": castMember.name,
-                  "position": castMember.position,
-                  "id": castMember.id,
+                  image: castMember.image || avatar,
+                  name: castMember.name,
+                  position: castMember.position,
+                  id: castMember.id,
+                };
+              })}
+              cellRenderer={(cellData, columnName, _index, _rowData) => {
+                if (columnName === "image") {
+                  return (
+                    <img src={cellData} className="Movie__cast-avatar-image" />
+                  );
+                } else if (columnName === "name") {
+                  return <span className="Movie__castname">{cellData}</span>;
+                } else {
+                  return <span className="Movie__position">{cellData}</span>;
                 }
-              })
-            }
-            cellRenderer={(cellData, columnName, _index, _rowData) => {
-              if (columnName === "image") {
-                return <img src={cellData} className="Movie__cast-avatar-image" />
-              } else if (columnName === "name") {
-              return <span className="Movie__castname">{cellData}</span>
-              } else {
-                return <span className="Movie__position">{cellData}</span>
-              }
-            }}
-          />
+              }}
+            />
           </MovieSection>
         )}
         <MovieSection heading="Recommended">
@@ -378,7 +380,7 @@ const MovieDetailPage = (props: { className?: string }) => {
               displayType="dotted"
               dataType="slice"
               ref={(c) => {
-                paginationHandle = c;
+                paginationHandle_recommend = c;
               }}
               dataCallback={async (page) => {
                 setIsLoadingRecommended(true);
@@ -491,6 +493,27 @@ const MovieDetailPage = (props: { className?: string }) => {
               />
             </div>
           )}
+        <div className="Movie__pagination-wrapper">
+          <Pagination
+            ref={(c) => {
+              paginationHandle_review = c;
+            }}
+            displayType="numbered"
+            dataType="slice"
+            perPage={reviewsPerPage}
+            dataCallback={async () => {
+              const response = await api({
+                path: `/movie/${movieId}/reviews`,
+                method: "GET",
+              });
+
+              return response.data.items as ReviewProps[]
+            }}
+            renderCallback={(data) => {
+              setReviews(data as ReviewProps[]);
+            }}
+          />
+        </div>
         </MovieSection>
       </div>
     );
