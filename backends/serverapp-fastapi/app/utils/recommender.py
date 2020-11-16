@@ -1,5 +1,7 @@
 import pickle
 import random
+import asyncio
+import aiofiles
 from typing import Set
 
 from surprise import dump
@@ -11,24 +13,6 @@ user_movie_recommender = None
 movie_movie_recommender = None
 raw_to_inner = None
 inner_to_raw = None
-
-# Import models and dicts globally
-# Each worker then needs to load the files from disk only once
-try:
-    _, movie_movie_recommender = dump.load(
-        settings.STORAGES_ROOT / "recommender/movie_movie_recommender"
-    )
-    _, user_movie_recommender = dump.load(
-        settings.STORAGES_ROOT / "recommender/user_movie_recommender"
-    )
-    with open(settings.STORAGES_ROOT / "recommender/raw_to_inner_id", "rb") as file:
-        raw_to_inner = pickle.load(file)
-    with open(settings.STORAGES_ROOT / "recommender/inner_to_raw_id", "rb") as file:
-        inner_to_raw = pickle.load(file)
-    with open(settings.STORAGES_ROOT / "recommender/movie_set", "rb") as file:
-        movie_set = pickle.load(file)
-except FileNotFoundError:
-    pass
 
 
 async def predict_on_movie(movie_id: str, size: int = 10):
@@ -56,18 +40,20 @@ async def predict_on_movie(movie_id: str, size: int = 10):
     global inner_to_raw
     if not raw_to_inner:
         try:
-            with open(
+            async with aiofiles.open(
                 settings.STORAGES_ROOT / "recommender/raw_to_inner_id", "rb"
             ) as file:
-                raw_to_inner = pickle.load(file)
+                raw_to_inner = await file.read()
+                raw_to_inner = pickle.loads(raw_to_inner)
         except FileNotFoundError:
             raise TypeError("Could not find raw_to_inner_id")
     if not inner_to_raw:
         try:
-            with open(
+            async with aiofiles.open(
                 settings.STORAGES_ROOT / "recommender/inner_to_raw_id", "rb"
             ) as file:
-                inner_to_raw = pickle.load(file)
+                inner_to_raw = await file.read()
+                inner_to_raw = pickle.loads(inner_to_raw)
         except FileNotFoundError:
             raise TypeError("Could not find inner_to_raw_id")
 
@@ -125,8 +111,9 @@ async def load_movie_set():
     global movie_set
     if not movie_set:
         try:
-            with open(settings.STORAGES_ROOT / "recommender/movie_set", "rb") as file:
-                movie_set = pickle.load(file)
+            async with aiofiles.open(settings.STORAGES_ROOT / "recommender/movie_set", "rb") as file:
+                movie_set = await file.read()
+                movie_set = pickle.loads(movie_set)
         except FileNotFoundError:
             raise TypeError("Could not find movie set")
     return movie_set

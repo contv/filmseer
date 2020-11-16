@@ -1,5 +1,6 @@
 import asyncio
 import pickle
+import aiofiles
 
 import asyncpg
 import pandas as pd
@@ -26,8 +27,9 @@ async def get_rating_data():
             """
         )
         movie_set = set(item[0] for item in movies)
-        with open(settings.STORAGES_ROOT / "recommender/movie_set", "wb") as file:
-            pickle.dump(movie_set, file, protocol=pickle.HIGHEST_PROTOCOL)
+        async with aiofiles.open(settings.STORAGES_ROOT / "recommender/movie_set", "wb") as file:
+            obj = pickle.dumps(movie_set)
+            await file.write(obj)
         ratings = await conn.fetch(
             """
             SELECT user_id::text, movie_id::text, rating FROM public.ratings
@@ -45,17 +47,13 @@ async def train():
     trainset = data.build_full_trainset()
 
     # Save inner id dicts
+    async with aiofiles.open(settings.STORAGES_ROOT / "recommender/raw_to_inner_id", "wb") as file:
+        obj = pickle.dumps(trainset._raw2inner_id_items)
+        await file.write(obj)
+    async with aiofiles.open(settings.STORAGES_ROOT / "recommender/inner_to_raw_id", "wb") as file:
+        obj = pickle.dumps({inner: raw for raw, inner in trainset._raw2inner_id_items.items()})
+        await file.write(obj)
 
-    with open(settings.STORAGES_ROOT / "recommender/raw_to_inner_id", "wb") as file:
-        pickle.dump(
-            trainset._raw2inner_id_items, file, protocol=pickle.HIGHEST_PROTOCOL
-        )
-    with open(settings.STORAGES_ROOT / "recommender/inner_to_raw_id", "wb") as file:
-        pickle.dump(
-            {inner: raw for raw, inner in trainset._raw2inner_id_items.items()},
-            file,
-            protocol=pickle.HIGHEST_PROTOCOL,
-        )
 
     # Train kNN recommender for getting movies similar to a given movie
     sim_options = {"name": "pearson_baseline", "user_based": False}
