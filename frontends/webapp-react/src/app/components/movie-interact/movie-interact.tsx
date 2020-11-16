@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react";
 
 import BookmarkIcon from "@material-ui/icons/Bookmark";
 import { ChatBubble } from "@material-ui/icons";
-import FlagIcon from "@material-ui/icons/Flag";
 import Popup from "src/app/popups/popup-base";
 import Stars from "src/app/components/stars";
 import Typography from "@material-ui/core/Typography";
@@ -64,7 +63,7 @@ const MovieInteract = (props: MovieInteractProps & {snapToReviews : any}) => {;
 
 return (
     <>
-      <div>
+      <div className="Interactive">
         <BookmarkIcon
           onClick={onWishlist}
           style={{ fill: isWishlisted ? "green" : "black" }}
@@ -73,7 +72,7 @@ return (
           {isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
         </Typography>
       </div>
-      <div>
+      <div className="Wishlist">
         <Typography variant="body2">Your rating</Typography>
         <Stars
           id="movie-interact-stars"
@@ -84,7 +83,7 @@ return (
           setRating={props.setUserRating}
         />
       </div>
-      <div onClick={showPopupIfNotLoggedIn}>
+      <div onClick={showPopupIfNotLoggedIn} className="Interactive">
         <a style={{textDecoration: "none"}} onClick={state.loggedIn && props.snapToReviews}>
         <ChatBubble/>
         <Typography variant="body2" display="inline">

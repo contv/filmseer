@@ -1,6 +1,12 @@
 .GenreTile {
+  cursor: pointer;
   display: inline-block;
   margin-right: 5px;
   color: unset;
   text-decoration: unset;
+
+  :hover{
+    border-radius: 1px;
+    color: var(--gray-1);
+  }
 }

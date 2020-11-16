@@ -123,7 +123,7 @@ const ReviewEditor = (props: ReviewEditorProps & { className?: string }) => {
                 />
                 Mark as spoiler
               </label>
-              <button onClick={changeMode}>
+              <button onClick={changeMode} className="ReviewEditor__submit">
                 {editable ? "Edit" : "Submit"}
               </button>
             </>
