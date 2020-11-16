@@ -361,16 +361,18 @@ const MovieDetailPage = (props: { className?: string }) => {
                 recommendParams.append("size", total.toString());
                 recommendParams.append("sort", sortBy || "rating");
                 recommendParams.append("desc", descending.toString() || "true");
-                (yearFilter || []).map((item) => {
-                  recommendParams.append("years", item);
-                });
-                (genreFilter || []).map((item) => {
-                  recommendParams.append("genres", item);
-                });
-                (directorFilter || []).map((item) => {
-                  recommendParams.append("directors", item);
-                });
 
+                for (let item of yearFilter || []) {
+                  recommendParams.append("years", item);
+                }
+
+                for (let item of genreFilter || []) {
+                  recommendParams.append("genres", item);
+                }
+
+                for (let item of directorFilter || []) {
+                  recommendParams.append("directors", item);
+                }
                 try {
                   res = await api({
                     path: "/movies/recommendation",
