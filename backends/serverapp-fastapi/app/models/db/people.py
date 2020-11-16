@@ -9,6 +9,10 @@ from .movies import Movies
 def _new_uuid():
     return to_uuid(id())
 
+"""
+The model represents the core data associated with a person not
+in any relation to any particular movie.
+"""
 
 class People(Model):
     # Data fields

@@ -15,7 +15,12 @@ router = APIRouter()
 override_prefix = None
 override_prefix_all = None
 
+"""
+This API controller handles all wishlist related data and wishlist
+management.
+"""
 
+# a brief summary of a movie as seen in a wishlist
 class MovieWishlistResponse(BaseModel):
     wishlist_id: str
     movie_id: str
@@ -33,7 +38,7 @@ class MovieWishlistResponse(BaseModel):
 class MovieInWishlistResponse(BaseModel):
     added: bool
 
-
+# gets all movies on your wishlist
 @router.get(
     "/", tags=["wishlist"], response_model=Wrapper[ListResponse[MovieWishlistResponse]]
 )
@@ -43,11 +48,13 @@ async def get_wishlist(request: Request):
     if not user_id:
         raise ApiException(401, 2001, "You are not logged in!")
 
+    
     items = []
     for wishlist_item in await Wishlists.filter(
         user_id=user_id, delete_date=None
     ).prefetch_related("movie"):
-
+        # gets the banlist-adjusted ratings before creating
+        # the wishlist response object
         rating = await calc_average_rating(
             wishlist_item.movie.cumulative_rating,
             wishlist_item.movie.num_votes,
@@ -68,13 +75,13 @@ async def get_wishlist(request: Request):
 
     return wrap({"items": items})
 
-
+# checks whether that movie is already on your wishlist
 @router.get("/{movie_id}", response_model=Wrapper[MovieInWishlistResponse])
 async def is_movie_wishlist(request: Request, movie_id: str):
     user_id = request.session.get("user_id")
 
     if not user_id:
-        raise ApiException(401, 2001, "You must be logged in to see your wishlist.")
+        raise ApiException(401, 2001, "You are not logged in!")
     added = (
         await Wishlists.filter(
             movie_id=movie_id, user_id=user_id, delete_date=None
@@ -84,13 +91,16 @@ async def is_movie_wishlist(request: Request, movie_id: str):
 
     return wrap({"added": added})
 
-
+# adds a movie to wishlist
 @router.put("/{movie_id}")
 async def add_to_wishlist(request: Request, movie_id: str):
     user_id = request.session.get("user_id")
 
     if not user_id:
         raise ApiException(401, 2001, "You are not logged in!")
+    
+    # if it was previously wishlisted (including soft deletion),
+    # idempotently add to wishlist.
 
     previously_wishlisted = await Wishlists.get_or_none(
         movie_id=movie_id, user_id=user_id
@@ -110,13 +120,15 @@ async def add_to_wishlist(request: Request, movie_id: str):
 
     return wrap({})
 
-
+# deletes a movie from wishlist
 @router.delete("/{movie_id}")
 async def delete_from_wishlist(request: Request, movie_id: str):
     user_id = request.session.get("user_id")
 
     if not user_id:
         raise ApiException(401, 2001, "You are not logged in!")
+    
+    # if previously wishlisted, delete it
     previously_wishlisted = await Wishlists.get_or_none(
         movie_id=movie_id, user_id=user_id
     )

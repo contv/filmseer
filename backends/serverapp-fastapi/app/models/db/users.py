@@ -7,6 +7,10 @@ from app.utils.unique_id import id, to_uuid
 def _new_uuid():
     return to_uuid(id())
 
+"""
+This is the core model representing the user profile and its associated 
+metadata.
+"""
 
 class Users(Model):
     # Data fields
@@ -24,7 +28,6 @@ class Users(Model):
     delete_date = fields.DatetimeField(null=True)
 
     # Relational fields
-    reports: fields.ReverseRelation["Reports"]
     ratings: fields.ReverseRelation["Ratings"]
     reviews: fields.ReverseRelation["Reviews"]
     banning_user_id: fields.ReverseRelation["Banlists"] 

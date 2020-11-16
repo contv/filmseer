@@ -7,6 +7,10 @@ from app.utils.unique_id import id, to_uuid
 def _new_uuid():
     return to_uuid(id())
 
+"""
+This model represents a movie and its core data, along with
+tables it relates to via foreign keys like people and genres
+"""
 
 class Movies(Model):
     # Data fields
@@ -38,7 +42,6 @@ class Movies(Model):
         forward_key="person_id",
     )
 
-    reports: fields.ReverseRelation["Reports"]
     reviews: fields.ReverseRelation["Reviews"]
     ratings: fields.ReverseRelation["Ratings"]
 

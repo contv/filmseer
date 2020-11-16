@@ -8,6 +8,11 @@ def _new_uuid():
     return to_uuid(id())
 
 
+"""
+This model represents a spoiler vote given to a particular review, 
+associated with a user.
+"""
+
 class SpoilerVotes(Model):
     spoiler_vote_id = fields.UUIDField(pk=True, default=_new_uuid)
     user = fields.ForeignKeyField("models.Users")

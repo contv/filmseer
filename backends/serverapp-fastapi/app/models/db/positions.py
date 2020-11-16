@@ -8,6 +8,13 @@ def _new_uuid():
     return to_uuid(id())
 
 
+"""
+This model represents the core data associated with a person
+in relation to a particular movie. This means what they did for that
+particular movie (e.g. actor, director, etc.)
+"""
+
+
 class Positions(Model):
     position_id = fields.UUIDField(pk=True)
     movie = fields.ForeignKeyField("models.Movies")

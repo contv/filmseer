@@ -9,12 +9,16 @@ router = APIRouter()
 override_prefix = None
 override_prefix_all = None
 
+"""
+This API controller handles session related data, such as login, logout, 
+and current session.
+"""
 
 class Login(BaseModel):
     username: str
     password: str
 
-
+# this returns 200 if you have a session i.e. you're logged in
 @router.get("/", tags=["session"])
 async def check_session(request: Request) -> Wrapper[dict]:
     username = request.session.get("username")
@@ -30,7 +34,7 @@ async def check_session(request: Request) -> Wrapper[dict]:
             raise ApiException(500, 2002, "This user no longer exists!")
     raise ApiException(500, 2001, "You are not logged in!")
 
-
+# login
 @router.post("/", tags=["session"])
 async def create_session(login: Login, request: Request) -> Wrapper[dict]:
     if "username" in request.session:
@@ -40,6 +44,7 @@ async def create_session(login: Login, request: Request) -> Wrapper[dict]:
     user = await Users.filter(username=login.username, delete_date=None).first()
     if not user:
         raise ApiException(500, 2010, "Incorrect username or password")
+    # when a user logs in adds user session keys for caching in Redis
     if verify(user.password_hash, login.password):
         if is_hash_deprecated(user.password_hash):
             user.password_hash = hash(login.password)
@@ -55,7 +60,7 @@ async def create_session(login: Login, request: Request) -> Wrapper[dict]:
         return wrap({})
     raise ApiException(500, 2010, "Incorrect username or password")
 
-
+# logout, clears session data
 @router.delete("/", tags=["session"])
 async def delete_session(request: Request) -> Wrapper[dict]:
     if "username" in request.session:

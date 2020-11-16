@@ -19,6 +19,10 @@ from app.core.config import settings
 from app.utils.dict_storage import DictStorageDriverBase
 from app.utils.dict_storage.redis import RedisDictStorageDriver
 
+"""
+This module is session middleware to handle session in requests
+to the API.
+"""
 
 def _urandom(num_bytes: int):
     try:

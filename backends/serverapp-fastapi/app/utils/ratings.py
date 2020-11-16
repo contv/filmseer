@@ -3,6 +3,11 @@ from app.models.db.ratings import Ratings
 from app.models.db.reviews import Reviews
 
 
+"""
+This helper function is used for calculating the average rating of a 
+movie. It takes into account banned list if a user_id is provided.
+"""
+
 async def calc_average_rating(
     cumulative_rating, num_votes, user_id=None, movie_id=None
 ) -> float:

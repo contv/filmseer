@@ -8,6 +8,10 @@ def _new_uuid():
     return to_uuid(id())
 
 
+"""
+This model represents the banlist of a user, storing banned users.
+"""
+
 class Banlists(Model):
     # Data fields
     banlist_id = fields.UUIDField(pk=True, default=_new_uuid)
