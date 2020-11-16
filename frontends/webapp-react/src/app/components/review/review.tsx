@@ -56,12 +56,15 @@ const Review = (props: ReviewProps & { className?: string }) => {
           <Link to={`/user/${props.username}`}>{props.username}</Link>{" "}
           {props.showMovie && (
             <span className="Review__meta-reviews">reviews</span>
-          )}
+          )}{" "}
           {props.showMovie && (
             <Link to={`/movie/${props.movieId}`}>
-              {props.movieTitle} ({props.movieYear})
+              {props.movieTitle}{" "}
+              {props.movieYear
+                ? `(${parseInt(props.movieYear, 10).toString()})`
+                : ""}
             </Link>
-          )}
+          )}{" "}
           <span className="Review__date">
             posted at {`${new Date(props.createDate).toUTCString()}`}
           </span>
