@@ -42,6 +42,9 @@ class ReviewResponse(BaseModel):
     review_id: str
     user_id: str
     username: str
+    movie_id: str
+    movie_title: str
+    movie_year: str
     create_date: str
     description: str
     contains_spoiler: bool
@@ -82,6 +85,9 @@ async def search_user_review(
             review_id=str(r.review_id),
             user_id=str(r.user_id),
             username=r.user.username,
+            movie_id=str(r.movie_id),
+            movie_title=str(r.movie.title),
+            movie_year=str(r.movie.release_date),
             create_date=str(r.create_date),
             description=r.description,
             contains_spoiler=r.contains_spoiler,
@@ -104,7 +110,7 @@ async def search_user_review(
         .offset((page - 1) * per_page)
         .limit(per_page)
         .prefetch_related(
-            "rating", "helpful_votes", "funny_votes", "spoiler_votes", "user"
+            "rating", "helpful_votes", "funny_votes", "spoiler_votes", "user", "movie"
         )
     ]
 
