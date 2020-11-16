@@ -195,4 +195,9 @@
   &__edit {
     cursor: pointer;
   }
+
+  &__loading-message {
+    padding-left: 160px;
+    min-height: 750px;
+  }
 }
