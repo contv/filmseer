@@ -26,8 +26,8 @@
 
 import range from "lodash/range";
 import React from "react";
-import { ChevronLeft, ChevronRight } from "react-feather";
-import { usePrevious, useUpdateEffect } from "src/utils";
+import { ChevronLeft,ChevronRight } from "react-feather";
+import { usePrevious,useUpdateEffect } from "src/utils";
 import "./pagination.scss";
 import firstIcon from "./to-first.svg";
 import lastIcon from "./to-last.svg";
@@ -45,6 +45,9 @@ type PaginationProps = {
 
 type PaginationRef = {
   refresh: (page?: number) => void;
+  getPageNumber: () => number;
+  countItemsOnPage: () => number;
+  countTotalPages: () => number;
 };
 
 const Pagination = React.forwardRef<
@@ -300,6 +303,14 @@ const Pagination = React.forwardRef<
     throw Error("Undefined displayType");
   }
 });
+
+type Handle<T> = T extends React.ForwardRefExoticComponent<
+  React.RefAttributes<infer T2>
+>
+  ? T2
+  : PaginationRef | null;
+
+export type PaginationHandle = Handle<typeof Pagination>;
 
 // FIXME: No view() wrapping until RisingStack/react-easy-state#187 got addressed
 export default Pagination;

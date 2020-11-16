@@ -8,6 +8,7 @@ import InputLabel from "@material-ui/core/InputLabel";
 import MenuItem from "@material-ui/core/MenuItem";
 import MovieItem from "src/app/components/movie-item/movie-item";
 import Pagination from "src/app/components/pagination";
+import {PaginationHandle} from "src/app/components/pagination/pagination";
 import React from "react";
 import Select from "@material-ui/core/Select";
 import TileList from "src/app/components/tile-list";
@@ -26,14 +27,6 @@ export type SearchItem = {
   cumulativeRating: number;
 };
 
-type Handle<T> = T extends React.ForwardRefExoticComponent<
-  React.RefAttributes<infer T2>
->
-  ? T2
-  : {
-      refresh: (page?: number) => void;
-    } | null;
-
 const SearchPage = (props: { className?: string }) => {
   const { searchString } = useParams<{ searchString?: string }>();
   const { searchField } = useParams<{ searchField?: string }>();
@@ -47,7 +40,7 @@ const SearchPage = (props: { className?: string }) => {
   const [filters, setFilters] = React.useState<Array<any>>();
   const [sortBy, setSortBy] = React.useState<string>("relevance");
   const [totalPages, setTotalPages] = React.useState<number>(0);
-  let paginationHandle: Handle<typeof Pagination>;
+  let paginationHandle: PaginationHandle;
 
   // This is an UGLY approach, but a CSS reader is even worse
   // UPDATE THIS WHEN YOU MODIFY SCSS
