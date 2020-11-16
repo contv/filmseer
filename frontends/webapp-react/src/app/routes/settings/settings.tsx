@@ -17,7 +17,7 @@ import Typography from "@material-ui/core/Typography";
 import AccountBoxIcon from "@material-ui/icons/AccountBox";
 import SaveIcon from "@material-ui/icons/Save";
 import SecurityIcon from "@material-ui/icons/Security";
-import { apiEffect, ApiError } from "src/utils";
+import { apiEffect, ApiError, baseApiUrl } from "src/utils";
 import "./settings.scss";
 
 export type User = {
@@ -211,7 +211,7 @@ const SettingsPage = (props: { className?: string }) => {
           <Grid item>
             <Avatar
               className="SettingsPage__avatar"
-              src={user.image}
+              src={baseApiUrl + user.image + "?" + Date.now().toString()}
               alt={user.username}
             />
           </Grid>
