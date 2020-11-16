@@ -2,3 +2,27 @@
   display: grid;
   grid-auto-flow: row;
 }
+
+.TableList__cell-image {
+  display: flex;
+  justify-content: center;
+}
+
+.TableList__cell-name {
+  display: flex;
+  align-items: center;
+  font-size: 18px;
+  justify-content: center;
+}
+
+.TableList__cell-position {
+  display: flex;
+  align-items: center;
+  font-size: 18px;
+  justify-content: center;
+}
+
+.TableList__cell {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 10px;
+}

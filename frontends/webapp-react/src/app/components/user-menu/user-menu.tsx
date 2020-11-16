@@ -1,14 +1,16 @@
-import { view } from "@risingstack/react-easy-state";
-import React from "react";
-import { Settings } from "react-feather";
+import "./user-menu.scss";
+
+import { api, apiEffect } from "src/utils";
+
 import { Link } from "react-router-dom";
 import Login from "src/app/popups/login";
-import TabPopup from "src/app/popups/popup-tabs";
+import React from "react";
 import Register from "src/app/popups/register";
+import { Settings } from "react-feather";
+import TabPopup from "src/app/popups/popup-tabs";
 import state from "src/app/states";
-import { api, apiEffect } from "src/utils";
 import user from "./user-icon.svg";
-import "./user-menu.scss";
+import { view } from "@risingstack/react-easy-state";
 
 const UserMenu = (props: { className?: string }) => {
   const [popupVisible, setPopupVisible] = React.useState(false);
@@ -55,12 +57,6 @@ const UserMenu = (props: { className?: string }) => {
   } else {
     return (
       <div className={`UserMenu ${(props.className || "").trim()}`}>
-        <button className="UserMenu__icon">
-          <img src={user} alt="Profile" className="UserMenu__profile-icon" />
-        </button>
-        <button className="UserMenu__icon">
-          <Settings className="UserMenu__profile-icon" size={1000} />
-        </button>
         <button
           className="UserMenu__button"
           onClick={() => {

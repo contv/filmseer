@@ -1,6 +1,7 @@
 .SearchPage {
   display: flex;
   flex-direction: column;
+  background: #f7f7f7;
   &__item {
     display: flex;
     flex-flow: column nowrap;
@@ -62,4 +63,8 @@
     justify-content: center;
   }
 
+}
+
+.SearchBar__container--open .SearchBar__suggestions-container {
+  z-index: 5;
 }

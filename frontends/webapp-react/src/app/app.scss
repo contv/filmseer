@@ -73,10 +73,16 @@ input[type="button"] {
     grid-template-areas: "logo search menu";
     column-gap: 3.5%;
     place-self: stretch;
+    background: #F7F7F7;
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.4);
   }
 
   &__main {
     grid-area: main;
+    background: #303030;
+    padding-bottom: 40px;
   }
 }
 
@@ -99,16 +105,26 @@ input[type="button"] {
 
 .Footer {
   z-index: 1300;
-  margin-top:40px;
+  margin-top: 0;
+  padding-top: 26px;
+  padding-bottom: 30px;
+  background: #DBDBDB;
   background-color: var(--gray-5);
   box-shadow: 0 50vh 0 50vh var(--gray-5);
 
   &__author {
     font-family: var(--monospace);
+    font-size: 12px;
+    margin: 0 0 8px;
   }
 
   &__authors {
     padding-left: 160px;
+  }
+
+  &__authors h4 {
+    font-size: 22px;
+    margin: 12px 0 26px;
   }
 
   &__logo-image {
@@ -117,4 +133,28 @@ input[type="button"] {
     margin-right: 160px;
     margin-top: 20px;
   }
+}
+
+
+.MovieDetailPage.Main__movie {
+  background: #F7F7F7;
+  overflow: hidden;
+  width: 80%;
+  margin: 0 auto;
+  padding: 50px 26px;
+  box-sizing: border-box;
+  box-shadow: 0 0 6px 0 rgba(0, 0, 0, 0.4);
+  position: relative;
+}
+
+.App__header::after {
+  content: '';
+  display: block;
+  background: linear-gradient(90deg, rgb(255,95,0) 0%, rgb(195, 0, 188) 50%, rgba(0,189,227,1) 100%);
+  width: 100%;
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  bottom: 0;
+  height: 5px;
 }

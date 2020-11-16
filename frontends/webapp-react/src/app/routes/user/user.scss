@@ -8,6 +8,8 @@
     max-width: 1200px;
     width: 100%;
     display: grid;
+    position: relative;
+    z-index: 2;  
     grid-template-columns: 120px 1fr 300px;
   }
 
@@ -40,6 +42,7 @@
     align-items: flex-end;
     font-weight: bold;
     margin: 6px 16px;
+    color: #fff;
   }
 
   &__bio {
@@ -54,6 +57,7 @@
 
   &__bio-content {
     margin-right: 10px;
+    color: #f7f7f7;
 
     &--empty {
       color: var(--gray-4);
@@ -81,8 +85,9 @@
 
   &__section-title {
     font-size: 30px;
-    margin-bottom: 24px;
     display: flex;
+    margin-top: 10px;
+    margin-bottom: 30px;  
     flex-flow: row nowrap;
   }
 
@@ -200,4 +205,78 @@
     padding-left: 160px;
     min-height: 750px;
   }
+}
+
+.UserPage__info-section .UserPage__edit {
+  color: #fff;
+}
+
+.UserPage__info-section + .UserPage__section {
+  position: relative;
+  z-index: 1;
+  border-top-right-radius: 60px;
+}
+
+
+
+.UserPage__info-section + .UserPage__section::before {
+  content: '';
+  display: block;
+  position: absolute;
+  background: linear-gradient(90deg, rgba(169,0,183,0.2) 0%, rgba(219,0,124,0.6) 40%, rgba(231,86,0,1) 100%);
+  width: calc(100% + 5px);
+  height: calc(100% + 5px);
+  left: 0;
+  top: -5px;
+  border-top-right-radius: 64px;
+  z-index: -1;
+}
+
+
+
+.UserPage__info-section + .UserPage__section::after {
+  content: '';
+  display: block;
+  position: absolute;
+  background: #f7f7f7;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  border-top-right-radius: 60px;
+  z-index: -1;
+}
+
+
+
+.UserPage__section + .UserPage__section {
+  position: relative;
+  z-index: 1;
+}
+
+
+
+.UserPage__section + .UserPage__section::before {
+  content: '';
+  display: block;
+  position: absolute;
+  background: linear-gradient(90deg, rgba(169,0,183,0.2) 0%, rgba(219,0,124,0.6) 40%, rgba(231,86,0,1) 100%);
+  width: calc(100% + 5px);
+  height: calc(100% + 1px);
+  left: 0;
+  top: 0;
+  z-index: -1;
+}
+
+
+.UserPage__section + .UserPage__section::after {
+  content: '';
+  display: block;
+  position: absolute;
+  background: #f7f7f7;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  z-index: -1;
 }

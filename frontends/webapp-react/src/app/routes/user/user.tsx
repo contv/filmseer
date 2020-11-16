@@ -1,17 +1,19 @@
-import { view } from "@risingstack/react-easy-state";
-import React from "react";
+import "./user.scss";
+
 import { CheckSquare, Edit, UserX, XCircle } from "react-feather";
 import { Link, useParams } from "react-router-dom";
+import { api, apiEffect, baseApiUrl, notify, useUpdateEffect } from "src/utils";
+
 import MovieItem from "src/app/components/movie-item";
 import Pagination from "src/app/components/pagination";
 import { PaginationHandle } from "src/app/components/pagination/pagination";
+import React from "react";
 import Review from "src/app/components/review";
 import { ReviewProps } from "src/app/components/review/review";
 import TileList from "src/app/components/tile-list";
-import userIcon from "src/app/components/user-menu/user-icon.svg";
 import VerticalList from "src/app/components/vertical-list";
-import { api, apiEffect, baseApiUrl, notify, useUpdateEffect } from "src/utils";
-import "./user.scss";
+import userIcon from "src/app/components/user-menu/user-icon.svg";
+import { view } from "@risingstack/react-easy-state";
 
 export type User = {
   id: string;
@@ -152,7 +154,8 @@ const UserPage = (props: { className?: string }) => {
               : Math.max(1, reviewHandle.getPageNumber() - 1)
           );
         })
-        .catch(() => {
+        .catch((e) => {
+          console.log(e);
           notify(
             "Unable to remove your comment, please try again later.",
             "error"
