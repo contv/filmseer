@@ -3,8 +3,12 @@ import "./movie.scss";
 import React, { useEffect, useRef, useState } from "react";
 import { api, apiEffect, useUpdateEffect } from "src/utils";
 
+import Filter from "src/app/components/filter";
+import FormControl from "@material-ui/core/FormControl";
 import GenreTile from "src/app/components/genre-tile";
 import HorizontalList from "src/app/components/horizontal-list";
+import InputLabel from "@material-ui/core/InputLabel";
+import MenuItem from "@material-ui/core/MenuItem";
 import MovieInteract from "src/app/components/movie-interact";
 import MovieItem from "src/app/components/movie-item";
 import MovieSection from "src/app/components/movie-section";
@@ -13,6 +17,7 @@ import Review from "src/app/components/review";
 import ReviewEditor from "src/app/components/review-editor";
 import { ReviewProps } from "src/app/components/review/review";
 import { SearchItem } from "src/app/routes/search/search";
+import Select from "@material-ui/core/Select";
 import Stars from "src/app/components/stars";
 import TileList from "src/app/components/tile-list";
 import Trailer from "src/app/components/trailer";
@@ -64,7 +69,6 @@ type Handle<T> = T extends React.ForwardRefExoticComponent<
       refresh: (page?: number) => void;
     } | null;
 
-
 const MovieDetailPage = (props: { className?: string }) => {
   const { movieId } = useParams<{ movieId: string }>();
   const [movieDetails, setMovie] = useState<Movie>();
@@ -75,12 +79,43 @@ const MovieDetailPage = (props: { className?: string }) => {
   const [hasError, setHasError] = useState<Boolean>(false);
   const [userRating, setUserRating] = useState<number>(0);
   const reviewSection: any = useRef();
+  const [filters, setFilters] = React.useState<Array<any>>();
+  const [sortBy, setSortBy] = React.useState<string>("relevance");
+  const [descending, setDescending] = React.useState<Boolean>(true);
+
   const [isLoadingRecommended, setIsLoadingRecommended] = React.useState<
     boolean
   >(true);
   const [hasErrorRecommened, setHasErrorRecommended] = React.useState<boolean>(
     false
   );
+  const getParamUpdater = (key: string) => {
+    if (key === "genre") {
+      return updateGenre;
+    }
+    if (key === "director") {
+      return updateDirector;
+    }
+    if (key === "year") {
+      return updateYears;
+    }
+    return () => {};
+  };
+  const [genreFilter, setGenreFilter] = React.useState<Array<string>>();
+  const [directorFilter, setDirectorFilter] = React.useState<Array<string>>();
+  const [yearFilter, setYearFilter] = React.useState<Array<string>>();
+
+  const updateYears = (event: { key: string; name: string }[]) => {
+    setYearFilter(event.map((item) => item.name));
+  };
+
+  const updateDirector = (event: { key: string; name: string }[]) => {
+    setDirectorFilter(event.map((item) => item.name));
+  };
+
+  const updateGenre = (event: { key: string; name: string }[]) => {
+    setGenreFilter(event.map((item) => item.name));
+  };
 
   const snapToReviews = () => reviewSection.current.scrollIntoView();
   let paginationHandle: Handle<typeof Pagination>;
@@ -134,11 +169,14 @@ const MovieDetailPage = (props: { className?: string }) => {
       }
     });
   }, [movieId]);
-  
 
   useUpdateEffect(() => {
     paginationHandle && paginationHandle.refresh(1);
-  }, [movieId]);
+  }, [sortBy, descending]);
+
+  useUpdateEffect(() => {
+    paginationHandle && paginationHandle.refresh();
+  }, [movieId, genreFilter, directorFilter, yearFilter]);
 
   if (movieDetails) {
     const formattedNumRatings: string = nFormatter(movieDetails.numVotes, 0);
@@ -216,93 +254,152 @@ const MovieDetailPage = (props: { className?: string }) => {
             </div>
           </MovieSection>
         )}
-          <MovieSection heading="Recommended">
-            <div className="Movie__section-content">
-              {isLoadingRecommended || hasErrorRecommened ? (
-                isLoadingRecommended ? (
-                  <div className="Movie__loading-messages">
-                    Fetching suggestions...
-                  </div>
-                ) : (
-                  <div className="Movie__loading-messages">
-                    An error occurred, please try again.
-                  </div>
-                )
-              ) : recommended ? (
-                <TileList
-                  className="Movie__list"
-                  itemClassName="Movie__item"
-                  items={recommended.map((movie) => (
-                    <MovieItem
-                      movieId={movie.id}
-                      year={movie.releaseYear}
-                      title={movie.title}
-                      genres={movie.genres.map((g) => ({
-                        id: `${g}-${movie.id}`,
-                        text: g,
-                      }))}
-                      imageUrl={movie.imageUrl || movieLogo}
-                      cumulativeRating={movie.cumulativeRating}
-                      numRatings={movie.numVotes}
-                      numReviews={0}
-                    />
-                  ))}
-                />
+        <MovieSection heading="Recommended">
+          <div className="Movie__section-content">
+            {filters && (
+              <div className="Movie__filters">
+                {filters.map((filter) => (
+                  <Filter
+                    key={filter.key}
+                    filterKey={filter.key}
+                    name={filter.name}
+                    type={filter.type}
+                    selections={filter.selections}
+                    updateSearchParams={getParamUpdater(filter.key)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {filters && (
+              <div className="Movie__sort">
+                <FormControl style={{ marginRight: "20px", width: "120px" }}>
+                  <InputLabel>Sort by</InputLabel>
+                  <Select
+                    value={sortBy}
+                    onChange={(event) =>
+                      setSortBy(event.target.value as string)
+                    }
+                  >
+                    <MenuItem value="relevance">Relevance</MenuItem>
+                    <MenuItem value="rating">Rating</MenuItem>
+                    <MenuItem value="name">Name</MenuItem>
+                    <MenuItem value="year">Year</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <FormControl style={{ width: "120px" }}>
+                  <InputLabel>Order</InputLabel>
+                  <Select
+                    value={descending ? "descending" : "ascending"}
+                    onChange={(event) =>
+                      setDescending(
+                        (event.target.value as string) === "descending"
+                      )
+                    }
+                  >
+                    <MenuItem value="descending">Descending</MenuItem>
+                    <MenuItem value="ascending">Ascending</MenuItem>
+                  </Select>
+                </FormControl>
+              </div>
+            )}
+
+            {isLoadingRecommended || hasErrorRecommened ? (
+              isLoadingRecommended ? (
+                <div className="Movie__loading-messages">
+                  Fetching suggestions...
+                </div>
               ) : (
                 <div className="Movie__loading-messages">
-                  Sorry, we couldn't find anything new.
+                  An error occurred, please try again.
                 </div>
-              )}
-            </div>
-
-            <div className="Movie__pagination-wrapper">
-              <Pagination
-                className="Movie__pagination"
-                displayType="dotted"
-                dataType="slice"
-                ref={(c) => {
-                  paginationHandle = c;
-                }}      
-                dataCallback={async () => {
-                  setIsLoadingRecommended(true);
-                  let res;
-                  try {
-                    res = await api({
-                      path: "/movies/recommendation",
-                      method: "GET",
-                      params: {
-                        per_page: total,
-                        type: "detail",
-                        movie_id: movieId,
-                        size: total,
-                        page: 1,
-                        sort: "rating",
-                        desc: true,
-                      },
-                    });
-                  } catch (e) {
-                    setIsLoadingRecommended(false);
-                    setHasErrorRecommended(true);
-                    return [];
-                  }
-                  setIsLoadingRecommended(false);
-                  if (res.code !== 0) {
-                    setHasErrorRecommended(true);
-                    return [];
-                  } else {
-                    setHasErrorRecommended(false);
-                    return res.data.movies;
-                  }
-                }}
-                renderCallback={(data) => {
-                  console.log(data);
-                  setRecommended(data as Array<SearchItem>);
-                }}
-                perPage={itemPerRow * 2}
+              )
+            ) : recommended ? (
+              <TileList
+                className="Movie__list"
+                itemClassName="Movie__item"
+                items={recommended.map((movie) => (
+                  <MovieItem
+                    movieId={movie.id}
+                    year={movie.releaseYear}
+                    title={movie.title}
+                    genres={movie.genres.map((g) => ({
+                      id: `${g}-${movie.id}`,
+                      text: g,
+                    }))}
+                    imageUrl={movie.imageUrl || movieLogo}
+                    cumulativeRating={movie.cumulativeRating}
+                    numRatings={movie.numVotes}
+                    numReviews={0}
+                  />
+                ))}
               />
-            </div>
-          </MovieSection>
-        
+            ) : (
+              <div className="Movie__loading-messages">
+                Sorry, we couldn't find anything new.
+              </div>
+            )}
+          </div>
+
+          <div className="Movie__pagination-wrapper">
+            <Pagination
+              className="Movie__pagination"
+              displayType="dotted"
+              dataType="slice"
+              ref={(c) => {
+                paginationHandle = c;
+              }}
+              dataCallback={async (page) => {
+                setIsLoadingRecommended(true);
+                let res;
+                const recommendParams = new URLSearchParams("");
+                recommendParams.append("per_page", total.toString());
+                recommendParams.append("type", "detail");
+                recommendParams.append("movie_id", movieId);
+                recommendParams.append("page", page?.toString() || "1");
+                recommendParams.append("size", total.toString());
+                recommendParams.append("sort", sortBy || "rating");
+                recommendParams.append("desc", descending.toString() || "true");
+                (yearFilter || []).map((item) => {
+                  recommendParams.append("years", item);
+                });
+                (genreFilter || []).map((item) => {
+                  recommendParams.append("genres", item);
+                });
+                (directorFilter || []).map((item) => {
+                  recommendParams.append("directors", item);
+                });
+
+                try {
+                  res = await api({
+                    path: "/movies/recommendation",
+                    method: "GET",
+                    params: recommendParams,
+                  });
+                } catch (e) {
+                  setIsLoadingRecommended(false);
+                  setHasErrorRecommended(true);
+                  return [];
+                }
+                setIsLoadingRecommended(false);
+                if (res.code !== 0) {
+                  setHasErrorRecommended(true);
+                  return [];
+                } else {
+                  setHasErrorRecommended(false);
+                  setFilters(res.data.filters);
+                  return res.data.movies;
+                }
+              }}
+              renderCallback={(data) => {
+                setRecommended(data as Array<SearchItem>);
+              }}
+              perPage={itemPerRow * 2}
+            />
+          </div>
+        </MovieSection>
+
         <MovieSection heading="Reviews">
           <div id="ReviewSection" ref={reviewSection}></div>
           {authorReview && authorReview.length > 0 && (

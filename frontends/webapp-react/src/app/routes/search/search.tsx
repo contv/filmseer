@@ -141,9 +141,9 @@ const SearchPage = (props: { className?: string }) => {
 
       {isSearching || hasError ? (
         isSearching ? (
-          <div>Searching...</div>
+          <div className="SearchPage__filter-and-sort">Searching...</div>
         ) : (
-          <div>An error occurred, please try again.</div>
+          <div className="SearchPage__filter-and-sort">An error occurred, please try again.</div>
         )
       ) : movies ? (
         <TileList
@@ -168,6 +168,7 @@ const SearchPage = (props: { className?: string }) => {
       ) : (
         <div>Sorry, we couldn't find any results.</div>
       )}
+      
       <div className="SearchPage__pagination-wrapper">
         <Pagination
           className={
@@ -188,7 +189,7 @@ const SearchPage = (props: { className?: string }) => {
             searchParams.append("per_page", perPage.toString() || "32");
             searchParams.append("page", page?.toString() || "1");
             searchParams.append("sort", sortBy || "");
-            searchParams.append("desc", descending.toString() || "True");
+            searchParams.append("desc", descending.toString() || "true");
             (yearFilter || []).map((item) => {
               searchParams.append("years", item);
             });
