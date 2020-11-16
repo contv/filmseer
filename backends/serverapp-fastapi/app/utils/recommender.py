@@ -13,6 +13,7 @@ raw_to_inner = None
 inner_to_raw = None
 
 # Import models and dicts globally
+# Each worker then needs to load the files from disk only once
 try:
     _, movie_movie_recommender = dump.load(
         settings.STORAGES_ROOT / "recommender/movie_movie_recommender"
@@ -31,6 +32,16 @@ except FileNotFoundError:
 
 
 async def predict_on_movie(movie_id: str, size: int = 10):
+    """Finds the nearest neighbours of the given movie id using kNN model
+
+    Args:
+        movie_id: string representing the movie's id
+        size: int representing how many movie results to return
+
+    Returns:
+        a list of movie ids each representing a similar movie
+    """
+
     global movie_movie_recommender
     if not movie_movie_recommender:
         try:
@@ -71,6 +82,17 @@ async def predict_on_movie(movie_id: str, size: int = 10):
 
 
 async def predict_on_user(user_id: str, movie_ids: Set[str], size: int):
+    """Return movies recommendations which the given user is likely to rate highly
+
+    Args:
+        user_id: a string representing the user's id
+        movie_ids: a set of movie ids representing the movies the user has already watched
+        size: int representing how many results to return
+
+    Returns:
+        a list of movie ids each representing a recommended movie based on rating prediction
+    """
+
     global user_movie_recommender
     if not user_movie_recommender:
         try:
