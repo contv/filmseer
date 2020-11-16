@@ -382,6 +382,7 @@ const UserPage = (props: { className?: string }) => {
                 <Review
                   className="UserPage__review"
                   hideFlags={true}
+                  showMovie={true}
                   {...review}
                 />
               </div>
