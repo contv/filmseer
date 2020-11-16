@@ -85,8 +85,11 @@ const App = () => {
               <Route path="/search/:searchField?/:searchString?">
                 <SearchPage className="Main__search" />
               </Route>
-              <Route path="/user/:username?">
+              <Route path="/user/:username">
                 <UserPage className="Main__user" />
+              </Route>
+              <Route path="/user">
+                <UserPage className="Main__user Main__user-1" />
               </Route>
               <Route path="/movie/:movieId?">
                 <MovieDetailPage className="Main__movie" />

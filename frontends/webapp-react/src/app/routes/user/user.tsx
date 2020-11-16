@@ -1,7 +1,7 @@
 import { view } from "@risingstack/react-easy-state";
 import React from "react";
 import { CheckSquare, Edit, UserX, XCircle } from "react-feather";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import MovieItem from "src/app/components/movie-item";
 import Pagination from "src/app/components/pagination";
 import { PaginationHandle } from "src/app/components/pagination/pagination";
@@ -10,7 +10,7 @@ import { ReviewProps } from "src/app/components/review/review";
 import TileList from "src/app/components/tile-list";
 import userIcon from "src/app/components/user-menu/user-icon.svg";
 import VerticalList from "src/app/components/vertical-list";
-import { api, apiEffect, baseApiUrl, notify } from "src/utils";
+import { api, apiEffect, baseApiUrl, notify, useUpdateEffect } from "src/utils";
 import "./user.scss";
 
 export type User = {
@@ -73,7 +73,7 @@ const UserPage = (props: { className?: string }) => {
         console.warn(error);
       }
     ),
-    []
+    [props.className]
   );
 
   React.useEffect(
@@ -93,8 +93,14 @@ const UserPage = (props: { className?: string }) => {
         return !isMe;
       }
     ),
-    []
+    [props.className]
   );
+
+  useUpdateEffect(() => {
+    reviewHandle?.refresh(1);
+    wishlistHandle?.refresh(1);
+    banlistHandle?.refresh(1);
+  }, [props.className]);
 
   const blockUserCallback = (username: string) => {
     return (event: React.MouseEvent) => {
@@ -486,7 +492,10 @@ const UserPage = (props: { className?: string }) => {
                     <XCircle size={22} />
                   </div>
                 )}
-                <div className="UserPage__banlist-item">
+                <Link
+                  className="UserPage__banlist-item"
+                  to={`/user/${banlistItem.bannedUsername}`}
+                >
                   <div className="UserPage__banlist-avatar">
                     <img
                       src={
@@ -501,10 +510,10 @@ const UserPage = (props: { className?: string }) => {
                       className="UserPage__banlist-avatar-image"
                     />
                   </div>
-                </div>
-                <div className="UserPage__banlist-username">
-                  {banlistItem.bannedUsername}
-                </div>
+                  <div className="UserPage__banlist-username">
+                    {banlistItem.bannedUsername}
+                  </div>
+                </Link>
               </div>
             );
           })}
