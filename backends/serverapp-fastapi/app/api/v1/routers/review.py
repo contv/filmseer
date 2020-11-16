@@ -132,7 +132,7 @@ async def update_author_review(review_id: str, review: ReviewRequest, request: R
             401, 2082, "You must be the author to update/delete the review."
         )
 
-    review_movie_id = (await Reviews.filter(review_id=review_id, delete_date=None).values("user_id", "movie_id"))[0]["review_movie_id"]
+    review_movie_id = (await Reviews.filter(review_id=review_id, delete_date=None).values("user_id", "movie_id"))[0]["movie_id"]
 
     #attempts to update review in db
     try:
@@ -167,7 +167,7 @@ async def delete_author_review(review_id: str, request: Request):
         raise ApiException(
             401, 2609, "You must be the author to update/delete the review."
         )
-    review_movie_id = (await Reviews.filter(review_id=review_id, delete_date=None).values("user_id", "movie_id"))[0]["review_movie_id"]
+    review_movie_id = (await Reviews.filter(review_id=review_id, delete_date=None).values("user_id", "movie_id"))[0]["movie_id"]
     # deletes and updates all associated review data
     try:
         await Reviews.filter(review_id=review_id).update(
