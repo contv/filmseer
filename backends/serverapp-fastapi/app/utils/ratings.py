@@ -22,9 +22,11 @@ async def calc_average_rating(
         exclude_rating = await Ratings.filter(
             movie_id=movie_id, user_id__in=exclude_list, delete_date=None
         ).values("rating")
-        num_votes = num_votes - len(exclude_rating)
+
         for item in exclude_rating:
-            cumulative_rating = cumulative_rating - item["rating"]
+            if item["rating"] is not None:
+                cumulative_rating = cumulative_rating - item["rating"]
+                num_votes = num_votes - 1
 
     average_rating = round(cumulative_rating / num_votes if num_votes > 0 else 0.0, 1)
     rating = dict()
