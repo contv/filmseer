@@ -26,8 +26,8 @@
 
 import range from "lodash/range";
 import React from "react";
-import { ChevronLeft,ChevronRight } from "react-feather";
-import { usePrevious,useUpdateEffect } from "src/utils";
+import { ChevronLeft, ChevronRight } from "react-feather";
+import { usePrevious, useUpdateEffect } from "src/utils";
 import "./pagination.scss";
 import firstIcon from "./to-first.svg";
 import lastIcon from "./to-last.svg";
@@ -151,7 +151,15 @@ const Pagination = React.forwardRef<
         return total;
       },
     }),
-    [refreshData]
+    [
+      refreshData,
+      current,
+      data,
+      total,
+      props.dataType,
+      props.displayType,
+      props.perPage,
+    ]
   );
 
   React.useEffect(() => {
