@@ -123,20 +123,11 @@ async def update_author_review(review_id: str, review: ReviewRequest, request: R
     if not session_user_id:
         raise ApiException(401, 2001, "You are not logged in")
 
-    review = str(
-        (
-            await Reviews.filter(review_id=review_id, delete_date=None).values(
-                "user_id", "movie_id"
-            )
-        )
-    )
-
-    review_user_id = review[0]["user_id"]
+    review_user_id = (await Reviews.filter(review_id=review_id, delete_date=None).values("user_id", "movie_id"))[0]["user_id"]
     if not review_user_id:
         raise ApiException(404, 2081, "Invalid review id.")
-
     #must be your review to update
-    if session_user_id != review_user_id:
+    if session_user_id != str(review_user_id):
         raise ApiException(
             401, 2082, "You must be the author to update/delete the review."
         )
@@ -167,20 +158,12 @@ async def delete_author_review(review_id: str, request: Request):
     if not session_user_id:
         raise ApiException(401, 2001, "You are not logged in")
 
-    review = str(
-        (
-            await Reviews.filter(review_id=review_id, delete_date=None).values(
-                "user_id", "movie_id"
-            )
-        )
-    )
-
-    review_user_id = review[0]["user_id"]
+    review_user_id = (await Reviews.filter(review_id=review_id, delete_date=None).values("user_id", "movie_id"))[0]["user_id"]
     if not review_user_id:
         raise ApiException(404, 2610, "Invalid review id.")
     
     # must be your own review to delete it
-    if session_user_id != review_user_id:
+    if session_user_id != str(review_user_id):
         raise ApiException(
             401, 2609, "You must be the author to update/delete the review."
         )

@@ -5,11 +5,11 @@
     box-sizing: border-box;
 
     &:nth-of-type(odd) {
-      background: #303030;
+      background: #D0D0D0;
     }
 
     &:nth-of-type(even) {
-      background-color: #404040;
+      background-color: #C0C0C0;
     }
 
     &:last-of-type {
@@ -32,7 +32,7 @@
     display: flex;
     flex-flow: row nowrap;
     width: 80%;
-    color: #F7F7F7;
+    color: #303030;
   }
 
   &__loading-messages {
