@@ -1,28 +1,35 @@
-import Typography from "@material-ui/core/Typography";
-import { view } from "@risingstack/react-easy-state";
-import React, { useEffect, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
+import "./movie.scss";
+
+import React, { useEffect, useRef, useState } from "react";
+import { api, apiEffect, useUpdateEffect } from "src/utils";
+
+import Filter from "src/app/components/filter";
+import FormControl from "@material-ui/core/FormControl";
 import GenreTile from "src/app/components/genre-tile";
+import HorizontalList from "src/app/components/horizontal-list";
+import InputLabel from "@material-ui/core/InputLabel";
+import MenuItem from "@material-ui/core/MenuItem";
 import MovieInteract from "src/app/components/movie-interact";
 import MovieItem from "src/app/components/movie-item";
-import {
-  MovieItemProps,
-  nFormatter,
-} from "src/app/components/movie-item/movie-item";
-import movieLogo from "src/app/components/movie-item/movie-logo.png";
 import MovieSection from "src/app/components/movie-section";
+import Pagination from "src/app/components/pagination";
 import Review from "src/app/components/review";
 import ReviewEditor from "src/app/components/review-editor";
-import avatar from "src/app/components/review/default-avatar.png";
 import { ReviewProps } from "src/app/components/review/review";
+import { SearchItem } from "src/app/routes/search/search";
+import Select from "@material-ui/core/Select";
 import Stars from "src/app/components/stars";
-import HorizontalList from "src/app/components/horizontal-list";
+import TileList from "src/app/components/tile-list";
 import Trailer from "src/app/components/trailer";
-import VerticalList from "src/app/components/vertical-list";
+import Typography from "@material-ui/core/Typography";
 import { User } from "src/app/routes/user/user";
+import VerticalList from "src/app/components/vertical-list";
+import avatar from "src/app/components/review/default-avatar.png";
+import movieLogo from "src/app/components/movie-item/movie-logo.png";
+import { nFormatter } from "src/app/components/movie-item/movie-item";
 import state from "src/app/states";
-import { api, apiEffect } from "src/utils";
-import "./movie.scss";
+import { useParams } from "react-router-dom";
+import { view } from "@risingstack/react-easy-state";
 
 type CastMember = {
   id: string;
@@ -49,62 +56,18 @@ type Movie = {
   crew?: Array<CastMember>;
   genres?: Array<string>;
 };
+const total = 16;
+const itemPerRow = Math.floor(
+  (document.body.clientWidth * 0.8 + 24) / (150 + 24) / 2
+);
 
-const dummyRecommendedMovies = [
-  {
-    movieId: "someId",
-    title: "movie1",
-    year: 1992,
-    genres: [
-      { id: "1", text: "drama" },
-      { id: "2", text: "mystery" },
-    ],
-    imageUrl:
-      "https://m.media-amazon.com/images/M/MV5BOTQyMjBmNDAtNDA0YS00ODFiLTk2OTUtMWM5NzI4NjM1YzhhXkEyXkFqcGdeQXVyMTA2MDU0NjM5._V1_UX182_CR0,0,182,268_AL_.jpg",
-    cumulativeRating: 450,
-    numRatings: 100,
-    numReviews: 200,
-  },
-  {
-    movieId: "someId2",
-    title: "movie2",
-    year: 1993,
-    genres: [
-      { id: "1", text: "war" },
-      { id: "2", text: "mystery" },
-    ],
-    imageUrl:
-      "https://m.media-amazon.com/images/M/MV5BOTQyMjBmNDAtNDA0YS00ODFiLTk2OTUtMWM5NzI4NjM1YzhhXkEyXkFqcGdeQXVyMTA2MDU0NjM5._V1_UX182_CR0,0,182,268_AL_.jpg",
-    cumulativeRating: 250,
-    numRatings: 52,
-    numReviews: 22,
-  },
-  {
-    movieId: "someId3",
-    title: "movie3",
-    year: 2001,
-    genres: [{ id: "1", text: "comedy" }],
-    imageUrl:
-      "https://m.media-amazon.com/images/M/MV5BOTQyMjBmNDAtNDA0YS00ODFiLTk2OTUtMWM5NzI4NjM1YzhhXkEyXkFqcGdeQXVyMTA2MDU0NjM5._V1_UX182_CR0,0,182,268_AL_.jpg",
-    cumulativeRating: 450,
-    numRatings: 150,
-    numReviews: 15,
-  },
-  {
-    movieId: "someId4",
-    title: "movie4",
-    year: 2015,
-    genres: [
-      { id: 1, text: "horror" },
-      { id: 2, text: "mystery" },
-    ],
-    imageUrl:
-      "https://m.media-amazon.com/images/M/MV5BOTQyMjBmNDAtNDA0YS00ODFiLTk2OTUtMWM5NzI4NjM1YzhhXkEyXkFqcGdeQXVyMTA2MDU0NjM5._V1_UX182_CR0,0,182,268_AL_.jpg",
-    cumulativeRating: 200,
-    numRatings: 40,
-    numReviews: 7,
-  },
-];
+type Handle<T> = T extends React.ForwardRefExoticComponent<
+  React.RefAttributes<infer T2>
+>
+  ? T2
+  : {
+      refresh: (page?: number) => void;
+    } | null;
 
 const MovieDetailPage = (props: { className?: string }) => {
   const { movieId } = useParams<{ movieId: string }>();
@@ -112,14 +75,50 @@ const MovieDetailPage = (props: { className?: string }) => {
   const [author, setAuthor] = useState<User>();
   const [reviews, setReviews] = useState<Array<ReviewProps>>();
   const [authorReview, setAuthorReview] = useState<Array<ReviewProps>>();
-  const [recommended, setRecommended] = useState<Array<MovieItemProps>>();
+  const [recommended, setRecommended] = useState<Array<SearchItem>>();
   const [hasError, setHasError] = useState<Boolean>(false);
   const [userRating, setUserRating] = useState<number>(0);
   const reviewSection: any = useRef();
+  const [filters, setFilters] = React.useState<Array<any>>();
+  const [sortBy, setSortBy] = React.useState<string>("relevance");
+  const [descending, setDescending] = React.useState<Boolean>(true);
+
+  const [isLoadingRecommended, setIsLoadingRecommended] = React.useState<
+    boolean
+  >(true);
+  const [hasErrorRecommened, setHasErrorRecommended] = React.useState<boolean>(
+    false
+  );
+  const getParamUpdater = (key: string) => {
+    if (key === "genre") {
+      return updateGenre;
+    }
+    if (key === "director") {
+      return updateDirector;
+    }
+    if (key === "year") {
+      return updateYears;
+    }
+    return () => {};
+  };
+  const [genreFilter, setGenreFilter] = React.useState<Array<string>>();
+  const [directorFilter, setDirectorFilter] = React.useState<Array<string>>();
+  const [yearFilter, setYearFilter] = React.useState<Array<string>>();
+
+  const updateYears = (event: { key: string; name: string }[]) => {
+    setYearFilter(event.map((item) => item.name));
+  };
+
+  const updateDirector = (event: { key: string; name: string }[]) => {
+    setDirectorFilter(event.map((item) => item.name));
+  };
+
+  const updateGenre = (event: { key: string; name: string }[]) => {
+    setGenreFilter(event.map((item) => item.name));
+  };
 
   const snapToReviews = () => reviewSection.current.scrollIntoView();
-  
-
+  let paginationHandle: Handle<typeof Pagination>;
 
   useEffect(() => {
     if (state.loggedIn) {
@@ -169,8 +168,15 @@ const MovieDetailPage = (props: { className?: string }) => {
         setHasError(false);
       }
     });
-    setRecommended(dummyRecommendedMovies as Array<MovieItemProps>);
   }, [movieId]);
+
+  useUpdateEffect(() => {
+    paginationHandle && paginationHandle.refresh(1);
+  }, [sortBy, descending]);
+
+  useUpdateEffect(() => {
+    paginationHandle && paginationHandle.refresh();
+  }, [movieId, genreFilter, directorFilter, yearFilter]);
 
   if (movieDetails) {
     const formattedNumRatings: string = nFormatter(movieDetails.numVotes, 0);
@@ -248,26 +254,154 @@ const MovieDetailPage = (props: { className?: string }) => {
             </div>
           </MovieSection>
         )}
-        {recommended && (
-          <MovieSection heading="Recommended">
-            <HorizontalList
-              items={recommended.map((movie) => (
-                <div className="Movie__review">
-                  <MovieItem
-                    movieId={movie.movieId}
-                    year={movie.year}
-                    title={movie.title}
-                    genres={movie.genres}
-                    imageUrl={movie.imageUrl}
-                    cumulativeRating={movie.cumulativeRating}
-                    numRatings={movie.numRatings}
-                    numReviews={movie.numReviews}
+        <MovieSection heading="Recommended">
+          <div className="Movie__section-content">
+            {filters && (
+              <div className="Movie__filters">
+                {filters.map((filter) => (
+                  <Filter
+                    key={filter.key}
+                    filterKey={filter.key}
+                    name={filter.name}
+                    type={filter.type}
+                    selections={filter.selections}
+                    updateSearchParams={getParamUpdater(filter.key)}
                   />
+                ))}
+              </div>
+            )}
+
+            {filters && (
+              <div className="Movie__sort">
+                <FormControl style={{ marginRight: "20px", width: "120px" }}>
+                  <InputLabel>Sort by</InputLabel>
+                  <Select
+                    value={sortBy}
+                    onChange={(event) =>
+                      setSortBy(event.target.value as string)
+                    }
+                  >
+                    <MenuItem value="relevance">Relevance</MenuItem>
+                    <MenuItem value="rating">Rating</MenuItem>
+                    <MenuItem value="name">Name</MenuItem>
+                    <MenuItem value="year">Year</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <FormControl style={{ width: "120px" }}>
+                  <InputLabel>Order</InputLabel>
+                  <Select
+                    value={descending ? "descending" : "ascending"}
+                    onChange={(event) =>
+                      setDescending(
+                        (event.target.value as string) === "descending"
+                      )
+                    }
+                  >
+                    <MenuItem value="descending">Descending</MenuItem>
+                    <MenuItem value="ascending">Ascending</MenuItem>
+                  </Select>
+                </FormControl>
+              </div>
+            )}
+
+            {isLoadingRecommended || hasErrorRecommened ? (
+              isLoadingRecommended ? (
+                <div className="Movie__loading-messages">
+                  Fetching suggestions...
                 </div>
-              ))}
+              ) : (
+                <div className="Movie__loading-messages">
+                  An error occurred, please try again.
+                </div>
+              )
+            ) : recommended ? (
+              <TileList
+                className="Movie__list"
+                itemClassName="Movie__item"
+                items={recommended.map((movie) => (
+                  <MovieItem
+                    movieId={movie.id}
+                    year={movie.releaseYear}
+                    title={movie.title}
+                    genres={movie.genres.map((g) => ({
+                      id: `${g}-${movie.id}`,
+                      text: g,
+                    }))}
+                    imageUrl={movie.imageUrl || movieLogo}
+                    cumulativeRating={movie.cumulativeRating}
+                    numRatings={movie.numVotes}
+                    numReviews={0}
+                  />
+                ))}
+              />
+            ) : (
+              <div className="Movie__loading-messages">
+                Sorry, we couldn't find anything new.
+              </div>
+            )}
+          </div>
+
+          <div className="Movie__pagination-wrapper">
+            <Pagination
+              className="Movie__pagination"
+              displayType="dotted"
+              dataType="slice"
+              ref={(c) => {
+                paginationHandle = c;
+              }}
+              dataCallback={async (page) => {
+                setIsLoadingRecommended(true);
+                let res;
+                const recommendParams = new URLSearchParams("");
+                recommendParams.append("per_page", total.toString());
+                recommendParams.append("type", "detail");
+                recommendParams.append("movie_id", movieId);
+                recommendParams.append("page", page?.toString() || "1");
+                recommendParams.append("size", total.toString());
+                recommendParams.append("sort", sortBy || "rating");
+                recommendParams.append("desc", descending.toString() || "true");
+
+                for (let item of yearFilter || []) {
+                  recommendParams.append("years", item);
+                }
+
+                for (let item of genreFilter || []) {
+                  recommendParams.append("genres", item);
+                }
+
+                for (let item of directorFilter || []) {
+                  recommendParams.append("directors", item);
+                }
+                try {
+                  res = await api({
+                    path: "/movies/recommendation",
+                    method: "GET",
+                    params: recommendParams,
+                  });
+                } catch (e) {
+                  setIsLoadingRecommended(false);
+                  setHasErrorRecommended(true);
+                  return [];
+                }
+                setIsLoadingRecommended(false);
+                if (res.code !== 0) {
+                  setHasErrorRecommended(true);
+                  return [];
+                } else {
+                  setHasErrorRecommended(false);
+                  setFilters(res.data.filters);
+                  return res.data.movies;
+                }
+              }}
+              renderCallback={(data) => {
+                setRecommended(data as Array<SearchItem>);
+              }}
+              perPage={itemPerRow * 2}
             />
-          </MovieSection>
-        )}
+          </div>
+        </MovieSection>
+
         <MovieSection heading="Reviews">
           <div id="ReviewSection" ref={reviewSection}></div>
           {authorReview && authorReview.length > 0 && (

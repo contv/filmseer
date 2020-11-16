@@ -1,18 +1,20 @@
+import "./search.scss";
+
+import { api, useUpdateEffect } from "src/utils";
+
+import Filter from "src/app/components/filter";
 import FormControl from "@material-ui/core/FormControl";
 import InputLabel from "@material-ui/core/InputLabel";
 import MenuItem from "@material-ui/core/MenuItem";
-import Select from "@material-ui/core/Select";
-import { view } from "@risingstack/react-easy-state";
-import React from "react";
-import { useParams } from "react-router-dom";
-import Filter from "src/app/components/filter";
 import MovieItem from "src/app/components/movie-item/movie-item";
-import movieLogo from "src/app/components/movie-item/movie-logo.png";
 import Pagination from "src/app/components/pagination";
 import { PaginationHandle } from "src/app/components/pagination/pagination";
+import React from "react";
+import Select from "@material-ui/core/Select";
 import TileList from "src/app/components/tile-list";
-import { api, useUpdateEffect } from "src/utils";
-import "./search.scss";
+import movieLogo from "src/app/components/movie-item/movie-logo.png";
+import { useParams } from "react-router-dom";
+import { view } from "@risingstack/react-easy-state";
 
 export type SearchItem = {
   id: string;
@@ -132,9 +134,9 @@ const SearchPage = (props: { className?: string }) => {
 
       {isSearching || hasError ? (
         isSearching ? (
-          <div>Searching...</div>
+          <div className="SearchPage__filter-and-sort">Searching...</div>
         ) : (
-          <div>An error occurred, please try again.</div>
+          <div className="SearchPage__filter-and-sort">An error occurred, please try again.</div>
         )
       ) : movies ? (
         <TileList
@@ -159,6 +161,7 @@ const SearchPage = (props: { className?: string }) => {
       ) : (
         <div>Sorry, we couldn't find any results.</div>
       )}
+      
       <div className="SearchPage__pagination-wrapper">
         <Pagination
           className={
@@ -179,16 +182,20 @@ const SearchPage = (props: { className?: string }) => {
             searchParams.append("per_page", perPage.toString() || "32");
             searchParams.append("page", page?.toString() || "1");
             searchParams.append("sort", sortBy || "");
-            searchParams.append("desc", descending.toString() || "True");
-            (yearFilter || []).map((item) => {
+            searchParams.append("desc", descending.toString() || "true");
+
+            for (let item of (yearFilter || [])) {
               searchParams.append("years", item);
-            });
-            (genreFilter || []).map((item) => {
+            }
+
+            for (let item of (genreFilter || [])) {
               searchParams.append("genres", item);
-            });
-            (directorFilter || []).map((item) => {
+            }
+
+            for (let item of (directorFilter || [])) {
               searchParams.append("directors", item);
-            });
+            }
+
             try {
               res = await api({
                 path: "/movies/",

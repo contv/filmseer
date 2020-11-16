@@ -1,31 +1,128 @@
-.Movie__poster{
-    float: left;
-    max-width: 300px;
+.Movie__poster {
+  float: left;
+  max-width: 300px;
 }
 
-.Movie__poster-image{
-    max-width: 300px;
+.Movie__poster-image {
+  max-width: 300px;
 }
 
-.Movie__about{
-    float: left;
-    padding-left: 20px;
-    max-width: 520px;
+.Movie__about {
+  float: left;
+  padding-left: 20px;
+  max-width: 520px;
 }
 
-.Movie__interact{
-    float: left;
-    padding-left: 20px;
+.Movie__interact {
+  float: left;
+  padding-left: 20px;
 }
 
-.Movie__review{
-    padding: 20px;
+.Movie__review {
+  padding: 20px;
 }
 
-.Movie__trailer{
-    padding: 40px;
+.Movie__recommended {
+  padding: 20px;
 }
 
-.Movie__castname{
-    padding: 20px;
+.Movie__trailer {
+  padding: 40px;
+}
+
+.Movie__castname {
+  padding: 20px;
+}
+
+.Movie__pagination {
+  margin: 20px;
+  justify-content: center;
+}
+
+.Movie__pagination-wrapper {
+  vertical-align: center;
+  display: flex;
+  margin-bottom: 20px;
+  margin-top: 10px;
+  justify-content: center;
+}
+
+.Movie__loading-messages {
+  font-size: 24px;
+  padding: 30px;
+  font-weight: bold;
+  color: var(--gray-3);
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.Movie__section {
+  width: 100%;
+  padding: 24px 0;
+  box-sizing: border-box;
+
+  &:nth-of-type(odd) {
+    background-color: var(--gray-6);
+  }
+
+  &:nth-of-type(even) {
+    background-color: #fff;
+  }
+}
+
+.Movie__section-title {
+  font-size: 30px;
+  margin: 20px auto 24px;
+  display: flex;
+  flex-flow: row nowrap;
+  width: 80%;
+}
+
+.Movie__item {
+  display: flex;
+  flex-flow: column nowrap;
+  justify-content: stretch;
+  align-items: stretch;
+  height: 100%;
+  margin-bottom: 16px;
+
+  .MovieItem {
+    flex: 1;
+
+    &__card {
+      height: 100%;
+      display: flex;
+      flex-flow: column;
+      justify-content: space-between;
+      max-width: 150px !important;
+      margin: auto;
+    }
+
+    &__header {
+      height: 100%;
+      align-items: flex-start;
+    }
+  }
+}
+
+.Movie__list {
+  width: 85%;
+  margin: 40px 200px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-gap: 24px;
+}
+
+
+.Movie__filters {
+  float: left;
+  margin-bottom: 20px;
+}
+
+.Movie__sort {
+  float: right;
+  margin-bottom: 5px;
+  margin-right: 20px;
 }
