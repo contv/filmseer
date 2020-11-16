@@ -24,19 +24,29 @@ router = APIRouter()
 override_prefix = None
 override_prefix_all = None
 
+"""
+This API controller handles all routes under the prefix /movie. It returns 
+detailed movie responses, movie reviews and handles user-related movie 
+interactions such as ratings and leaving reviews.
+"""
 
+# trailers are represented by their site and their key as 
+# a unique url identifier e.g. {site}.com/{key}. We support
+# vimeo and youtube which both follow this scheme
 class Trailer(BaseModel):
     key: str
     site: str
 
-
+# crew objects represent both cast and other film crew members
+# such as filmographers and directors.
 class CrewMember(BaseModel):
     id: str
     name: str
     position: str
     image: Optional[str]
 
-
+# this is the highest detail response for a movie, providing
+# most relevant details about that movie.
 class MovieResponse(BaseModel):
     id: str
     title: str
@@ -55,19 +65,21 @@ class MovieResponse(BaseModel):
         alias_generator = camelize
         allow_population_by_field_name = True
 
-
+# represents a user's movie rating
 class RatingResponse(BaseModel):
     id: str
     rating: float
 
-
+# represents the average rating of a movie 
 class AverageRatingResponse(BaseModel):
     average: float
 
-
+# this method gets the average rating for a movie, with banned list taking into account.
 @router.get("/{movie_id}/ratings", response_model=Wrapper[AverageRatingResponse])
 async def get_average_rating(movie_id: str, request: Request) -> Wrapper[dict]:
     user_id = request.session.get("user_id")
+    
+    # gets the relevant movie object
     try:
         movie = (
             await Movies.filter(movie_id=movie_id, delete_date=None)
@@ -80,7 +92,8 @@ async def get_average_rating(movie_id: str, request: Request) -> Wrapper[dict]:
     if movie is None:
         raise ApiException(404, 2060, "That movie doesn't exist.")
 
-    # TODO remove ratings from blocked users
+    # passes the count and cumulative rating to our utility which produces the correct
+    # result with banned users taken into account.
     return wrap(
         {
             "average": (
@@ -91,7 +104,7 @@ async def get_average_rating(movie_id: str, request: Request) -> Wrapper[dict]:
         }
     )
 
-
+# gets the detailed movie object
 @router.get("/{movie_id}", tags=["movies"], response_model=Wrapper[MovieResponse])
 async def get_movie(movie_id: str, request: Request):
     user_id = request.session.get("user_id")
@@ -103,7 +116,11 @@ async def get_movie(movie_id: str, request: Request):
     if movie is None:
         raise ApiException(404, 2100, "That movie doesn't exist")
 
+    # collect genres
     genres = [genre.name for genre in await movie.genres]
+    
+    # gets all people who worked on the film and then creates a 
+    # crew object for each
     crew = [
         CrewMember(
             id=str(p.person_id),
@@ -114,9 +131,12 @@ async def get_movie(movie_id: str, request: Request):
         for p in await Positions.filter(movie_id=movie_id).prefetch_related("person")
     ]
 
+    # get rating, with banned list taken into account
     rating = await calc_average_rating(
         movie.cumulative_rating, movie.num_votes, user_id, movie_id
     )
+    
+    # final movie detail to return
     movie_detail = MovieResponse(
         id=str(movie.movie_id),
         title=movie.title,
@@ -137,7 +157,7 @@ async def get_movie(movie_id: str, request: Request):
 
 # REVIEW RELATED START
 
-
+# gets all reviews for a movie
 @router.get(
     "/{movie_id}/reviews", tags=["movies"], response_model=Wrapper[ListReviewResponse]
 )
@@ -148,6 +168,7 @@ async def get_movie_reviews(
     per_page: int = 0,
     me: Optional[bool] = False,
 ):
+    # handle pagination parameters
     if per_page >= 42:
         raise ApiException(400, 2700, "Please limit the numer of items per page")
     if (per_page < 0) or (page < 0):
@@ -233,7 +254,7 @@ async def get_movie_reviews(
         ]
     return wrap({"items": reviews})
 
-
+# adds or modifies a review
 @router.post(
     "/{movie_id}/review", tags=["movies"], response_model=Wrapper[ReviewCreateDate]
 )
@@ -257,6 +278,7 @@ async def create_update_user_review(
             401, 2001, "You are not logged in!"
         )
 
+    # attempt to add review to db
     try:
         async with in_transaction():
             rating = await (
@@ -293,7 +315,7 @@ async def create_update_user_review(
 
     return wrap({"create_date": create_date})
 
-
+# delete previously posted review
 @router.delete("/{movie_id}/review", tags=["movies"])
 async def delete_user_review(movie_id: str, request: Request):
     user_id = request.session.get("user_id")
@@ -301,6 +323,8 @@ async def delete_user_review(movie_id: str, request: Request):
         raise ApiException(
             401, 2001, "You are not logged in!"
         )
+    
+    #attempt to remove from db
     try:
         async with in_transaction():
             review = await Reviews.get_or_create(user_id=user_id, movie_id=movie_id)
@@ -332,7 +356,7 @@ async def delete_user_review(movie_id: str, request: Request):
 
 # REVIEW RELATED END
 
-
+# adds a user rating for a movie
 @router.post(
     "/{movie_id}/rating", tags=["movies"], response_model=Wrapper[RatingResponse]
 )
@@ -340,9 +364,11 @@ async def rate_movie(request: Request, movie_id: str, rating: float):
     user_id = request.session.get("user_id")
     if not user_id:
         raise ApiException(500, 2001, "You are not logged in!")
+    # handle invalid rating request
     if not 0 <= rating <= 5.0 or rating % 0.5 != 0.0:
         raise ApiException(500, 2073, "Invalid rating.")
 
+    # attempt to add rating to db
     try:
         async with in_transaction():
             existing_rating = await Ratings.get_or_none(
@@ -411,7 +437,7 @@ async def update_review_rating(
     except OperationalError:
         raise OperationalError
 
-
+# removes a rating for that user
 @router.delete(
     "/{movie_id}/rating", tags=["movies"], response_model=Wrapper[RatingResponse]
 )
@@ -440,7 +466,7 @@ async def delete_rating(request: Request, movie_id: str) -> Wrapper[dict]:
 
     return wrap({"id": str(rating_id), "rating": rating})
 
-
+# returns the user rating for a movie
 @router.get(
     "/{movie_id}/rating", tags=["Movies"], response_model=Wrapper[RatingResponse]
 )

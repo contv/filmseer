@@ -22,12 +22,18 @@ router = APIRouter()
 override_prefix = None
 override_prefix_all = None
 
+"""
+This API controller handles all routes under the prefix /user. It handles user 
+registration and login, profile updates, and user specific data such as 
+wishlist, banlist and reviews.
+"""
 
+# registration request model
 class Register(BaseModel):
     username: str
     password: str
 
-
+# user profile update request model
 class UpdateUser(BaseModel):
     username: Optional[str]
     current_password: Optional[str]
@@ -39,20 +45,19 @@ class UpdateUser(BaseModel):
         alias_generator = camelize
         allow_population_by_field_name = True
 
-
+# returns newly updated profile (excluding password for security)
 class UserProfileResponse(BaseModel):
     id: str
     username: str
     description: Optional[str]
     image: Optional[str]
 
-
+# registration
 @router.post("/", tags=["user"])
 async def create_user(register: Register, request: Request) -> Wrapper[dict]:
     user = await Users.filter(username=register.username, delete_date=None).first()
     if user:
         raise ApiException(500, 2020, "This username already exists")
-    # TODO: Validation
     await Users(
         username=register.username, password_hash=hash(register.password)
     ).save()
@@ -61,11 +66,12 @@ async def create_user(register: Register, request: Request) -> Wrapper[dict]:
 
 # REVIEW RELATED START
 
-
+# gets user's reviews
 @router.get(
     "/{username}/reviews", tags=["user"], response_model=Wrapper[ListReviewResponse]
 )
 async def get_reviews_user(username: str, page: int = 0, per_page: int = 0):
+    # handle pagination request parameters
     if per_page >= 42:
         raise ApiException(400, 2700, "Please limit the numer of items per page")
     if (per_page < 0) or (page < 0):
@@ -87,7 +93,8 @@ async def get_reviews_user(username: str, page: int = 0, per_page: int = 0):
             user_id=str(r.user_id),
             username=r.user.username,
             movie_id=str(r.movie_id),
-            movie_name=str(r.movie.title),
+            movie_title=str(r.movie.title),
+            movie_year=str(r.movie.release_date),
             create_date=str(r.create_date),
             description=r.description,
             contains_spoiler=r.contains_spoiler,
@@ -121,15 +128,16 @@ async def get_reviews_user(username: str, page: int = 0, per_page: int = 0):
 
 # WISHLIST RELATED START
 
-
+# gets the user's wishlist items, which is a list of compact movie objects
 @router.get("/{username}/wishlist")
 async def get_user_wishlist(username: str):
     user = await Users.filter(username=username, delete_date=None).first()
 
     if not user:
         raise ApiException(404, 2021, "That user's profile was not found.")
-
+    
     items = []
+    #get all movie objects in that user's wishlist
     for wishlist_item in await Wishlists.filter(
         user_id=user.user_id, delete_date=None
     ).prefetch_related("movie"):
@@ -159,7 +167,7 @@ async def get_user_wishlist(username: str):
 
 # BANLIST RELATED START
 
-
+# gets all users in that user's banlist
 @router.get(
     "/{username}/banlist", response_model=Wrapper[ListResponse[UserBanlistResponse]]
 )
@@ -170,6 +178,7 @@ async def get_user_banlist(username: str):
         raise ApiException(404, 2031, "That user doesn't exist.")
 
     items = []
+    # get relevant user details for each banlist user
     for banlist_item in await Banlists.filter(user_id=user.user_id, delete_date=None):
         banned_user = (
             await Users.filter(
@@ -190,7 +199,7 @@ async def get_user_banlist(username: str):
 
 # BANLIST RELATED END
 
-
+# gets your profile
 @router.get(
     "/", tags=["User"], response_model=Union[Wrapper[UserProfileResponse], Wrapper]
 )
@@ -212,7 +221,7 @@ async def get_current_user(request: Request):
 
     return wrap(response)
 
-
+# gets profile of a provided username' account
 @router.get(
     "/{username}",
     tags=["User"],
@@ -232,7 +241,7 @@ async def get_user_profile(username: str):
 
     return wrap(response)
 
-
+# update user profile
 @router.put("/", tags=["User"], response_model=Wrapper)
 async def modify_user(request: Request, form: UpdateUser):
     user_id = request.session.get("user_id")
@@ -242,19 +251,24 @@ async def modify_user(request: Request, form: UpdateUser):
     if not user:
         raise ApiException(500, 2021, "That user's profile was not found")
 
+    # updating username
     if form.username:
         existing_username = await Users.get_or_none(username__iexact=form.username)
+        # checks if new username is available
         if existing_username and str(existing_username.user_id) != str(user_id):
             raise ApiException(500, 2020, "This username already exists")
         user.username = form.username
         await user.save(update_fields=["username"])
 
+    # updating password
     if form.new_password:
+        #verifies password provided for previous pswd
         if not verify(user.password_hash, form.current_password):
             raise ApiException(500, 2010, "Incorrect username or password")
         user.password_hash = hash(form.new_password)
         await user.save(update_fields=["password_hash"])
 
+    # updates user image and saves to local storage
     if form.image:
         image_url = "storages/images/users/" + user_id + ".png"
         with open("../../" + image_url, "wb") as f:
@@ -262,7 +276,9 @@ async def modify_user(request: Request, form: UpdateUser):
         user.image = image_url
         await user.save(update_fields=["image"])
 
+    # updates user description
     if form.description is not None:
+        # validates length
         if len(form.description) > 140:
             raise ApiException(
                 500, 2022, "Your description must be 140 characters or less."

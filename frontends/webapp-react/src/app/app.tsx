@@ -100,6 +100,17 @@ const App = () => {
             </Switch>
           </article>
         </Router>
+        <footer className="Footer">
+          <a href="/" ><img src="/static/media/logo.5e491f07.svg" alt="FilmSeer" className="Footer__logo-image"/></a>
+          <div className="Footer__authors">
+            <h4>Authors</h4>
+            <p className="Footer__author">Con Tieu-Vinh - z5245136</p>
+            <p className="Footer__author">Daheng Wang - z5234730 </p>
+            <p className="Footer__author">Mengfan Huang - z5148963</p>
+            <p className="Footer__author">Minh Phuong Nguyen - z5234456</p>
+            <p className="Footer__author">Tom Hagis - z5149234</p>
+          </div>
+        </footer>
       </div>
     </StylesProvider>
   );

@@ -8,6 +8,12 @@ def _new_uuid():
     return to_uuid(id())
 
 
+"""
+This model represents a review given to a movie by a user.
+It contains text, whether or not the author flagged it as containing
+a spoiler and the metadata related to funny, helpful and spoiler votes.
+"""
+
 class Reviews(Model):
     # Data fields
     review_id = fields.UUIDField(pk=True, default=_new_uuid)

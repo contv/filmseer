@@ -15,6 +15,11 @@ from app.utils.wrapper import ApiException, wrap
 
 _status_codes_to_handle: List[int] = []
 
+"""
+This module involves custom error handlers and error page responses to
+well-defined codes. Also adds error headers to responses.
+"""
+
 
 async def status_code_handler(
     response: Response, scope: Scope, receive: Receive, send: Send
