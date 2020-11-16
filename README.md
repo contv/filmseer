@@ -111,6 +111,14 @@ For more details: http://getbem.com/naming/
 
 ## How to run on VLAB
 * This is a short version of how to run our project in VLAB. Please refer to the report for user manual
+
+1. **Front-end initialization**
+- Make sure .env file in `~/frontend/webapp-react` is configured correctly
+- Go to `~/frontend/webapp-react` folder
+- Run: `npm run build` followed by `npm run publish`
+- Alternative, `npm run start` can be run for Developer mode
+
+2. **Back-end initialization**
 - Make sure .env file in `~/backend/serverapp-fastapi` is configured correctly
 - Install poetry: https://python-poetry.org/docs/#installation
 - Go to `~/backend/serverapp-fastapi`, run `poetry install`
