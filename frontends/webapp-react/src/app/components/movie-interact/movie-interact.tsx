@@ -66,24 +66,12 @@ const MovieInteract = (props: MovieInteractProps & {snapToReviews : any}) => {;
 return (
     <>
       <div>
-        <VisibilityIcon />
-        <Typography variant="body2" display="inline">
-          Watched
-        </Typography>
-      </div>
-      <div>
         <BookmarkIcon
           onClick={onWishlist}
           style={{ fill: isWishlisted ? "green" : "black" }}
         ></BookmarkIcon>
         <Typography variant="body2" display="inline">
-          {isWishlisted ? "Remove from Wishlist" : "Add to wishlist"}
-        </Typography>
-      </div>
-      <div>
-        <FlagIcon />
-        <Typography variant="body2" display="inline">
-          Flag inaccurate
+          {isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
         </Typography>
       </div>
       <div>
