@@ -93,6 +93,8 @@ input[type="button"] {
 }
 
 .Footer {
+  z-index: 1300;
+  margin-top:40px;
   background-color: var(--gray-5);
   box-shadow: 0 50vh 0 50vh var(--gray-5);
 
