@@ -5,12 +5,25 @@
     box-sizing: border-box;
 
     &:nth-of-type(odd) {
-      background-color: var(--gray-6);
+      background: #303030;
     }
 
     &:nth-of-type(even) {
-      background-color: #fff;
+      background-color: #404040;
     }
+
+    &:last-of-type {
+      margin-bottom: -40px;
+    }
+
+    &:nth-of-type(odd) .HomePage__pagination-wrapper {
+      filter: brightness(0.6) contrast(1.6);
+    }
+
+    &:nth-of-type(even) .HomePage__pagination-wrapper {
+      filter: brightness(0.7) contrast(1.5);
+    }
+
   }
 
   &__section-title {
@@ -19,6 +32,7 @@
     display: flex;
     flex-flow: row nowrap;
     width: 80%;
+    color: #F7F7F7;
   }
 
   &__loading-messages {

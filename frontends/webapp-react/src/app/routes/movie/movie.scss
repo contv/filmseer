@@ -1,21 +1,55 @@
 .Movie__poster {
   float: left;
   max-width: 300px;
+  box-shadow: 0 0 16px 3px rgba(0, 0, 0, 0.4);
 }
 
 .Movie__poster-image {
   max-width: 300px;
+  display: block;
 }
 
 .Movie__about {
   float: left;
-  padding-left: 20px;
+  padding-left: 40px;
   max-width: 520px;
+}
+
+
+.Movie__about .GenreTile {
+  background-color: #DBDBDB;
+  padding: 2px 8px;
+  border-radius: 6px;
+  margin: 6px 8px 6px 0;
+}
+
+.Movie__about .movieScore {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.Movie__about .movieScore > * {
+  margin-right: 5px;
+  font-size: 14px;
+  display: flex;
+}
+
+
+.Movie__description {
+  margin: 20px 0;
+  font-size: 15px;
 }
 
 .Movie__interact {
   float: left;
   padding-left: 20px;
+}
+
+.Movie__title {
+  font-size: 22px;
+  font-weight: bold;
+  margin: 10px 0 20px;
 }
 
 .Movie__review {
@@ -27,7 +61,8 @@
 }
 
 .Movie__trailer {
-  padding: 40px;
+  padding: 0;
+  margin-right: 16px;
 }
 
 .Movie__castname {
@@ -56,6 +91,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 .Movie__section {
@@ -108,11 +145,16 @@
 }
 
 .Movie__list {
-  width: 85%;
-  margin: 40px 200px;
+  width: 100%;
+  margin: 40px auto;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   grid-gap: 24px;
+}
+
+
+.Movie__filters .GenreTile {
+  max-width: 300px;
 }
 
 
@@ -125,4 +167,19 @@
   float: right;
   margin-bottom: 5px;
   margin-right: 20px;
+}
+
+.Movie__cast-avatar-image {
+  width: auto;
+  height: 80px;
+  display: block;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+}
+
+.Movie__position {
+  text-transform: capitalize;
+}
+
+.Movie__cast-table {
+  margin-top: -10px;
 }
