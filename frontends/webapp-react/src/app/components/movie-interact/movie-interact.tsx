@@ -8,7 +8,6 @@ import FlagIcon from "@material-ui/icons/Flag";
 import Popup from "src/app/popups/popup-base";
 import Stars from "src/app/components/stars";
 import Typography from "@material-ui/core/Typography";
-import VisibilityIcon from "@material-ui/icons/Visibility";
 import { api } from "src/utils";
 import state from "src/app/states";
 import { view } from "@risingstack/react-easy-state";
