@@ -58,7 +58,7 @@ const Pagination = React.forwardRef<
   const [data, setData] = React.useState<object[]>([]);
   const prevPageNum = usePrevious(current);
   const pageInput = React.useRef<HTMLInputElement>(null);
-  const total = props.total || Math.ceil(data.length / (props.perPage || 1));
+  const total = Math.max(1, props.total || Math.ceil(data.length / (props.perPage || 1)));
 
   const handleCallbackData = (newData: object[]) => {
     if (props.displayType !== "loadmore") {
