@@ -30,12 +30,13 @@ detailed movie responses, movie reviews and handles user-related movie
 interactions such as ratings and leaving reviews.
 """
 
-# trailers are represented by their site and their key as 
+# trailers are represented by their site and their key as
 # a unique url identifier e.g. {site}.com/{key}. We support
 # vimeo and youtube which both follow this scheme
 class Trailer(BaseModel):
     key: str
     site: str
+
 
 # crew objects represent both cast and other film crew members
 # such as filmographers and directors.
@@ -44,6 +45,7 @@ class CrewMember(BaseModel):
     name: str
     position: str
     image: Optional[str]
+
 
 # this is the highest detail response for a movie, providing
 # most relevant details about that movie.
@@ -65,20 +67,23 @@ class MovieResponse(BaseModel):
         alias_generator = camelize
         allow_population_by_field_name = True
 
+
 # represents a user's movie rating
 class RatingResponse(BaseModel):
     id: str
     rating: float
 
-# represents the average rating of a movie 
+
+# represents the average rating of a movie
 class AverageRatingResponse(BaseModel):
     average: float
+
 
 # this method gets the average rating for a movie, with banned list taking into account.
 @router.get("/{movie_id}/ratings", response_model=Wrapper[AverageRatingResponse])
 async def get_average_rating(movie_id: str, request: Request) -> Wrapper[dict]:
     user_id = request.session.get("user_id")
-    
+
     # gets the relevant movie object
     try:
         movie = (
@@ -87,7 +92,9 @@ async def get_average_rating(movie_id: str, request: Request) -> Wrapper[dict]:
             .first()
         )
     except OperationalError:
-        raise ApiException(401, 2070, "There was a problem fetching that movie's ratings.")
+        raise ApiException(
+            401, 2070, "There was a problem fetching that movie's ratings."
+        )
 
     if movie is None:
         raise ApiException(404, 2060, "That movie doesn't exist.")
@@ -104,6 +111,7 @@ async def get_average_rating(movie_id: str, request: Request) -> Wrapper[dict]:
         }
     )
 
+
 # gets the detailed movie object
 @router.get("/{movie_id}", tags=["movies"], response_model=Wrapper[MovieResponse])
 async def get_movie(movie_id: str, request: Request):
@@ -118,8 +126,8 @@ async def get_movie(movie_id: str, request: Request):
 
     # collect genres
     genres = [genre.name for genre in await movie.genres]
-    
-    # gets all people who worked on the film and then creates a 
+
+    # gets all people who worked on the film and then creates a
     # crew object for each
     crew = [
         CrewMember(
@@ -135,7 +143,7 @@ async def get_movie(movie_id: str, request: Request):
     rating = await calc_average_rating(
         movie.cumulative_rating, movie.num_votes, user_id, movie_id
     )
-    
+
     # final movie detail to return
     movie_detail = MovieResponse(
         id=str(movie.movie_id),
@@ -183,6 +191,9 @@ async def get_movie_reviews(
                 review_id=str(r.review_id),
                 user_id=str(r.user_id),
                 username=r.user.username,
+                movie_id=str(r.movie_id),
+                movie_title=str(r.movie.title),
+                movie_year=str(r.movie.release_date),
                 create_date=str(r.create_date),
                 description=r.description,
                 contains_spoiler=r.contains_spoiler,
@@ -207,7 +218,7 @@ async def get_movie_reviews(
             .offset((page - 1) * per_page)
             .limit(per_page)
             .prefetch_related(
-                "rating", "helpful_votes", "funny_votes", "spoiler_votes", "user"
+                "rating", "helpful_votes", "funny_votes", "spoiler_votes", "user", "movie"
             )
         ]
     # Return the review for all other users (for this movie)
@@ -226,6 +237,9 @@ async def get_movie_reviews(
                 review_id=str(r.review_id),
                 user_id=str(r.user_id),
                 username=r.user.username,
+                movie_id=str(r.movie_id),
+                movie_title=str(r.movie.title),
+                movie_year=str(r.movie.release_date),
                 create_date=str(r.create_date),
                 description=r.description,
                 contains_spoiler=r.contains_spoiler,
@@ -249,10 +263,11 @@ async def get_movie_reviews(
             .offset((page - 1) * per_page)
             .limit(per_page)
             .prefetch_related(
-                "rating", "helpful_votes", "funny_votes", "spoiler_votes", "user"
+                "rating", "helpful_votes", "funny_votes", "spoiler_votes", "user", "movie"
             )
         ]
     return wrap({"items": reviews})
+
 
 # adds or modifies a review
 @router.post(
@@ -274,9 +289,7 @@ async def create_update_user_review(
 
     user_id = request.session.get("user_id")
     if not user_id:
-        raise ApiException(
-            401, 2001, "You are not logged in!"
-        )
+        raise ApiException(401, 2001, "You are not logged in!")
 
     # attempt to add review to db
     try:
@@ -315,16 +328,15 @@ async def create_update_user_review(
 
     return wrap({"create_date": create_date})
 
+
 # delete previously posted review
 @router.delete("/{movie_id}/review", tags=["movies"])
 async def delete_user_review(movie_id: str, request: Request):
     user_id = request.session.get("user_id")
     if not user_id:
-        raise ApiException(
-            401, 2001, "You are not logged in!"
-        )
-    
-    #attempt to remove from db
+        raise ApiException(401, 2001, "You are not logged in!")
+
+    # attempt to remove from db
     try:
         async with in_transaction():
             review = await Reviews.get_or_create(user_id=user_id, movie_id=movie_id)
@@ -437,6 +449,7 @@ async def update_review_rating(
     except OperationalError:
         raise OperationalError
 
+
 # removes a rating for that user
 @router.delete(
     "/{movie_id}/rating", tags=["movies"], response_model=Wrapper[RatingResponse]
@@ -465,6 +478,7 @@ async def delete_rating(request: Request, movie_id: str) -> Wrapper[dict]:
         raise ApiException(500, 2071, "Could not find or delete rating")
 
     return wrap({"id": str(rating_id), "rating": rating})
+
 
 # returns the user rating for a movie
 @router.get(
