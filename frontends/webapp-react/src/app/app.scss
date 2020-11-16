@@ -18,6 +18,11 @@
   --purple-2: #bb6bd9;
   --red-dim: #d9a2a2;
   --blue-dim: #90b6e3;
+  --sans-serif: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+    "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  --monospace: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+    monospace;
 }
 
 [style*="--aspect-ratio:"]::before {
@@ -98,15 +103,15 @@ input[type="button"] {
   background-color: var(--gray-5);
   box-shadow: 0 50vh 0 50vh var(--gray-5);
 
-  &__author{
-    font-family: 'Courier New', Courier, monospace;
+  &__author {
+    font-family: var(--monospace);
   }
 
-  &__authors{
+  &__authors {
     padding-left: 160px;
   }
 
-  &__logo-image{
+  &__logo-image {
     width: 200px;
     float: right;
     margin-right: 160px;

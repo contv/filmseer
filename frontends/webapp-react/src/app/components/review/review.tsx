@@ -31,7 +31,10 @@ const Review = (props: ReviewProps & { className?: string }) => {
   const authorSpoiler = props.containsSpoiler;
   return (
     <div className={`Review ${(props.className || "").trim()}`}>
-      <Link to={`/user/${props.username}`}>
+      <Link
+        to={`/user/${props.username}`}
+        className="Review__user-avatar-container"
+      >
         <img
           className="Review__user-avatar"
           src={props.profileImage}
@@ -39,9 +42,9 @@ const Review = (props: ReviewProps & { className?: string }) => {
           alt=""
         />
       </Link>
-      <div className="Review__content">
+      <div className="Review__content-wrapper">
         {props.rating && (
-          <>
+          <div className="Review__rating">
             <Rating
               name="star-rating"
               value={props.rating}
@@ -50,9 +53,9 @@ const Review = (props: ReviewProps & { className?: string }) => {
               readOnly={true}
             />
             <span> {props.rating} stars</span>
-          </>
+          </div>
         )}
-        <p className="Review__meta">
+        <div className="Review__meta">
           <Link to={`/user/${props.username}`}>{props.username}</Link>{" "}
           {props.showMovie && (
             <span className="Review__meta-reviews">reviews</span>
@@ -68,7 +71,7 @@ const Review = (props: ReviewProps & { className?: string }) => {
           <span className="Review__date">
             posted at {`${new Date(props.createDate).toUTCString()}`}
           </span>
-        </p>
+        </div>
 
         <div className="Review__content">
           {showSpoiler ? (

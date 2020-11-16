@@ -73,7 +73,7 @@ const UserPage = (props: { className?: string }) => {
         console.warn(error);
       }
     ),
-    [props.className]
+    [props.className, username]
   );
 
   React.useEffect(
@@ -93,14 +93,14 @@ const UserPage = (props: { className?: string }) => {
         return !isMe;
       }
     ),
-    [props.className]
+    [props.className, username]
   );
 
   useUpdateEffect(() => {
     reviewHandle?.refresh(1);
     wishlistHandle?.refresh(1);
     banlistHandle?.refresh(1);
-  }, [props.className]);
+  }, [props.className, username]);
 
   const blockUserCallback = (username: string) => {
     return (event: React.MouseEvent) => {

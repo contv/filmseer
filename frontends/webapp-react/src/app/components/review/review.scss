@@ -18,9 +18,66 @@
   &__content {
     font-size: 16px;
     padding-bottom: 5px;
+    grid-area: content;
   }
 
   &__date {
     color: var(--gray-2);
+  }
+
+  &__meta {
+    /* margin: 0 0 16px; */
+    display: flex;
+    grid-area: meta;
+    align-items: center;
+    padding-bottom: 10px;
+  }
+
+  &__content-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 160px;
+    grid-template-rows: 40px 1fr;
+    grid-template-areas: "meta rating" "content content";
+  }
+
+  &__rating {
+    grid-area: rating;
+    justify-self: right;
+    display: flex;
+    align-items: center;
+    padding-bottom: 10px;
+  }
+
+  &__meta a {
+    color: unset;
+    text-decoration: unset;
+    font-weight: bold;
+  }
+
+  &__content-wrapper * {
+    font-family: var(--sans-serif) !important;
+    font-weight: unset;
+  }
+
+  &__content-wrapper summary {
+    font-weight: bold;
+  }
+
+  &__content-wrapper details {
+    filter: brightness(1.05);
+    background: var(--gray-5);
+    padding: 10px;
+  }
+
+  &__content-wrapper details[open] summary {
+    margin-bottom: 10px;
+  }
+
+  &__meta > * {
+    margin-right: 0.5em;
+  }
+
+  &__rating > * {
+    margin-left: 5px;
   }
 }

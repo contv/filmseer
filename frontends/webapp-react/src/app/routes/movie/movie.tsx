@@ -20,6 +20,7 @@ import { SearchItem } from "src/app/routes/search/search";
 import Select from "@material-ui/core/Select";
 import Stars from "src/app/components/stars";
 import TileList from "src/app/components/tile-list";
+import TableList from "src/app/components/table-list";
 import Trailer from "src/app/components/trailer";
 import Typography from "@material-ui/core/Typography";
 import { User } from "src/app/routes/user/user";
@@ -243,15 +244,44 @@ const MovieDetailPage = (props: { className?: string }) => {
         )}
         {movieDetails.crew && (
           <MovieSection heading="Cast and Crew">
-            <div className="Cast">
-              {movieDetails.crew.map((castMember, i) => (
-                <div key={i} className="CastMember">
-                  <img width={60} src={castMember.image || avatar} alt=""></img>
-                  <span className="Movie__castname">{castMember.name}</span>
-                  <i>{castMember.position}</i>
-                </div>
-              ))}
-            </div>
+          <TableList
+            className="Movie__cast-table"
+            header={{
+              "image": "Image",
+              "name": "Name",
+              "position": "Position",
+            }}
+            headerClassName={{
+              "image": "Movie__cast-avatar",
+              "name": "Movie__cast-name",
+              "position": "Movie__cast-position",
+            }}
+            columnSizes={{
+              "image": "1fr",
+              "name": "1fr",
+              "position": "1fr",
+            }}
+            showHeader={false}
+            rowsData={
+              movieDetails.crew.map((castMember) => {
+                return {
+                  "image": castMember.image || avatar,
+                  "name": castMember.name,
+                  "position": castMember.position,
+                  "id": castMember.id,
+                }
+              })
+            }
+            cellRenderer={(cellData, columnName, _index, _rowData) => {
+              if (columnName === "image") {
+                return <img src={cellData} className="Movie__cast-avatar-image" />
+              } else if (columnName === "name") {
+              return <span className="Movie__castname">{cellData}</span>
+              } else {
+                return <span className="Movie__position">{cellData}</span>
+              }
+            }}
+          />
           </MovieSection>
         )}
         <MovieSection heading="Recommended">
