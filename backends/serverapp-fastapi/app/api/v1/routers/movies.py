@@ -699,7 +699,7 @@ async def get_recommendation(
         if not user_id:
             raise ApiException(500, 2001, "You are not logged in!")
         # Check if foryou has been generated recently
-        searches = request.session["recommendations"]
+        searches = request.session.get("recommendations", {})
         try:
             search_id = searches["foryou"]
         except KeyError:
@@ -707,6 +707,7 @@ async def get_recommendation(
             if len(searches.keys()) >= settings.REDIS_SEARCHES_MAX:
                 searches.pop(list(searches)[0])
             searches["foryou"] = search_id
+            request.session["recommendations"] = searches
         # Attempt to retrieve stored movie payload from Redis
         movies, _ = await recommendation_cache_driver.get(search_id)
         if movies:
@@ -737,7 +738,7 @@ async def get_recommendation(
         if not movie_id:
             raise ApiException(404, 2060, "That movie doesn't exist.")
         # Check if movie has had recommendations calculated on it within same session
-        searches = request.session["recommendations"]
+        searches = request.session.get("recommendations", {})
         try:
             search_id = searches[movie_id]
         except KeyError:
@@ -745,6 +746,7 @@ async def get_recommendation(
             if len(searches.keys()) >= settings.REDIS_SEARCHES_MAX:
                 searches.pop(list(searches)[0])
             searches[movie_id] = search_id
+            request.session["recommendations"] = searches
         # Attempt to retrieve stored movie payload from Redis
         movies, _ = await recommendation_cache_driver.get(search_id)
         if movies:
