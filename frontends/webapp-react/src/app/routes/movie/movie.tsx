@@ -1,36 +1,34 @@
-import "./movie.scss";
-
-import React, { useEffect, useRef, useState } from "react";
-import { api, apiEffect, useUpdateEffect } from "src/utils";
-
-import Filter from "src/app/components/filter";
 import FormControl from "@material-ui/core/FormControl";
-import GenreTile from "src/app/components/genre-tile";
-import HorizontalList from "src/app/components/horizontal-list";
 import InputLabel from "@material-ui/core/InputLabel";
 import MenuItem from "@material-ui/core/MenuItem";
+import Select from "@material-ui/core/Select";
+import Typography from "@material-ui/core/Typography";
+import { view } from "@risingstack/react-easy-state";
+import React, { useEffect, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
+import Filter from "src/app/components/filter";
+import GenreTile from "src/app/components/genre-tile";
+import HorizontalList from "src/app/components/horizontal-list";
 import MovieInteract from "src/app/components/movie-interact";
 import MovieItem from "src/app/components/movie-item";
+import { nFormatter } from "src/app/components/movie-item/movie-item";
+import movieLogo from "src/app/components/movie-item/movie-logo.png";
 import MovieSection from "src/app/components/movie-section";
 import Pagination from "src/app/components/pagination";
 import Review from "src/app/components/review";
 import ReviewEditor from "src/app/components/review-editor";
+import avatar from "src/app/components/review/default-avatar.png";
 import { ReviewProps } from "src/app/components/review/review";
-import { SearchItem } from "src/app/routes/search/search";
-import Select from "@material-ui/core/Select";
 import Stars from "src/app/components/stars";
 import TableList from "src/app/components/table-list";
 import TileList from "src/app/components/tile-list";
 import Trailer from "src/app/components/trailer";
-import Typography from "@material-ui/core/Typography";
-import { User } from "src/app/routes/user/user";
 import VerticalList from "src/app/components/vertical-list";
-import avatar from "src/app/components/review/default-avatar.png";
-import movieLogo from "src/app/components/movie-item/movie-logo.png";
-import { nFormatter } from "src/app/components/movie-item/movie-item";
+import { SearchItem } from "src/app/routes/search/search";
+import { User } from "src/app/routes/user/user";
 import state from "src/app/states";
-import { useParams } from "react-router-dom";
-import { view } from "@risingstack/react-easy-state";
+import { api, apiEffect, useUpdateEffect } from "src/utils";
+import "./movie.scss";
 
 type CastMember = {
   id: string;
@@ -92,7 +90,6 @@ const MovieDetailPage = (props: { className?: string }) => {
     false
   );
 
-
   const getParamUpdater = (key: string) => {
     if (key === "genre") {
       return updateGenre;
@@ -124,8 +121,7 @@ const MovieDetailPage = (props: { className?: string }) => {
   const snapToReviews = () => reviewSection.current.scrollIntoView();
   let paginationHandle_recommend: Handle<typeof Pagination>;
   let paginationHandle_review: Handle<typeof Pagination>;
-  
-  
+
   useEffect(() => {
     if (state.loggedIn) {
       api({ path: `/user`, method: "GET" }).then((res) => {
@@ -162,6 +158,7 @@ const MovieDetailPage = (props: { className?: string }) => {
       if (res.code !== 0) {
         setHasError(true);
       } else {
+        console.log("res.data.items", res.data.items);
         setAuthorReview(res.data.items as Array<ReviewProps>);
         setHasError(false);
       }
@@ -179,7 +176,6 @@ const MovieDetailPage = (props: { className?: string }) => {
   useUpdateEffect(() => {
     paginationHandle_review && paginationHandle_review.refresh();
   }, [movieId]);
-
 
   if (movieDetails) {
     const formattedNumRatings: string = nFormatter(movieDetails.numVotes, 0);
@@ -237,7 +233,7 @@ const MovieDetailPage = (props: { className?: string }) => {
           <MovieSection heading="Trailers">
             <HorizontalList
               items={movieDetails.trailers.map((trailer) => (
-                <div className="Movie__trailer">
+                <div className="Movie__trailer" key={trailer.key}>
                   <Trailer site={trailer.site} videoId={trailer.key}></Trailer>
                 </div>
               ))}
@@ -493,27 +489,27 @@ const MovieDetailPage = (props: { className?: string }) => {
               />
             </div>
           )}
-        <div className="Movie__pagination-wrapper">
-          <Pagination
-            ref={(c) => {
-              paginationHandle_review = c;
-            }}
-            displayType="numbered"
-            dataType="slice"
-            perPage={reviewsPerPage}
-            dataCallback={async () => {
-              const response = await api({
-                path: `/movie/${movieId}/reviews`,
-                method: "GET",
-              });
+          <div className="Movie__pagination-wrapper">
+            <Pagination
+              ref={(c) => {
+                paginationHandle_review = c;
+              }}
+              displayType="numbered"
+              dataType="slice"
+              perPage={reviewsPerPage}
+              dataCallback={async () => {
+                const response = await api({
+                  path: `/movie/${movieId}/reviews`,
+                  method: "GET",
+                });
 
-              return response.data.items as ReviewProps[]
-            }}
-            renderCallback={(data) => {
-              setReviews(data as ReviewProps[]);
-            }}
-          />
-        </div>
+                return response.data.items as ReviewProps[];
+              }}
+              renderCallback={(data) => {
+                setReviews(data as ReviewProps[]);
+              }}
+            />
+          </div>
         </MovieSection>
       </div>
     );

@@ -85,7 +85,6 @@ const ReviewEditor = (props: ReviewEditorProps & { className?: string }) => {
           <textarea
             className="ReviewEditor__textbox"
             disabled={editable}
-            defaultValue={props.description}
             value={desc}
             onChange={reviewDesc}
           ></textarea>

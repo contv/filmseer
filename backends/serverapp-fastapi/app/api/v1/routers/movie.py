@@ -482,7 +482,7 @@ async def delete_rating(request: Request, movie_id: str) -> Wrapper[dict]:
 
 # returns the user rating for a movie
 @router.get(
-    "/{movie_id}/rating", tags=["Movies"], response_model=Wrapper
+    "/{movie_id}/rating", tags=["Movies"], response_model=Wrapper[RatingResponse]
 )
 async def get_current_user_rating(request: Request, movie_id: str):
     user_id = request.session.get("user_id")

@@ -55,12 +55,6 @@ const UserMenu = (props: { className?: string }) => {
   } else {
     return (
       <div className={`UserMenu ${(props.className || "").trim()}`}>
-        <button className="UserMenu__icon">
-          <img src={user} alt="Profile" className="UserMenu__profile-icon" />
-        </button>
-        <button className="UserMenu__icon">
-          <Settings className="UserMenu__profile-icon" size={1000} />
-        </button>
         <button
           className="UserMenu__button"
           onClick={() => {
