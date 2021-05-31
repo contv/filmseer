@@ -3,8 +3,7 @@
 
 The FilmFinder Project for COMP9900-W17B-FilmSeer Group.
 
-## How to run on VLAB
-* This is a short version of how to run our project in VLAB. Please refer to the report for user manual
+## How to run
 
 1. **Front-end initialization**
 - Make sure .env file in `~/frontend/webapp-react` is configured correctly
